@@ -1,0 +1,7 @@
+torch==2.2.2
+torchvision==0.17.2
+opencv-python==4.9.0.80
+Pillow
+detecto==1.1.6
+pandas
+numpy==1.26.4
