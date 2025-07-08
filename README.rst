@@ -229,7 +229,7 @@ Hardware Requirements
 
 For optimal performance, especially when running deep learning models (e.g., label detection, rotation correction), it is recommended to use a machine with a dedicated NVIDIA GPU and recent drivers. While the pipeline can run on CPU-only systems, processing will be significantly slower.
 
-If you plan to use GPU acceleration with Docker, ensure you have the [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html) installed and configured.
+If you plan to use GPU acceleration with Docker, ensure you have the `NVIDIA Container Toolkit <https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html>`_ installed and configured.
 
 If your system supports GPU acceleration and you have set up the NVIDIA Container Toolkit, you can run the pipeline with GPU support by adding the ``--gpus all`` flag:
 
