@@ -1,28 +1,32 @@
+==============================================================
 Collection Mining – Entomological Label Information Extraction
 ==============================================================
-
-*A Python package developed at the Berlin Natural History Museum*
 
 .. contents::
 
 Overview
---------
+========
 
 This package provides a modular framework for the **semi-automated processing of entomological specimen labels**. 
 It uses artificial intelligence to perform **label detection, classification, rotation correction, OCR, and clustering** laying the groundwork for comprehensive information extraction. 
 It is designed to work in conjunction with the 'python-mfnb' cpackage for downstream clustering tasks.
 
+
 Key Features
-------------
+============
 
 - **AI-Powered Label Classification**: Three TensorFlow-based classifiers tailored to different label types.
 - **OCR Pipeline**: Supports both Tesseract and the Google Cloud Vision API.
 - **Modular Components**: For classification, preprocessing, text extraction, and postprocessing.
 - **High Efficiency**: Optimized for digitizing large-scale entomological collections.
 
+**Model Retraining Notebooks Provided**
+
+We provide Jupyter notebooks in the `training_notebooks/` folder to allow users to retrain the models presented here on their own data. These notebooks cover label detection, classification, and rotation correction, and can be adapted to new datasets as needed.
+
 
 Prerequisites
--------------
+=============
 
 - Python 3.10 (for local installation)
 - Docker Desktop (for running the pipeline in containers)
@@ -32,7 +36,7 @@ Prerequisites
 
 
 Installation
-------------
+============
 
 1. Create a Python 3.10 environment (recommended to ensure dependency compatibility):
 
@@ -69,7 +73,7 @@ Be sure to activate your environment before running any further commands:
 
 
 Input Image Guidelines
-----------------------
+======================
 
 The modules work best on **JPEG** images that adhere to standardized practices, such as those from:
 
@@ -78,6 +82,7 @@ The modules work best on **JPEG** images that adhere to standardized practices, 
 - `Atlas of Living Australia <https://www.ala.org.au/>`_
 
 Recommended image specifications:
+---------------------------------
 
 - High-resolution JPEG format (300 DPI)
 - Clear separation between labels
@@ -88,7 +93,7 @@ Recommended image specifications:
 
 
 Google Cloud Vision Setup
---------------------------
+=========================
 
 To use the Google Vision API:
 
@@ -108,7 +113,7 @@ The script will use your Google Cloud Vision credentials to process all images i
 
 
 Installing `zbar` for QR Code Recognition
------------------------------------------
+=========================================
 
 To enhance QR code detection using `zbar`, install the following dependencies:
 
@@ -218,7 +223,6 @@ Troubleshooting
 .. code-block:: console
 
   docker compose -f multi-label-docker-compose.yaml down --remove-orphans
-
 
 Hardware Requirements
 ---------------------
