@@ -231,13 +231,3 @@ Hardware Requirements
      .. code-block:: console
 
         docker compose --gpus all -f multi-label-docker-compose.yaml up --build
-
-Unit Tests
-==========
-
-Unit tests are provided in the ``unit_tests/`` folder.  
-To run all tests, use:
-
-.. code-block:: console
-
-   python -m unittest discover unit_tests
