@@ -54,9 +54,6 @@ dependencies = [
         "torchvision==0.17.2"
 ]
 
-[tool.setuptools.packages.find]
-where = ["."]
-
 [project.optional-dependencies]
 dev = [
     "pytest>=7.0",
