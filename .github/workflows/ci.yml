@@ -40,11 +40,15 @@ jobs:
         # Set environment variables for CPU-only TensorFlow
         export TF_CPP_MIN_LOG_LEVEL=2
         export CUDA_VISIBLE_DEVICES=""
+        # Create necessary test directories
+        mkdir -p unit_tests/testdata/output
         pip install -e .
         pip install pytest pytest-cov flake8 black
       env:
         TF_CPP_MIN_LOG_LEVEL: 2
         CUDA_VISIBLE_DEVICES: ""
+        # Disable GPU for TensorFlow
+        TF_FORCE_GPU_ALLOW_GROWTH: false
     
     - name: Lint with flake8
       run: |

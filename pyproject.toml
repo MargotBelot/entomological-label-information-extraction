@@ -64,6 +64,11 @@ dev = [
     "mypy>=1.0",
     "pre-commit>=3.0"
 ]
+test = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "tensorflow-cpu==2.15.0"
+]
 docs = [
     "sphinx>=7.0",
     "sphinx-rtd-theme>=1.3",

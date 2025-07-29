@@ -3,6 +3,7 @@ import unittest
 import os
 import tempfile
 import json
+from pathlib import Path
 from unittest.mock import patch
 
 # Import the necessary module from the 'label_processing' module package
@@ -53,20 +54,20 @@ class TestUtilityFunctions(unittest.TestCase):
         If the function adds the appropriate file extension when provided.
         """
         # Test with a valid file path
-        original_path = os.path.join(os.path.dirname(__file__), '../testdata/cropped_pictures/BLF1562(11)-2_L_label_typed_3_printed.jpg')  # Define the file path
+        original_path = Path(__file__).parent / '..' / 'testdata' / 'cropped_pictures' / 'BLF1562(11)-2_L_label_typed_3_printed.jpg'  # Define the file path
         appendix = 'processed'
         expected_filename = 'BLF1562(11)-2_L_label_typed_3_printed_processed'  # Expected output file name
         result = generate_filename(original_path, appendix)
         self.assertEqual(result, expected_filename)
         
         # Test with directory path (no file extension)
-        original_path = os.path.join(os.path.dirname(__file__), '../testdata')  # Define directory path
+        original_path = Path(__file__).parent / '..' / 'testdata'  # Define directory path
         expected_filename = 'testdata_processed'  # Expected output directory name
         result = generate_filename(original_path, appendix)
         self.assertEqual(result, expected_filename)
         
         # Test with extension passed
-        original_path = os.path.join(os.path.dirname(__file__), '../testdata/cropped_pictures/BLF1562(11)-2_L_label_typed_3_printed.jpg') 
+        original_path = Path(__file__).parent / '..' / 'testdata' / 'cropped_pictures' / 'BLF1562(11)-2_L_label_typed_3_printed.jpg'
         expected_filename = 'BLF1562(11)-2_L_label_typed_3_printed_processed.jpg'
         result = generate_filename(original_path, appendix, extension='jpg')
         self.assertEqual(result, expected_filename)
@@ -86,7 +87,7 @@ class TestUtilityFunctions(unittest.TestCase):
             filename = 'test_output.json'
             
             # Ensure directory exists before saving
-            temp_data_dir = os.path.join(temp_dir, "../testdata")  # Define where the file will be saved
+            temp_data_dir = os.path.join(temp_dir, "testdata")  # Define where the file will be saved
             os.makedirs(temp_data_dir, exist_ok=True)
 
             save_json(data, filename, temp_data_dir)

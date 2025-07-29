@@ -2,6 +2,7 @@
 import unittest
 import numpy as np
 import os
+from pathlib import Path
 
 # Import the necessary module from the 'label_processing' module package
 from label_processing.label_rotation import load_image, rotate_image
@@ -23,7 +24,7 @@ class TestImageRotationModule(unittest.TestCase):
         and that the returned object is a numpy array. Also checks that the 
         image is not empty.
         """
-        img_path = os.path.join(os.path.dirname(__file__), "../testdata/not_empty/147843c0-06a7-496c-a156-0b139e843d62_label_front_0001_label_single.jpg")
+        img_path = Path(__file__).parent / ".." / "testdata" / "not_empty" / "147843c0-06a7-496c-a156-0b139e843d62_label_front_0001_label_single.jpg"
         
         # Ensure the image can be loaded successfully
         image = load_image(img_path)
@@ -37,7 +38,7 @@ class TestImageRotationModule(unittest.TestCase):
         Verifies that the image can be rotated by a specified angle, and that the rotated
         image retains its data type (numpy array) and has the expected dimensions (height, width, channels).
         """
-        img_path = os.path.join(os.path.dirname(__file__), "../testdata/not_empty/147843c0-06a7-496c-a156-0b139e843d62_label_front_0001_label_single.jpg")
+        img_path = Path(__file__).parent / ".." / "testdata" / "not_empty" / "147843c0-06a7-496c-a156-0b139e843d62_label_front_0001_label_single.jpg"
         angle = 1  # Rotate by 1 degree (or any other specified angle)
         
         # Load the image

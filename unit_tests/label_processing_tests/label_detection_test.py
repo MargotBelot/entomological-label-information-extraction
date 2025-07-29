@@ -17,7 +17,7 @@ class TestSegmentationCropping(unittest.TestCase):
     model prediction, thresholding, and cropping operations.
     """
     path_to_model = str(Path(__file__).parent.resolve() / "../../models/label_detection_model.pth")
-    jpg_path: Path = Path(__file__).parent.resolve() / "../testdata/uncropped/CASENT0922705_L.jpg"
+    jpg_path: Path = Path(__file__).parent / ".." / "testdata" / "uncropped" / "CASENT0922705_L.jpg"
 
     def setUp(self):
         """
@@ -83,7 +83,7 @@ class TestSegmentationCropping(unittest.TestCase):
         image_folder = str(self.label_predictor.jpg_path.parent)
         
         label_predictor = PredictLabel(self.path_to_model, ["label"])
-        df = prediction_parallel(os.path.join(os.path.dirname(__file__), "../testdata/uncropped", image_folder), label_predictor, n_processes=4)
+        df = prediction_parallel(Path(__file__).parent / ".." / "testdata" / "uncropped" / image_folder, label_predictor, n_processes=4)
 
         self.assertIsInstance(df, pd.DataFrame)
         self.assertEqual(len(df.columns), 7)
@@ -113,7 +113,7 @@ class TestSegmentationCropping(unittest.TestCase):
         # Get the parent directory of the image from self.label_predictor
         image_folder = str(self.label_predictor.jpg_path.parent)
         label_predictor = PredictLabel(self.path_to_model, ["label"])
-        df = prediction_parallel(os.path.join(os.path.dirname(__file__), "../testdata/uncropped", image_folder), label_predictor, n_processes=4)
+        df = prediction_parallel(Path(__file__).parent / ".." / "testdata" / "uncropped" / image_folder, label_predictor, n_processes=4)
 
         self.assertEqual(len(df), 20)
 
@@ -131,9 +131,9 @@ class TestSegmentationCropping(unittest.TestCase):
         image_folder = str(self.label_predictor.jpg_path.parent)
         
         label_predictor = PredictLabel(self.path_to_model, ["label"])
-        df = prediction_parallel(os.path.join(os.path.dirname(__file__), "../testdata/uncropped", image_folder), label_predictor, n_processes=4)
+        df = prediction_parallel(Path(__file__).parent / ".." / "testdata" / "uncropped" / image_folder, label_predictor, n_processes=4)
 
-        clean_df = clean_predictions(os.path.join(os.path.dirname(__file__), "../testdata/uncropped"), df, 1.0)
+        clean_df = clean_predictions(Path(__file__).parent / ".." / "testdata" / "uncropped", df, 1.0)
         self.assertEqual(len(clean_df), 0)
 
     def test_crops(self):
@@ -149,13 +149,13 @@ class TestSegmentationCropping(unittest.TestCase):
         image_folder = str(self.label_predictor.jpg_path.parent)
         
         label_predictor = PredictLabel(self.path_to_model, ["label"])
-        df = prediction_parallel(os.path.join(os.path.dirname(__file__), "../testdata/uncropped", image_folder), label_predictor, n_processes=4)
+        df = prediction_parallel(Path(__file__).parent / ".." / "testdata" / "uncropped" / image_folder, label_predictor, n_processes=4)
         
         # Log the number of predictions
         print(f"Number of predictions: {len(df)}")
         
-        create_crops(os.path.join(os.path.dirname(__file__), "../testdata/uncropped"), df, out_dir=Path("../testdata/check_crops"))
-        crop_files = glob.glob(os.path.join(Path("../testdata/check_crops/uncropped_cropped"), '*.jpg'))
+        create_crops(Path(__file__).parent / ".." / "testdata" / "uncropped", df, out_dir=Path(__file__).parent / ".." / "testdata" / "check_crops")
+        crop_files = list((Path(__file__).parent / ".." / "testdata" / "check_crops" / "uncropped_cropped").glob('*.jpg'))
         
         # Log the number of crop files created
         print(f"Number of crop files: {len(crop_files)}")
@@ -181,8 +181,9 @@ class TestSegmentationCropping(unittest.TestCase):
         This method is called after each test to remove temporary directories and crop files created
         during the test. This ensures that each test starts with a clean slate.
         """
-        if os.path.exists("../testdata/check_crops"):
-            for f in glob.glob("../testdata/check_crops/*"):
+        check_crops_path = Path(__file__).parent / ".." / "testdata" / "check_crops"
+        if check_crops_path.exists():
+            for f in check_crops_path.iterdir():
                 try:
                     os.chmod(f, 0o777)  # Ensure write permission
                     os.remove(f)
@@ -190,6 +191,6 @@ class TestSegmentationCropping(unittest.TestCase):
                     print(f"Permission denied while deleting {f}.")
                     continue
             try:
-                os.rmdir("../testdata/check_crops")  # Remove the empty directory
+                check_crops_path.rmdir()  # Remove the empty directory
             except OSError as e:
                 print(f"Failed to remove 'check_crops' directory: {e}")
