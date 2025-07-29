@@ -24,7 +24,7 @@ jobs:
     - name: Install system dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y tesseract-ocr libzbar0 libgl1-mesa-glx libglib2.0-0
+        sudo apt-get install -y tesseract-ocr libzbar0 libgl1-mesa-dri libglib2.0-0 libsm6 libxext6 libxrender-dev libgomp1
     
     - name: Cache pip packages
       uses: actions/cache@v3
