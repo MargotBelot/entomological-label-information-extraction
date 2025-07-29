@@ -15,13 +15,20 @@ class TestMetricsFunctions(unittest.TestCase):
         This method loads the CSV file containing the ground truth and predicted labels, extracts the 
         unique class labels (target names), and prepares the output directory where results will be saved.
         """
-        file_path = "../testdata/gt_pred_classiferHP.csv"
+        # Use absolute path based on test file location
+        test_dir = Path(__file__).parent
+        testdata_dir = test_dir.parent / "testdata"
+        file_path = testdata_dir / "gt_pred_classiferHP.csv"
+        
+        if not file_path.exists():
+            self.skipTest(f"Test data file not found: {file_path}")
+            
         df = pd.read_csv(file_path, sep=';')
         
         self.pred = df['pred']
         self.gt = df['gt']
         self.target_names = list(set(self.gt.unique()))  # Extract unique class labels
-        self.out_dir = Path("../testdata/output")
+        self.out_dir = testdata_dir / "output"
         self.out_dir.mkdir(parents=True, exist_ok=True)
 
     def test_metrics(self):
@@ -64,7 +71,7 @@ class TestMetricsFunctions(unittest.TestCase):
         This method removes all the files in the output directory to ensure a clean state for subsequent tests.
         Any file deletion errors (e.g., due to permissions) are handled with warnings.
         """
-        for file in Path("../testdata/output").glob("*"):
+        for file in self.out_dir.glob("*"):
             try:
                 file.unlink()
             except PermissionError:

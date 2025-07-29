@@ -18,7 +18,7 @@ class TestImageProcessor(unittest.TestCase):
         image (numpy.ndarray): The image loaded using OpenCV for testing.
     """
     # Ensure image_path is absolute to avoid confusion in CI/CD environments
-    image_path = os.path.join(os.path.dirname(__file__), "../testdata/not_empty/coll.mfn-berlin.de_u_1b0791__Crambidae_sp_label_typed_2.jpg")
+    image_path = Path(__file__).parent / ".." / "testdata" / "not_empty" / "coll.mfn-berlin.de_u_1b0791__Crambidae_sp_label_typed_2.jpg"
 
     # Attempt to load image using OpenCV
     image = cv2.imread(str(image_path))
@@ -121,7 +121,7 @@ class TestImageProcessor(unittest.TestCase):
         preprocessor = ImageProcessor.read_image(self.image_path)
         
         # Use absolute path to ensure the output directory exists
-        path = os.path.join(os.path.dirname(__file__), "../testdata/output")
+        path = Path(__file__).parent / ".." / "testdata" / "output"
         
         # Ensure the output directory exists or create it
         os.makedirs(path, exist_ok=True)
@@ -165,7 +165,7 @@ class TestTesseract(unittest.TestCase):
         image_path (Path): The file path to a sample image used for testing.
         image (numpy.ndarray): The image loaded using OpenCV for testing.
     """
-    image_path = os.path.join(os.path.dirname(__file__), "../testdata/not_empty/coll.mfn-berlin.de_u_1b0791__Crambidae_sp_label_typed_2.jpg")
+    image_path = Path(__file__).parent / ".." / "testdata" / "not_empty" / "coll.mfn-berlin.de_u_1b0791__Crambidae_sp_label_typed_2.jpg"
     image = cv2.imread(str(image_path))
 
     def setUp(self):

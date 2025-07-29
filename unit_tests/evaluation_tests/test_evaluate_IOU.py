@@ -17,10 +17,17 @@ class TestIOUModule(unittest.TestCase):
         This method loads a CSV file containing the necessary test data and prepares the output directory
         where results will be saved or plotted.
         """
-        file_path = "../testdata/iou_scores.csv"
+        # Use absolute path based on test file location
+        test_dir = Path(__file__).parent
+        testdata_dir = test_dir.parent / "testdata"
+        file_path = testdata_dir / "iou_scores.csv"
+        
+        if not file_path.exists():
+            self.skipTest(f"Test data file not found: {file_path}")
+            
         self.df_concat = pd.read_csv(file_path)
         
-        self.out_dir = Path("../testdata/output")
+        self.out_dir = testdata_dir / "output"
         self.out_dir.mkdir(parents=True, exist_ok=True)
 
     def test_calculate_iou(self):

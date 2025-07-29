@@ -14,16 +14,22 @@ class TestTFClassifier(unittest.TestCase):
     """
     A test suite for the TensorFlow classifier module.
     """
-    model_path = os.path.join(os.path.dirname(__file__), "../../models/label_classifier_hp")
+    model_path = Path(__file__).parent / ".." / ".." / "models" / "label_classifier_hp"
     classes = ['handwritten', 'printed']
-    outdir = os.path.join(os.path.dirname(__file__), "../testdata/output")
-    jpg_dir = os.path.join(os.path.dirname(__file__), "../testdata/not_empty")
+    outdir = Path(__file__).parent / ".." / "testdata" / "output"
+    jpg_dir = Path(__file__).parent / ".." / "testdata" / "not_empty"
     
     def setUp(self):
         """Set up test fixtures before each test method."""
+        # Ensure output directory exists
+        os.makedirs(self.outdir, exist_ok=True)
+        
         try:
             # Try to load the model
             if os.path.exists(self.model_path):
+                # Set TensorFlow to use CPU only in tests
+                os.environ['CUDA_VISIBLE_DEVICES'] = ''
+                os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
                 self.model = get_model(self.model_path)
             else:
                 self.skipTest(f"Model not found at {self.model_path}")
@@ -55,7 +61,7 @@ class TestTFClassifier(unittest.TestCase):
 
         This test checks if the function raises a FileNotFoundError when given an empty input directory.
         """
-        empty_dir = os.path.join(os.path.dirname(__file__), "../testdata/empty_dir")
+        empty_dir = Path(__file__).parent / ".." / "testdata" / "empty_dir"
         Path(empty_dir).mkdir(parents=True, exist_ok=True)
 
         # Check that FileNotFoundError is raised
