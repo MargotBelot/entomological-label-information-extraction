@@ -2,28 +2,76 @@
 Collection Mining – Entomological Label Information Extraction
 ==============================================================
 
+.. image:: https://img.shields.io/badge/python-3.9%2B-blue.svg
+   :alt: Python Version
+   :target: https://python.org
+
+.. image:: https://img.shields.io/badge/license-GPL--3.0-green.svg
+   :alt: License
+   :target: LICENSE
+
 .. contents::
    :local:
+   :depth: 2
 
 Overview
 ========
 
-This package provides a modular framework for the **semi-automated processing of entomological specimen labels**.  
-It uses artificial intelligence to perform **label detection, classification, rotation correction, OCR, and clustering**, laying the groundwork for comprehensive information extraction.  
-It is designed to work in conjunction with the `python-mfnb` package for downstream clustering tasks.
+This package provides a **modular AI framework** for the semi-automated processing of entomological specimen labels. 
+It combines state-of-the-art machine learning techniques to create a complete digitization pipeline that transforms 
+physical specimen labels into structured, searchable data.
+
+**Pipeline Workflow:**
+
+.. image:: docs/images/pipeline_flowchart.png
+   :alt: ELIE Pipeline Flowchart
+   :align: center
+   :width: 100%
+
+**Legend:**
+
+- **🔍 Detection Stage**: Automatically locate and extract individual labels from specimen images
+- **🏷️ Classification Stage**: Categorize labels by characteristics (handwritten vs. printed, etc.)
+- **🔄 Rotation Stage**: Correct text orientation for optimal OCR performance
+- **📝 OCR Stage**: Extract text using Tesseract or Google Cloud Vision API
+- **⚙️ Post-processing**: Clean, structure, and validate extracted information
+- **📊 Output**: Generate CSV, JSON, and structured data files
+
+**Process Flow:**
+
+1. **Label Detection** → Automatically locate labels in specimen images
+2. **Image Classification** → Categorize labels by type (handwritten, printed, etc.)
+3. **Rotation Correction** → Align text for optimal OCR performance  
+4. **Text Extraction** → Convert images to text using OCR technologies
+5. **Post-processing** → Clean and structure extracted information
 
 Key Features
 ============
 
-- **AI-Powered Label Classification**: Three TensorFlow-based classifiers tailored to different label types.
-- **OCR Pipeline**: Supports both Tesseract and the Google Cloud Vision API.
-- **Modular Components**: For classification, preprocessing, text extraction, and postprocessing.
-- **High Efficiency**: Optimized for digitizing large-scale entomological collections.
+🤖 **AI-Powered Processing**
+  - Three specialized TensorFlow classifiers for different label types
+  - Deep learning models for label detection and rotation correction
+  - Optimized for entomological specimen workflows
 
-**Model Retraining Notebooks Provided**
+📝 **Flexible OCR Pipeline**
+  - **Tesseract OCR**: Free, offline text recognition
+  - **Google Cloud Vision API**: Premium cloud-based OCR with superior accuracy
+  - QR code detection and processing capabilities
 
-We provide Jupyter notebooks in the ``training_notebooks/`` folder to allow users to retrain the models on their own data.  
-These notebooks cover label detection, classification, and rotation correction, and can be adapted to new datasets as needed.
+🔧 **Modular Architecture**
+  - Independent components for each processing stage
+  - Docker containerization for easy deployment
+  - Configurable pipelines for different use cases
+
+⚡ **Production Ready**
+  - Optimized for large-scale collections (thousands of specimens)
+  - GPU acceleration support for faster inference
+  - Comprehensive error handling and logging
+
+📚 **Extensible & Reproducible**
+  - Jupyter notebooks for model retraining on custom datasets
+  - Well-documented APIs for integration with existing workflows
+  - Complete unit test coverage
 
 Datasets
 ========
@@ -31,14 +79,48 @@ Datasets
 The training and testing datasets used for model development are publicly available on Zenodo:  
 `https://doi.org/10.7479/khac-x956 <https://doi.org/10.7479/khac-x956>`_
 
+Quick Start
+===========
+
+**For Docker users (recommended):**
+
+.. code-block:: console
+
+   # Clone the repository
+   git clone <repository-url>
+   cd entomological-label-information-extraction
+   
+   # Place your images in data/MLI/input/
+   # Run the complete pipeline
+   docker compose -f multi-label-docker-compose.yaml up --build
+   
+   # Results will be in data/MLI/output/
+
+**For Python developers:**
+
+.. code-block:: console
+
+   # Install the package
+   pip install -e .
+   
+   # Run individual components
+   python scripts/processing/detection.py --input /path/to/images
+
 Prerequisites
 =============
 
-- Python 3.10 (for local installation)
-- Docker Desktop (for running the pipeline in containers)
-- Docker Compose
-- (Optional) Conda for environment management
-- (Optional) NVIDIA GPU and drivers for faster deep learning inference
+**System Requirements:**
+
+- **Python**: 3.9+ (3.10 recommended for optimal compatibility)
+- **Docker**: Desktop version with Docker Compose
+- **Memory**: 8GB+ RAM recommended (16GB+ for large datasets)
+- **Storage**: 2GB+ free space for models and temporary files
+
+**Optional Components:**
+
+- **Conda**: For isolated environment management
+- **NVIDIA GPU**: For accelerated inference (10x+ speed improvement)
+- **Google Cloud Account**: For premium OCR capabilities
 
 Installation
 ============
@@ -232,12 +314,163 @@ Hardware Requirements
 
         docker compose --gpus all -f multi-label-docker-compose.yaml up --build
 
-Unit Tests
-==========
+Usage Examples
+==============
 
-Unit tests are provided in the ``unit_tests/`` folder.  
-To run all tests, use:
+**Processing Individual Components:**
+
+.. code-block:: python
+
+   from label_processing.label_detection import PredictLabel
+   from label_processing.tensorflow_classifier import class_prediction
+   from label_processing.text_recognition import ImageProcessor, Tesseract
+   
+   # Label detection
+   detector = PredictLabel(model_path, ["label"], image_path)
+   predictions = detector.class_prediction(image_path)
+   
+   # Classification
+   model = get_model(classifier_path)
+   df = class_prediction(model, ["handwritten", "printed"], image_dir)
+   
+   # OCR processing
+   processor = ImageProcessor.read_image(image_path)
+   ocr = Tesseract(image=processor)
+   text_result = ocr.image_to_string()
+
+**Command Line Usage:**
 
 .. code-block:: console
 
+   # Run label detection
+   python scripts/processing/detection.py \
+     --input data/input/ \
+     --output data/detection/ \
+     --model models/label_detection_model.pth
+   
+   # Run classification
+   python scripts/processing/classifiers.py \
+     --input data/detection/ \
+     --output data/classified/ \
+     --model models/label_classifier_hp/
+   
+   # Run OCR with Tesseract
+   python scripts/processing/tesseract.py \
+     --input data/classified/ \
+     --output data/ocr_results/
+
+Output Format
+=============
+
+The pipeline generates structured output in multiple formats:
+
+**CSV Files:**
+  - ``detection_results.csv``: Bounding boxes and confidence scores
+  - ``classification_results.csv``: Label types and predictions
+  - ``ocr_results.csv``: Extracted text with confidence metrics
+
+**JSON Files:**
+  - ``processed_labels.json``: Complete structured data for each label
+  - ``pipeline_metadata.json``: Processing parameters and statistics
+
+**Example Output Structure:**
+
+.. code-block:: json
+
+   {
+     "filename": "specimen_001.jpg",
+     "labels": [
+       {
+         "bbox": [100, 150, 300, 250],
+         "classification": "printed",
+         "confidence": 0.95,
+         "text": "Lepidoptera\nNoctuidae\nCollected: 1995-07-15",
+         "qr_code": null,
+         "processed_text": {
+           "family": "Noctuidae",
+           "order": "Lepidoptera",
+           "collection_date": "1995-07-15"
+         }
+       }
+     ]
+   }
+
+Development & Testing
+====================
+
+**Running Tests:**
+
+.. code-block:: console
+
+   # Run all tests
    python -m unittest discover unit_tests
+   
+   # Run with coverage
+   pip install pytest pytest-cov
+   pytest unit_tests/ --cov=. --cov-report=html
+   
+   # Run specific test modules
+   python -m unittest unit_tests.label_processing_tests.test_detection
+
+**Code Quality:**
+
+.. code-block:: console
+
+   # Install development dependencies
+   pip install -e .[dev]
+   
+   # Run code formatting
+   black .
+   isort .
+   
+   # Run linting
+   flake8 .
+   mypy .
+   
+   # Set up pre-commit hooks
+   pre-commit install
+
+Model Retraining
+===============
+
+Customize the models for your specific datasets using the provided Jupyter notebooks:
+
+**Available Training Notebooks:**
+
+- ``training_notebooks/Label_Detection_Detecto_Training_Notebook.ipynb``
+  - Retrain the label detection model on custom specimen images
+  - Supports custom annotation formats and label types
+
+- ``training_notebooks/Classifier_TensorFlow_Training_Notebook.ipynb``
+  - Train classification models for different label characteristics
+  - Includes data augmentation and transfer learning techniques
+
+- ``training_notebooks/Label_Rotation_TensorFlow_Training_Notebook.ipynb``
+  - Develop rotation correction models for your image types
+  - Handles various rotation angles and image qualities
+
+**Training Data Requirements:**
+
+- **Detection**: Annotated images with bounding box coordinates
+- **Classification**: Labeled image crops organized by category
+- **Rotation**: Image pairs (original and corrected orientations)
+
+License
+=======
+
+This project is licensed under the GPL-3.0 License - see the `LICENSE <LICENSE>`_ file for details.
+
+Citation
+========
+
+If you use this software in your research, please cite the associated dataset:
+
+.. code-block:: bibtex
+
+   @dataset{entomological_labels_2024,
+     title={Entomological Label Information Extraction Dataset},
+     url={https://doi.org/10.7479/khac-x956},
+     DOI={10.7479/khac-x956},
+     publisher={Zenodo},
+     year={2024}
+   }
