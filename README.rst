@@ -362,18 +362,30 @@ Usage Examples
 Output Format
 =============
 
-The pipeline generates structured output in multiple formats:
+**Current Output:**
+
+The pipeline currently generates output in the following formats:
 
 **CSV Files:**
-  - ``detection_results.csv``: Bounding boxes and confidence scores
-  - ``classification_results.csv``: Label types and predictions
-  - ``ocr_results.csv``: Extracted text with confidence metrics
+  - Detection predictions with bounding box coordinates
+  - Classification results for label types
+  - OCR text extraction results
 
-**JSON Files:**
-  - ``processed_labels.json``: Complete structured data for each label
-  - ``pipeline_metadata.json``: Processing parameters and statistics
+**Image Files:**
+  - Cropped label images organized by classification
+  - Processed images after rotation correction
 
-**Example Output Structure:**
+**Planned Enhancements:**
+
+.. note::
+   The following features are planned for future releases:
+
+- **Unified JSON Output**: Complete structured data combining all pipeline stages
+- **Metadata Files**: Processing parameters and pipeline statistics
+- **Structured Text Fields**: Automated parsing of taxonomic information and dates
+- **Quality Metrics**: Confidence scores and validation indicators
+
+**Example Future Output Structure:**
 
 .. code-block:: json
 
