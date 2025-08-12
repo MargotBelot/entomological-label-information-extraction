@@ -10,6 +10,22 @@ Collection Mining – Entomological Label Information Extraction
    :alt: License
    :target: LICENSE
 
+.. raw:: html
+
+   <p align="center">
+     <a href="#overview">Overview</a> •
+     <a href="#key-features">Key Features</a> •
+     <a href="#datasets">Datasets</a> •
+     <a href="#quick-start">Quick Start</a> •
+     <a href="#installation">Installation</a> •
+     <a href="#docker-usage">Docker Usage</a> •
+     <a href="#usage-examples">Usage Examples</a> •
+     <a href="#output-format">Output Format</a> •
+     <a href="#development--testing">Development & Testing</a> •
+     <a href="#model-retraining">Model Retraining</a> •
+     <a href="#license">License</a>
+   </p>
+
 .. contents::
    :local:
    :depth: 2
@@ -219,30 +235,27 @@ Docker Usage
 Docker Installation
 -------------------
 
-Download and install Docker Desktop:
+- Download and install Docker Desktop: https://www.docker.com/products/docker-desktop/
+- Verify Docker is installed:
 
-- https://www.docker.com/products/docker-desktop/
+  .. code-block:: console
 
-Verify Docker is installed:
-
-.. code-block:: console
-
-   docker --version
+     docker --version
 
 Docker Compose Installation
 ---------------------------
 
-(Optional) Install Docker Compose via conda:
+- (Optional) Install Docker Compose via conda:
 
-.. code-block:: console
+  .. code-block:: console
 
-   conda install -c conda-forge docker-compose
+     conda install -c conda-forge docker-compose
 
-Verify Docker Compose:
+- Verify Docker Compose:
 
-.. code-block:: console
+  .. code-block:: console
 
-   docker-compose --version
+     docker-compose --version
 
 Pipeline Execution
 ------------------
@@ -483,6 +496,11 @@ If you use this software in your research, please cite the associated dataset:
      title={Entomological Label Information Extraction Dataset},
      url={https://doi.org/10.7479/khac-x956},
      DOI={10.7479/khac-x956},
-     publisher={Zenodo},
-     year={2024}
+     publisher={Anonymous},
+     year={2025}
    }
+
+Contributing
+============
+
+Contributions are welcome! Please open an issue or submit a pull request.
