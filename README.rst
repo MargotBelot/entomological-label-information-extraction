@@ -10,22 +10,6 @@ Collection Mining – Entomological Label Information Extraction
    :alt: License
    :target: LICENSE
 
-.. raw:: html
-
-   <p align="center">
-     <a href="#overview">Overview</a> •
-     <a href="#key-features">Key Features</a> •
-     <a href="#datasets">Datasets</a> •
-     <a href="#quick-start">Quick Start</a> •
-     <a href="#installation">Installation</a> •
-     <a href="#docker-usage">Docker Usage</a> •
-     <a href="#usage-examples">Usage Examples</a> •
-     <a href="#output-format">Output Format</a> •
-     <a href="#development--testing">Development & Testing</a> •
-     <a href="#model-retraining">Model Retraining</a> •
-     <a href="#license">License</a>
-   </p>
-
 .. contents::
    :local:
    :depth: 2
