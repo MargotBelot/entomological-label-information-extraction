@@ -20,7 +20,7 @@ This guide covers installation, system setup, troubleshooting, and advanced tech
 
 **Installation Options Summary:**
 - `pip install -e .` - Basic installation (runtime dependencies only)
-- `pip install -e ".[dev]"` - Development installation (includes testing, linting, formatting tools)
+- `pip install -e .[dev]` - Development installation (includes testing, linting, formatting tools)
 - `pip install -e ".[test]"` - Testing installation (includes pytest and coverage tools)
 - `pip install -e ".[docs]"` - Documentation installation (includes Sphinx and themes)
 - `pip install -e ".[dev,test,docs]"` - Complete installation (all optional dependencies)
@@ -41,15 +41,20 @@ cd entomological-label-information-extraction
 # Mac: https://docs.anaconda.com/anaconda/install/mac-os/
 # Linux: https://docs.anaconda.com/anaconda/install/linux/
 
-# Create and activate environment
+An up-to-date `environment.yml` is provided in the repository.  
+To set up all dependencies, simply run:
+
+```bash
 conda env create -f environment.yml
 conda activate entomological-label
+```
+There is no need to create a new environment file—just use the one provided.
 
 # Install the package (basic installation)
 pip install -e .
 
 # OR for development (includes testing, linting, formatting tools)
-pip install -e ".[dev]"
+pip install -e .[dev]
 ```
 
 **Option B: Virtual Environment**
@@ -65,7 +70,7 @@ source elie-env/bin/activate  # Mac/Linux
 pip install -e .
 
 # OR for development (includes testing, linting, formatting tools)
-pip install -e ".[dev]"
+pip install -e .[dev]
 ```
 
 **Step 3: System Dependencies**
@@ -147,7 +152,7 @@ cd /path/to/entomological-label-information-extraction
 pip install -e .
 
 # For development with all tools
-pip install -e ".[dev]"
+pip install -e .[dev]
 ```
 
 **Problem: "TesseractNotFoundError"**
