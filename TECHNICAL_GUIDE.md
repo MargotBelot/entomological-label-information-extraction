@@ -110,11 +110,11 @@ sudo dnf install tesseract zbar-devel python3-devel
 
 ```bash
 # Test package installation
-python3 -c "import label_processing; print('✅ Package installed successfully')"
+python3 -c "import label_processing; print('Package installed successfully')"
 
 # Test system dependencies
 tesseract --version
-python3 -c "import cv2; print('✅ OpenCV working')"
+python3 -c "import cv2; print('OpenCV working')"
 
 # Run test suite
 python3 -m pytest unit_tests/ -v
@@ -170,7 +170,7 @@ sudo apt install tesseract-ocr    # Ubuntu/Debian
 sudo yum install tesseract         # CentOS/RHEL
 ```
 
-**Problem: "Command 'gcc' failed" or compilation errors**
+**Problem: "Command 'gcc'failed" or compilation errors**
 
 ```bash
 # macOS: Install Xcode command line tools
@@ -187,7 +187,7 @@ sudo apt install build-essential python3-dev  # Ubuntu/Debian
 This is typically a CUDA/CPU compatibility issue. The improved model loading code in the label_processing package automatically handles this by trying multiple loading strategies:
 
 - Normal PyTorch loading
-- CPU fallback with map_location='cpu' 
+- CPU fallback with map_location='cpu'
 - weights_only mode for newer PyTorch versions
 
 This should resolve cross-platform model loading issues automatically.
@@ -479,11 +479,11 @@ python3 scripts/processing/vision.py [options]
 
 ```bash
 # Check package installation
-python3 -c "import label_processing; print('✅ Package working')"
+python3 -c "import label_processing; print('Package working')"
 
 # Test system dependencies
 tesseract --version
-python3 -c "import cv2; print('✅ OpenCV working')"
+python3 -c "import cv2; print('OpenCV working')"
 
 # Run test suite
 python3 -m pytest unit_tests/ -v
