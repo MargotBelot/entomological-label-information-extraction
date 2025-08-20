@@ -35,9 +35,11 @@ cd entomological-label-information-extraction
 **Step 2: Python Environment Setup**
 
 **Option A: Conda (Recommended)**
+
 Install conda if needed:
-Mac: https://docs.anaconda.com/anaconda/install/mac-os/
-Linux: https://docs.anaconda.com/anaconda/install/linux/
+
+- Mac: https://docs.anaconda.com/anaconda/install/mac-os/
+- Linux: https://docs.anaconda.com/anaconda/install/linux/
 
 An up-to-date `environment.yml` is provided in the repository.  
 To set up all dependencies, simply run:
