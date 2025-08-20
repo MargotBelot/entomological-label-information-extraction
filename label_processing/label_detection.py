@@ -10,6 +10,8 @@ import numpy as np
 from typing import Union
 from pathlib import Path
 from detecto.core import Model
+import pickle
+
 import warnings
 
 # Suppress torchvision deprecation warnings from detecto library
@@ -111,7 +113,6 @@ class PredictLabel():
     
     def _load_with_cpu_fallback(self):
         """Load model with CPU map_location to handle CUDA/CPU mismatches."""
-        import torch
         try:
             # First load the state dict to CPU
             state_dict = torch.load(self.path_to_model, map_location='cpu')
@@ -131,7 +132,6 @@ class PredictLabel():
     
     def _load_with_weights_only(self):
         """Load model using weights_only=True for newer PyTorch versions."""
-        import torch
         try:
             # Try with weights_only=True (PyTorch 1.13+)
             state_dict = torch.load(self.path_to_model, map_location='cpu', weights_only=True)
@@ -144,7 +144,6 @@ class PredictLabel():
     
     def _load_with_weights_only_false(self):
         """Load model with weights_only=False to handle pickle issues."""
-        import torch
         try:
             # Force weights_only=False for corrupted pickle files
             state_dict = torch.load(self.path_to_model, map_location='cpu', weights_only=False)
@@ -157,8 +156,6 @@ class PredictLabel():
     
     def _load_with_pickle_protocol(self):
         """Load model with different pickle protocols to handle version mismatches."""
-        import torch
-        import pickle
         try:
             # Try loading with pickle protocol compatibility
             with open(self.path_to_model, 'rb') as f:
@@ -181,7 +178,6 @@ class PredictLabel():
     
     def _load_with_basic_torch(self):
         """Most basic torch loading as last resort."""
-        import torch
         # Just load the state dict and create a minimal wrapper
         state_dict = torch.load(self.path_to_model, map_location=torch.device('cpu'))
         
