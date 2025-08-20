@@ -6,6 +6,7 @@ import os
 import time
 import warnings
 from pathlib import Path
+import pandas as pd
 
 # Suppress warning messages during execution
 warnings.filterwarnings('ignore')
@@ -26,35 +27,51 @@ def parse_arguments() -> argparse.Namespace:
     Returns:
         argparse.Namespace: Parsed command-line arguments.
     """
-    usage = 'detection.py [-h] [-c N] [-np N] -o <path to jpgs outputs> -j <path to jpgs>'
-
     parser = argparse.ArgumentParser(
-        description="Execute the label_detection_module.py.",
-        add_help = False,
-        usage = usage)
-
-    parser.add_argument(
-            '-h','--help',
-            action='help',
-            help='Description of the command-line arguments.'
-            )
+        description="Execute label detection on entomological specimen images."
+    )
     
-    parser.add_argument(
-            '-o', '--out_dir',
-            metavar='',
-            type=str,
-            default = os.getcwd(),
-            help=('Directory in which the resulting crops and the csv will be stored.\n'
-                  'Default is the user current working directory.')
-            )
+    # Input options (mutually exclusive)
+    input_group = parser.add_mutually_exclusive_group(required=True)
+    input_group.add_argument(
+        '-j', '--input-dir',
+        type=str,
+        help='Directory containing specimen images'
+    )
+    input_group.add_argument(
+        '-i', '--input-image',
+        type=str,
+        help='Single image file to process'
+    )
     
+    # Output directory (required)
     parser.add_argument(
-            '-j', '--jpg_dir',
-            metavar='',
-            type=str,
-            required = True,
-            help=('Directory where the jpgs are stored.')
-            )
+        '-o', '--output-dir',
+        type=str,
+        required=True,
+        help='Directory where results will be saved'
+    )
+    
+    # Optional parameters
+    parser.add_argument(
+        '--confidence',
+        type=float,
+        default=0.5,
+        help='Detection confidence threshold (default: 0.5)'
+    )
+    parser.add_argument(
+        '--batch-size',
+        type=int,
+        default=16,
+        help='Number of images processed simultaneously (default: 16)'
+    )
+    parser.add_argument(
+        '--device',
+        type=str,
+        default='auto',
+        choices=['auto', 'cpu', 'cuda'],
+        help='Device to use for processing (default: auto)'
+    )
 
     return parser.parse_args()
 
@@ -91,16 +108,59 @@ def main():
 
     script_dir = os.path.dirname(__file__)
     MODEL_PATH = os.path.join(script_dir, "../../models/label_detection_model.pth")
-    jpg_dir = Path(args.jpg_dir)
-    out_dir = args.out_dir
+    
+    # Handle input (directory or single file)
+    if args.input_dir:
+        jpg_dir = Path(args.input_dir)
+        input_type = "directory"
+    else:
+        # Single file input
+        single_file = Path(args.input_image)
+        if not single_file.exists():
+            print(f"Error: Input file '{single_file}' does not exist.")
+            return
+        jpg_dir = single_file.parent
+        input_type = "single_file"
+        print(f"Processing single file: {single_file.name}")
+    
+    out_dir = args.output_dir
+    confidence_threshold = args.confidence
+    batch_size = args.batch_size
+    device = args.device
     classes = ["label"]
 
-    if not validate_paths(jpg_dir, out_dir, MODEL_PATH):
+    # Validate paths
+    if not os.path.exists(out_dir):
+        print(f"Creating output directory: {out_dir}")
+        os.makedirs(out_dir)
+    if not os.path.exists(MODEL_PATH):
+        print(f"Error: Model file '{MODEL_PATH}' not found.")
+        return
+    if input_type == "directory" and not jpg_dir.exists():
+        print(f"Error: Input directory '{jpg_dir}' does not exist.")
         return
 
+    print(f"Using confidence threshold: {confidence_threshold}")
+    print(f"Using batch size: {batch_size}")
+    print(f"Using device: {device}")
+
     try:
+        # Initialize predictor (device selection happens in model loading)
         predictor = scrop.PredictLabel(MODEL_PATH, classes)
-        df = scrop.prediction_parallel(jpg_dir, predictor, PROCESSES)
+        
+        if input_type == "single_file":
+            # Process single file by creating temporary directory structure
+            print(f"Processing single file: {single_file}")
+            df = predictor.class_prediction(single_file)
+            if df.empty:
+                # Create empty dataframe with expected columns if no predictions
+                df = pd.DataFrame(columns=['filename', 'class', 'score', 'xmin', 'ymin', 'xmax', 'ymax'])
+        else:
+            # Process directory with parallel processing
+            # Adjust number of processes based on batch_size if needed
+            processes = min(PROCESSES, batch_size) if batch_size < PROCESSES else PROCESSES
+            df = scrop.prediction_parallel(jpg_dir, predictor, processes)
+            
     except Exception as e:
         print(f"Error during prediction: {e}")
         return
@@ -110,12 +170,12 @@ def main():
         return
 
     try:
-        df = scrop.clean_predictions(jpg_dir, df, THRESHOLD, out_dir=out_dir)
+        df = scrop.clean_predictions(jpg_dir, df, confidence_threshold, out_dir=out_dir)
     except Exception as e:
         print(f"Error cleaning predictions: {e}")
         return
 
-    print(f"Processing finished in {round(time.perf_counter() - start_time, 2)} seconds")
+    print(f"Detection finished in {round(time.perf_counter() - start_time, 2)} seconds")
 
     try:
         create_crops(jpg_dir, df, out_dir=out_dir)
@@ -123,7 +183,10 @@ def main():
         print(f"Error during cropping: {e}")
         return
 
-    print(f"Finished in {round(time.perf_counter() - start_time, 2)} seconds")
+    print(f"\nProcessing completed in {round(time.perf_counter() - start_time, 2)} seconds")
+    print(f"Results saved to: {out_dir}")
+    print(f"- CSV file: {out_dir}/input_predictions.csv")
+    print(f"- Cropped images: {out_dir}/input_cropped/")
 
 
 if __name__ == '__main__':

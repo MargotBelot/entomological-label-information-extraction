@@ -157,6 +157,12 @@ def main(crop_dir: str, credentials: str, output_dir: str, encoding: str = 'utf8
     """
     start_time = time.time()
     print("Starting OCR process...")
+    
+    # Ensure output directory exists
+    if not os.path.exists(output_dir):
+        print(f"Creating output directory: {output_dir}")
+        os.makedirs(output_dir, exist_ok=True)
+    
     try:
         client = vision.ImageAnnotatorClient(credentials=service_account.Credentials.from_service_account_file(credentials))
     except Exception as e:

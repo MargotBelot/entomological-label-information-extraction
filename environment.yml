@@ -77,4 +77,5 @@ dependencies:
 
 # To use:
 #   conda env create -f environment.yml
-#   conda
+#   conda activate entomological-label
+#   pip install -e .
