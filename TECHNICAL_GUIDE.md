@@ -48,7 +48,8 @@ To set up all dependencies, simply run:
 conda env create -f environment.yml
 conda activate entomological-label
 ```
-There is no need to create a new environment file—just use the one provided.
+
+There is no need to create a new environment file, just use the one provided.
 
 # Install the package (basic installation)
 pip install -e .
