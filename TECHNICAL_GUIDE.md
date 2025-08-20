@@ -36,7 +36,6 @@ cd entomological-label-information-extraction
 
 **Option A: Conda (Recommended)**
 
-```bash
 # Install conda if needed:
 # Mac: https://docs.anaconda.com/anaconda/install/mac-os/
 # Linux: https://docs.anaconda.com/anaconda/install/linux/
