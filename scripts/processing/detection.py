@@ -147,6 +147,7 @@ def main():
     try:
         # Initialize predictor (device selection happens in model loading)
         predictor = scrop.PredictLabel(MODEL_PATH, classes)
+        # Predictor is busy
         
         if input_type == "single_file":
             # Process single file by creating temporary directory structure
