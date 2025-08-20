@@ -4,6 +4,7 @@ import os
 from glob import glob
 import numpy as np
 import cv2
+from pathlib import Path
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix
@@ -118,9 +119,27 @@ def evaluate_rotation_model(input_image_dir: str, output_folder_path: str) -> No
         print("Error: No valid images found.")
         return
     
-    model_path = '../../models/rotation_model.h5'
+    # Use platform-independent path resolution
+    script_dir = Path(__file__).parent
+    project_root = script_dir.parent.parent
+    model_path = project_root / "models" / "rotation_model.h5"
+    
+    # Check if model exists, otherwise try alternative names
+    if not model_path.exists():
+        alternative_paths = [
+            project_root / "models" / "label_rotation_model.h5",
+            project_root / "models" / "rotation_classifier.h5"
+        ]
+        for alt_path in alternative_paths:
+            if alt_path.exists():
+                model_path = alt_path
+                break
+        else:
+            print(f"Error: Rotation model not found at {model_path}")
+            return
+    
     try:
-        model = load_model(model_path, custom_objects={"BatchNormalization": BatchNormalization})
+        model = load_model(str(model_path), custom_objects={"BatchNormalization": BatchNormalization})
     except Exception as e:
         print(f"Error loading model: {e}")
         return

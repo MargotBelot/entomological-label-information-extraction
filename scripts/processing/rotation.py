@@ -5,6 +5,7 @@ import time
 import warnings
 import sys
 import cv2
+from pathlib import Path
 
 # Import the necessary module from the 'label_processing' module package
 from label_processing.label_rotation import predict_angles
@@ -131,13 +132,34 @@ def main():
     """
     start_time = time.time()
     args = parse_arguments()
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    model_path = os.path.join(script_dir, "../../models/rotation_model.h5")
+    
+    # Use platform-independent path resolution
+    script_dir = Path(__file__).parent
+    project_root = script_dir.parent.parent
+    model_path = project_root / "models" / "rotation_model.h5"
+    
+    # Check if model path exists, otherwise look for alternative names
+    if not model_path.exists():
+        # Try alternative model names
+        alternative_paths = [
+            project_root / "models" / "label_rotation_model.h5",
+            project_root / "models" / "rotation_classifier.h5"
+        ]
+        for alt_path in alternative_paths:
+            if alt_path.exists():
+                model_path = alt_path
+                break
+        else:
+            print(f"Error: Rotation model not found. Tried:")
+            print(f"  - {project_root / 'models' / 'rotation_model.h5'}")
+            for alt_path in alternative_paths:
+                print(f"  - {alt_path}")
+            print("Please ensure the rotation model is available in the models directory.")
 
     # Validate input/output paths and retrieve valid images
     valid_images = validate_paths(args.input_image_dir, args.output_image_dir)
 
-    if not valid_images or not validate_model_path(model_path):
+    if not valid_images or not validate_model_path(str(model_path)):
         sys.exit(1)
 
     # Filter out unreadable images
@@ -147,7 +169,7 @@ def main():
         sys.exit(1)
 
     try:
-        predict_angles(args.input_image_dir, args.output_image_dir, model_path)
+        predict_angles(args.input_image_dir, args.output_image_dir, str(model_path))
         print(f"\nThe rotated images have been successfully saved in {args.output_image_dir}")
     except Exception as e:
         print(f"Error during image rotation: {e}")
