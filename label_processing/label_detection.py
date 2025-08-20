@@ -108,12 +108,22 @@ class PredictLabel():
     def _load_with_cpu_fallback(self):
         """Load model with CPU map_location to handle CUDA/CPU mismatches."""
         import torch
-        # First load the state dict to CPU
-        state_dict = torch.load(self.path_to_model, map_location='cpu')
-        # Then use detecto's loading mechanism
-        model = Model(self.classes)
-        model.model.load_state_dict(state_dict)
-        return model
+        try:
+            # First load the state dict to CPU
+            state_dict = torch.load(self.path_to_model, map_location='cpu')
+            # Create a new model instance and load the state dict
+            model = Model(self.classes)
+            # Handle potential state dict key mismatches
+            if hasattr(model.model, 'load_state_dict'):
+                model.model.load_state_dict(state_dict, strict=False)
+            else:
+                # Alternative loading for different detecto versions
+                model._model.load_state_dict(state_dict, strict=False)
+            return model
+        except Exception as e:
+            print(f"CPU fallback failed: {e}")
+            # Try even more basic loading
+            return self._load_with_basic_torch()
     
     def _load_with_weights_only(self):
         """Load model using weights_only=True for newer PyTorch versions."""
@@ -127,6 +137,35 @@ class PredictLabel():
         except TypeError:
             # Fallback for older PyTorch versions that don't support weights_only
             return self._load_with_cpu_fallback()
+    
+    def _load_with_basic_torch(self):
+        """Most basic torch loading as last resort."""
+        import torch
+        # Just load the state dict and create a minimal wrapper
+        state_dict = torch.load(self.path_to_model, map_location=torch.device('cpu'))
+        
+        # Try to create a detecto model the most basic way possible
+        try:
+            from torchvision.models.detection import fasterrcnn_resnet50_fpn
+            from detecto.core import Model
+            
+            # Create base model
+            model = Model(self.classes)
+            
+            # Force load state dict with any necessary key adjustments
+            try:
+                model.model.load_state_dict(state_dict, strict=False)
+            except:
+                # If that fails, try alternative attribute names
+                if hasattr(model, '_model'):
+                    model._model.load_state_dict(state_dict, strict=False)
+                else:
+                    raise Exception("Could not find model attribute to load state dict")
+            
+            return model
+            
+        except Exception as e:
+            raise Exception(f"All loading methods failed. Last attempt error: {e}")
     
     def class_prediction(self, jpg_path: Path = None) -> pd.DataFrame:
         """

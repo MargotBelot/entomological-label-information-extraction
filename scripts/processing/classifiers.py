@@ -131,19 +131,19 @@ def main() -> None:
 
     if not os.path.isdir(args.jpg_dir):
         raise NotADirectoryError(f"JPEG input directory does not exist: {args.jpg_dir}")
+    
+    # Ensure output directory exists
+    if not os.path.exists(args.out_dir):
+        logging.info(f"Creating output directory: {args.out_dir}")
+        os.makedirs(args.out_dir, exist_ok=True)
 
     if args.model:
         model_path = resolve_default_model_path(args.model)
         class_names = get_class_names_by_model(args.model)
         if not class_names:
             raise ValueError(f"No class names found for model {args.model}")
-    elif args.model_path and args.classes_path:
-        model_path = args.model_path
-        if not os.path.exists(model_path):
-            raise FileNotFoundError(f"Model path does not exist: {model_path}")
-        class_names = load_class_names_from_file(args.classes_path)
     else:
-        raise ValueError("You must provide either a model number (-m) or a model path (-p) with a class names file (-c).")
+        raise ValueError("You must provide a model number (-m 1, 2, or 3).")
 
     logging.info("Loading model...")
     model = label_processing.tensorflow_classifier.get_model(model_path)
