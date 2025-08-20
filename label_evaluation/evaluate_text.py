@@ -94,8 +94,9 @@ def calculate_scores(gold_text: str, predicted_text: str) -> tuple:
     gold_text, predicted_text = gold_text.lower(), predicted_text.lower()
     if not gold_text or gold_text.isspace():
         raise EmptyReferenceError()
-    all_scores = jiwer.compute_measures(gold_text, predicted_text)
-    wer = round(all_scores['wer'], 2)
+    # Use the new jiwer API - process_words returns more detailed output
+    output = jiwer.process_words(gold_text, predicted_text)
+    wer = round(output.wer, 2)
     cer = round(calculate_cer([gold_text], [predicted_text]), 2)
     return wer, cer
 

@@ -10,6 +10,12 @@ import numpy as np
 from typing import Union
 from pathlib import Path
 from detecto.core import Model
+import warnings
+
+# Suppress torchvision deprecation warnings from detecto library
+warnings.filterwarnings('ignore', message='The parameter \'pretrained\' is deprecated.*')
+warnings.filterwarnings('ignore', message='Arguments other than a weight enum.*')
+warnings.filterwarnings('ignore', category=UserWarning, module='torchvision')
 
 
 #---------------------Image Segmentation---------------------#
@@ -64,19 +70,63 @@ class PredictLabel():
     def retrieve_model(self) -> detecto.core.Model:
         """
         Retrieve the trained object detection model using Detecto's Model.load.
+        Includes cross-platform compatibility fixes.
         """
         if not os.path.exists(self.path_to_model):
             raise FileNotFoundError(f"Model file '{self.path_to_model}' not found.")
         if os.path.getsize(self.path_to_model) == 0:
             raise IOError(f"Model file '{self.path_to_model}' is empty.")
-        try:
-            print("Loading model from:", self.path_to_model)
-            model = Model.load(self.path_to_model, self.classes)
-            print("Model loaded successfully")
-        except Exception as e:
-            print("Model load failed:", e)
-            raise
+        
+        print("Loading model from:", self.path_to_model)
+        
+        # Try multiple loading strategies for cross-platform compatibility
+        loading_strategies = [
+            # Strategy 1: Direct detecto loading
+            lambda: Model.load(self.path_to_model, self.classes),
+            # Strategy 2: Force CPU loading (for CUDA/CPU mismatch issues)
+            lambda: self._load_with_cpu_fallback(),
+            # Strategy 3: Load with weights_only=True (for newer PyTorch versions)
+            lambda: self._load_with_weights_only(),
+        ]
+        
+        last_error = None
+        for i, strategy in enumerate(loading_strategies, 1):
+            try:
+                print(f"Trying loading strategy {i}...")
+                model = strategy()
+                print("✅ Model loaded successfully")
+                return model
+            except Exception as e:
+                print(f"❌ Strategy {i} failed: {e}")
+                last_error = e
+                continue
+        
+        # If all strategies fail, raise the last error
+        print(f"❌ All loading strategies failed. Last error: {last_error}")
+        raise last_error
+    
+    def _load_with_cpu_fallback(self):
+        """Load model with CPU map_location to handle CUDA/CPU mismatches."""
+        import torch
+        # First load the state dict to CPU
+        state_dict = torch.load(self.path_to_model, map_location='cpu')
+        # Then use detecto's loading mechanism
+        model = Model(self.classes)
+        model.model.load_state_dict(state_dict)
         return model
+    
+    def _load_with_weights_only(self):
+        """Load model using weights_only=True for newer PyTorch versions."""
+        import torch
+        try:
+            # Try with weights_only=True (PyTorch 1.13+)
+            state_dict = torch.load(self.path_to_model, map_location='cpu', weights_only=True)
+            model = Model(self.classes)
+            model.model.load_state_dict(state_dict)
+            return model
+        except TypeError:
+            # Fallback for older PyTorch versions that don't support weights_only
+            return self._load_with_cpu_fallback()
     
     def class_prediction(self, jpg_path: Path = None) -> pd.DataFrame:
         """

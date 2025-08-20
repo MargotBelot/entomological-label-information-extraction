@@ -70,9 +70,10 @@ def comparison(df_pred_filename: pd.DataFrame, df_gt_filename: pd.DataFrame) -> 
             for key in max_coords:
                 max_coords[key].append(best_match.get(key, None))
         
-        df_pred_filename["score"] = max_scores
+        df_pred_filename = df_pred_filename.copy()
+        df_pred_filename.loc[:, "score"] = max_scores
         for key, values in max_coords.items():
-            df_pred_filename[key] = values
+            df_pred_filename.loc[:, key] = values
         return df_pred_filename
     except Exception as e:
         print(f"Error in comparison: {e}")
