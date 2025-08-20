@@ -3,6 +3,7 @@
 # Import third-party libraries
 import argparse
 import os
+import sys
 import time
 import warnings
 from pathlib import Path
@@ -10,6 +11,9 @@ import pandas as pd
 
 # Suppress warning messages during execution
 warnings.filterwarnings('ignore')
+
+# Import project configuration
+from label_processing.config import get_model_path, get_project_root
 
 # Import the necessary module from the 'label_processing' module package
 import label_processing.label_detection as scrop
@@ -106,8 +110,13 @@ def main():
     start_time = time.perf_counter()
     args = parse_arguments()
 
-    script_dir = os.path.dirname(__file__)
-    MODEL_PATH = os.path.join(script_dir, "../../models/label_detection_model.pth")
+    # Use centralized configuration for model path
+    try:
+        MODEL_PATH = get_model_path("detection")
+    except Exception as e:
+        print(f"Error getting model path: {e}")
+        print("Please ensure the model file exists or set the ENTOMOLOGICAL_DETECTION_MODEL_PATH environment variable.")
+        return
     
     # Handle input (directory or single file)
     if args.input_dir:
@@ -133,8 +142,10 @@ def main():
     if not os.path.exists(out_dir):
         print(f"Creating output directory: {out_dir}")
         os.makedirs(out_dir)
-    if not os.path.exists(MODEL_PATH):
+    if not MODEL_PATH.exists():
         print(f"Error: Model file '{MODEL_PATH}' not found.")
+        print(f"Expected path: {MODEL_PATH}")
+        print("Please ensure the model file exists or set the ENTOMOLOGICAL_DETECTION_MODEL_PATH environment variable.")
         return
     if input_type == "directory" and not jpg_dir.exists():
         print(f"Error: Input directory '{jpg_dir}' does not exist.")
@@ -147,7 +158,6 @@ def main():
     try:
         # Initialize predictor (device selection happens in model loading)
         predictor = scrop.PredictLabel(MODEL_PATH, classes)
-        # Predictor is busy
         
         if input_type == "single_file":
             # Process single file by creating temporary directory structure

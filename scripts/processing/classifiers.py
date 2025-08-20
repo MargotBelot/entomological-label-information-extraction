@@ -1,15 +1,19 @@
 #!/usr/bin/env python3
 
-# Import the necessary module from the 'label_processing' module package
-import label_processing.tensorflow_classifier
-
 # Import third-party libraries
 import argparse
 import os
+import sys
 import warnings
 import time
 import logging
-import sys
+from pathlib import Path
+
+# Import project configuration
+from label_processing.config import get_model_path, config
+
+# Import the necessary module from the 'label_processing' module package
+import label_processing.tensorflow_classifier
 
 # Suppress warnings
 warnings.filterwarnings('ignore')
@@ -65,32 +69,35 @@ def parse_arguments() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def resolve_default_model_path(model_int: int) -> str:
+def resolve_default_model_path(model_int: int) -> Path:
     """
-    Get the default model path based on model number.
+    Get the default model path based on model number using centralized configuration.
 
     Args:
         model_int (int): Model number (1-3)
 
     Returns:
-        str: Absolute path to the default model
+        Path: Path to the default model
     """
-    script_dir = os.path.dirname(__file__)
-    model_paths = {
-        1: "../../models/label_classifier_identifier_not_identifier",
-        2: "../../models/label_classifier_hp",
-        3: "../../models/label_classifier_multi_single"
+    model_type_mapping = {
+        1: "identifier",
+        2: "handwritten_printed", 
+        3: "multi_single"
     }
-
-    model_rel_path = model_paths.get(model_int)
-    if not model_rel_path:
-        raise ValueError(f"No default model path found for model {model_int}")
-    return os.path.abspath(os.path.join(script_dir, model_rel_path))
+    
+    model_type = model_type_mapping.get(model_int)
+    if not model_type:
+        raise ValueError(f"No model type found for model number {model_int}")
+    
+    try:
+        return get_model_path(model_type)
+    except Exception as e:
+        raise ValueError(f"Error getting model path for model {model_int}: {e}")
 
 
 def get_class_names_by_model(model_int: int) -> list[str]:
     """
-    Return default class names for the selected model number.
+    Return default class names for the selected model number using centralized configuration.
 
     Args:
         model_int (int): Model number (1-3)
@@ -98,12 +105,17 @@ def get_class_names_by_model(model_int: int) -> list[str]:
     Returns:
         list[str]: Class labels
     """
-    class_names = {
-        1: ["not_identifier", "identifier"],
-        2: ["handwritten", "printed"],
-        3: ["multi", "single"]
+    model_type_mapping = {
+        1: "identifier",
+        2: "handwritten_printed",
+        3: "multi_single"
     }
-    return class_names.get(model_int)
+    
+    model_type = model_type_mapping.get(model_int)
+    if not model_type:
+        return None
+        
+    return config.get_class_names(model_type)
 
 
 def load_class_names_from_file(path: str) -> list[str]:
