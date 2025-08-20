@@ -123,6 +123,14 @@ markers = [
     "slow: marks tests as slow (deselect with '-m not slow')",
     "integration: marks tests as integration tests"
 ]
+filterwarnings = [
+    "ignore::UserWarning:torchvision.*",
+    "ignore:The parameter 'pretrained' is deprecated.*:UserWarning",
+    "ignore:Arguments other than a weight enum.*:UserWarning",
+    "ignore::urllib3.exceptions.NotOpenSSLWarning",
+    "ignore::pandas.errors.SettingWithCopyWarning",
+    "ignore:urllib3 v2 only supports OpenSSL.*:urllib3.exceptions.NotOpenSSLWarning"
+]
 
 [tool.coverage.run]
 source = ["label_processing", "label_postprocessing", "label_evaluation", "pipelines"]

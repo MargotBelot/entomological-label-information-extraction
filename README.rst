@@ -79,84 +79,199 @@ Datasets
 The training and testing datasets used for model development are publicly available on Zenodo:  
 `https://doi.org/10.7479/khac-x956 <https://doi.org/10.7479/khac-x956>`_
 
-Quick Start
-===========
+Installation Guide
+==================
 
-**For Docker users (recommended):**
+🚀 **Quick Setup for Mac and Linux**
+
+This guide will get you up and running with the entomological label extraction pipeline in just a few minutes.
+
+**Option 1: Docker Installation (Recommended for beginners)**
 
 .. code-block:: console
 
-   # Clone the repository
-   git clone <repository-url>
+   # 1. Install Docker Desktop
+   # Mac: Download from https://www.docker.com/products/docker-desktop/
+   # Linux: Follow instructions at https://docs.docker.com/desktop/install/linux-install/
+   
+   # 2. Clone the repository
+   git clone https://github.com/[your-username]/entomological-label-information-extraction.git
    cd entomological-label-information-extraction
    
-   # Place your images in data/MLI/input/
-   # Run the complete pipeline
+   # 3. Place your specimen images in the input folder
+   mkdir -p data/MLI/input
+   # Copy your .jpg images to data/MLI/input/
+   
+   # 4. Run the complete pipeline
    docker compose -f multi-label-docker-compose.yaml up --build
    
-   # Results will be in data/MLI/output/
+   # 5. Find results in data/MLI/output/
 
-**For Python developers:**
+**Option 2: Python Installation (For developers)**
+
+*Prerequisites:*
+
+- Python 3.9+ (3.10 recommended)
+- Git
+- Package manager (pip/conda)
+
+**Step 1: Clone the repository**
 
 .. code-block:: console
 
+   git clone https://github.com/[your-username]/entomological-label-information-extraction.git
+   cd entomological-label-information-extraction
+
+**Step 2: Choose your installation method**
+
+**Method A: Conda (Recommended)**
+
+.. code-block:: console
+
+   # Install conda if you don't have it:
+   # Mac: Download from https://docs.anaconda.com/anaconda/install/mac-os/
+   # Linux: Download from https://docs.anaconda.com/anaconda/install/linux/
+   
+   # Create and activate environment
+   conda env create -f environment.yml
+   conda activate entomological-label
+   
    # Install the package
    pip install -e .
+
+**Method B: pip + venv**
+
+.. code-block:: console
+
+   # Create virtual environment
+   python3 -m venv elie-env
    
-   # Run individual components
-   python scripts/processing/detection.py --input /path/to/images
+   # Activate environment
+   # Mac/Linux:
+   source elie-env/bin/activate
+   
+   # Install the package
+   pip install -e .
 
-Prerequisites
-=============
+**Step 3: Install system dependencies**
 
-**System Requirements:**
+**For macOS:**
 
-- **Python**: 3.9+ (3.10 recommended for optimal compatibility)
-- **Docker**: Desktop version with Docker Compose
-- **Memory**: 8GB+ RAM recommended (16GB+ for large datasets)
-- **Storage**: 2GB+ free space for models and temporary files
+.. code-block:: console
 
-**Optional Components:**
+   # Install Homebrew if you don't have it
+   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+   
+   # Install Tesseract OCR (for text recognition)
+   brew install tesseract
+   
+   # Install zbar (for QR code detection)
+   brew install zbar
 
-- **Conda**: For isolated environment management
-- **NVIDIA GPU**: For accelerated inference (10x+ speed improvement)
-- **Google Cloud Account**: For premium OCR capabilities
+**For Linux (Ubuntu/Debian):**
 
-Installation
-============
+.. code-block:: console
 
-1. Create a Python 3.10 environment (recommended to ensure dependency compatibility):
+   # Update package list
+   sudo apt update
+   
+   # Install Tesseract OCR
+   sudo apt install tesseract-ocr
+   
+   # Install zbar for QR codes
+   sudo apt install libzbar0
+   
+   # Install additional dependencies
+   sudo apt install python3-dev python3-pip
 
-   .. code-block:: console
+**For Linux (CentOS/RHEL/Fedora):**
 
-      conda create --name ELIE python=3.10
+.. code-block:: console
 
-2. Activate the environment:
+   # For CentOS/RHEL
+   sudo yum install tesseract zbar-devel python3-devel
+   
+   # For Fedora
+   sudo dnf install tesseract zbar-devel python3-devel
 
-   .. code-block:: console
+**Step 4: Verify installation**
 
-      conda activate ELIE
+.. code-block:: console
 
-3. Install the package:
+   # Test that everything is working
+   python3 -c "import label_processing, label_postprocessing, label_evaluation, pipelines; print('✅ Installation successful!')"
+   
+   # Run tests to ensure everything works
+   python3 -m pytest unit_tests/ -v
 
-   .. code-block:: console
+**Quick Start Guide**
 
-      cd entomological-label-information-extraction
-      pip install .
+**1. Basic Label Processing:**
 
-4. Install Tesseract OCR (optional, required if using Tesseract):
+.. code-block:: console
 
-   - **Ubuntu/Debian**:
+   # Process a folder of specimen images
+   python3 scripts/processing/detection.py -j /path/to/your/images -o /path/to/output
 
-     .. code-block:: console
+**2. Custom Pipeline:**
 
-        sudo apt install tesseract-ocr
+.. code-block:: python
 
-   - **macOS**:
+   from label_processing.label_detection import PredictLabel
+   from label_processing.text_recognition import ocr_tesseract
+   
+   # Initialize the label detector
+   detector = PredictLabel(
+       path_to_model="models/detection_model.pth",
+       classes=["label"]
+   )
+   
+   # Process your images
+   results = detector.class_prediction("/path/to/image.jpg")
+   print(results)
 
-     .. code-block:: console
+**Troubleshooting**
 
-        brew install tesseract
+**Common Issues:**
+
+🔧 **"No module named 'label_processing'"**
+   
+   - Make sure you installed with ``pip install -e .`` from the project directory
+   - Check that your virtual environment is activated
+
+🔧 **"TesseractNotFoundError"**
+   
+   - Install Tesseract: ``brew install tesseract`` (Mac) or ``sudo apt install tesseract-ocr`` (Linux)
+   - Add Tesseract to your PATH
+
+🔧 **GPU/CUDA Issues**
+   
+   - The package works with CPU by default
+   - For GPU acceleration, install PyTorch with CUDA support
+
+🔧 **Permission Errors**
+   
+   - Use ``sudo`` for system-wide installations (not recommended)
+   - Or use virtual environments (recommended)
+
+🔧 **Model Loading Issues ("invalid load key" errors)**
+   
+   - Run the diagnostic script: ``python3 scripts/troubleshooting/test_model_loading.py``
+   - This will test your model file and suggest fixes
+   - Common cause: CUDA/CPU mismatch (model trained on GPU, loading on CPU)
+   - The improved code automatically handles this issue
+
+**Getting Help:**
+
+- 📖 Check the `documentation <docs/>`_
+- 🐛 Report issues on `GitHub Issues <https://github.com/[your-username]/entomological-label-information-extraction/issues>`_
+- 💬 Ask questions in `Discussions <https://github.com/[your-username]/entomological-label-information-extraction/discussions>`_
+
+**Next Steps:**
+
+- See `Usage Examples <#usage-examples>`_ for detailed workflows
+- Check out `Training Notebooks <training_notebooks/>`_ to customize models
+- Read about `Docker Usage <#docker-usage>`_ for production deployment
 
 Input Image Guidelines
 ======================
@@ -190,28 +305,9 @@ Run the OCR script independently:
 
 .. code-block:: console
 
-   python scripts/processing/vision.py -d <path_to_cropped_images> -c <path_to_credentials.json> -o <output_directory>
+   python3 scripts/processing/vision.py -d <path_to_cropped_images> -c <path_to_credentials.json> -o <output_directory>
 
 Replace placeholders with your actual paths.
-
-Installing `zbar` for QR Code Recognition
-=========================================
-
-To enhance QR code detection using `zbar`, install the following dependencies:
-
-- **macOS**:
-
-  .. code-block:: console
-
-     brew install zbar
-
-- **Linux**:
-
-  .. code-block:: console
-
-     sudo apt-get install libzbar0
-
-- **Windows**: `zbar` is bundled with the Python wheels and requires no extra setup.
 
 Docker Usage
 ============
@@ -225,21 +321,6 @@ Docker Installation
   .. code-block:: console
 
      docker --version
-
-Docker Compose Installation
----------------------------
-
-- (Optional) Install Docker Compose via conda:
-
-  .. code-block:: console
-
-     conda install -c conda-forge docker-compose
-
-- Verify Docker Compose:
-
-  .. code-block:: console
-
-     docker-compose --version
 
 Pipeline Execution
 ------------------
@@ -297,20 +378,6 @@ Troubleshooting
 
      docker compose -f multi-label-docker-compose.yaml down --remove-orphans
 
-Hardware Requirements
-=====================
-
-- Recommended: **NVIDIA GPU** for fast inference
-- CPU-only systems are supported but significantly slower
-- To enable GPU support in Docker:
-
-  1. Install the `NVIDIA Container Toolkit <https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html>`_
-  2. Run Docker with GPU support:
-
-     .. code-block:: console
-
-        docker compose --gpus all -f multi-label-docker-compose.yaml up --build
-
 Usage Examples
 ==============
 
@@ -340,19 +407,19 @@ Usage Examples
 .. code-block:: console
 
    # Run label detection
-   python scripts/processing/detection.py \
+   python3 scripts/processing/detection.py \
      --input data/input/ \
      --output data/detection/ \
      --model models/label_detection_model.pth
    
    # Run classification
-   python scripts/processing/classifiers.py \
+   python3 scripts/processing/classifiers.py \
      --input data/detection/ \
      --output data/classified/ \
      --model models/label_classifier_hp/
    
    # Run OCR with Tesseract
-   python scripts/processing/tesseract.py \
+   python3 scripts/processing/tesseract.py \
      --input data/classified/ \
      --output data/ocr_results/
 
@@ -412,14 +479,14 @@ Development & Testing
 .. code-block:: console
 
    # Run all tests
-   python -m unittest discover unit_tests
+   python3 -m pytest unit_tests/ -v
    
    # Run with coverage
    pip install pytest pytest-cov
-   pytest unit_tests/ --cov=. --cov-report=html
+   python3 -m pytest unit_tests/ --cov=. --cov-report=html
    
    # Run specific test modules
-   python -m unittest unit_tests.label_processing_tests.test_detection
+   python3 -m pytest unit_tests/label_processing_tests/
 
 **Code Quality:**
 
@@ -440,7 +507,7 @@ Development & Testing
    pre-commit install
 
 Model Retraining
-===============
+================
 
 Customize the models for your specific datasets using the provided Jupyter notebooks:
 
@@ -464,6 +531,33 @@ Customize the models for your specific datasets using the provided Jupyter noteb
 - **Classification**: Labeled image crops organized by category
 - **Rotation**: Image pairs (original and corrected orientations)
 
+Hardware Requirements
+====================
+
+**Minimum Requirements:**
+- **CPU**: 4+ cores
+- **RAM**: 8GB+ (16GB+ recommended for large datasets)
+- **Storage**: 5GB+ free space
+- **OS**: macOS 10.14+, Ubuntu 18.04+, or other Linux distribution
+
+**Recommended for Production:**
+- **GPU**: NVIDIA GPU with 8GB+ VRAM
+- **RAM**: 32GB+
+- **Storage**: SSD with 50GB+ free space
+
+**GPU Support:**
+
+To enable GPU acceleration:
+
+1. Install NVIDIA drivers and CUDA toolkit
+2. Install PyTorch with CUDA support:
+
+   .. code-block:: console
+
+      pip install torch torchvision --index-url https://download.pytorch.org/whl/cu118
+
+3. For Docker GPU support, install `NVIDIA Container Toolkit <https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html>`_
+
 License
 =======
 
@@ -480,11 +574,37 @@ If you use this software in your research, please cite the associated dataset:
      title={Entomological Label Information Extraction Dataset},
      url={https://doi.org/10.7479/khac-x956},
      DOI={10.7479/khac-x956},
-     publisher={Anonymous},
+     publisher={Zenodo},
      year={2025}
    }
 
 Contributing
 ============
 
-Contributions are welcome! Please open an issue or submit a pull request.
+Contributions are welcome! Please:
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests for new functionality
+5. Run the test suite
+6. Submit a pull request
+
+For major changes, please open an issue first to discuss what you would like to change.
+
+**Development Setup:**
+
+.. code-block:: console
+
+   # Clone your fork
+   git clone https://github.com/your-username/entomological-label-information-extraction.git
+   cd entomological-label-information-extraction
+   
+   # Install in development mode
+   pip install -e .[dev]
+   
+   # Set up pre-commit hooks
+   pre-commit install
+   
+   # Run tests
+   python3 -m pytest unit_tests/ -v

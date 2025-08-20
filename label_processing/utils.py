@@ -42,11 +42,14 @@ def generate_filename(original_path: str, appendix: str, extension: Optional[str
     Returns:
         str: new file or directory name
     """
+    # Convert Path object to string if necessary
+    original_path_str = str(original_path)
+    
     # Remove extension if it has one
-    new_filename, _ = os.path.splitext(os.path.basename(original_path))
+    new_filename, _ = os.path.splitext(os.path.basename(original_path_str))
     
     appendix = appendix.strip("_")
-    if original_path.endswith(os.path.sep):
+    if original_path_str.endswith(os.path.sep):
         new_filename = f"{os.path.basename(os.path.dirname(new_filename))}_{appendix}"
     else:
         new_filename = f"{new_filename}_{appendix}"

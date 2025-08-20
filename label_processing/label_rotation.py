@@ -30,7 +30,9 @@ def load_image(image_path: str) -> np.ndarray:
     Returns:
         np.ndarray: Loaded image.
     """
-    image = cv2.imread(image_path)
+    # Convert Path object to string if necessary
+    image_path_str = str(image_path)
+    image = cv2.imread(image_path_str)
     if image is None:
         raise ValueError(f"Error: Unable to read image '{image_path}'")
     return image
