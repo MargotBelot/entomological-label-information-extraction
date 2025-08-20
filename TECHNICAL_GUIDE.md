@@ -18,6 +18,13 @@ This guide covers installation, system setup, troubleshooting, and advanced tech
 
 ## Installation
 
+**Installation Options Summary:**
+- `pip install -e .` - Basic installation (runtime dependencies only)
+- `pip install -e ".[dev]"` - Development installation (includes testing, linting, formatting tools)
+- `pip install -e ".[test]"` - Testing installation (includes pytest and coverage tools)
+- `pip install -e ".[docs]"` - Documentation installation (includes Sphinx and themes)
+- `pip install -e ".[dev,test,docs]"` - Complete installation (all optional dependencies)
+
 **Step 1: Clone the Repository**
 
 ```bash
@@ -38,8 +45,11 @@ cd entomological-label-information-extraction
 conda env create -f environment.yml
 conda activate entomological-label
 
-# Install the package
+# Install the package (basic installation)
 pip install -e .
+
+# OR for development (includes testing, linting, formatting tools)
+pip install -e ".[dev]"
 ```
 
 **Option B: Virtual Environment**
@@ -51,8 +61,11 @@ python3 -m venv elie-env
 # Activate environment
 source elie-env/bin/activate  # Mac/Linux
 
-# Install the package
+# Install the package (basic installation)
 pip install -e .
+
+# OR for development (includes testing, linting, formatting tools)
+pip install -e ".[dev]"
 ```
 
 **Step 3: System Dependencies**
@@ -132,6 +145,9 @@ docker compose -f multi-label-docker-compose.yaml up --build
 # Solution: Reinstall the package
 cd /path/to/entomological-label-information-extraction
 pip install -e .
+
+# For development with all tools
+pip install -e ".[dev]"
 ```
 
 **Problem: "TesseractNotFoundError"**
