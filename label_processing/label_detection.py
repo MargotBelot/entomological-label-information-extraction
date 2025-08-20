@@ -85,8 +85,12 @@ class PredictLabel():
             lambda: Model.load(self.path_to_model, self.classes),
             # Strategy 2: Force CPU loading (for CUDA/CPU mismatch issues)
             lambda: self._load_with_cpu_fallback(),
-            # Strategy 3: Load with weights_only=True (for newer PyTorch versions)
+            # Strategy 3: Force weights_only=False (for corrupted pickle issues)
+            lambda: self._load_with_weights_only_false(),
+            # Strategy 4: Load with weights_only=True (for newer PyTorch versions)
             lambda: self._load_with_weights_only(),
+            # Strategy 5: Pickle protocol fallback
+            lambda: self._load_with_pickle_protocol(),
         ]
         
         last_error = None
@@ -94,15 +98,15 @@ class PredictLabel():
             try:
                 print(f"Trying loading strategy {i}...")
                 model = strategy()
-                print("✅ Model loaded successfully")
+                print("Model loaded successfully")
                 return model
             except Exception as e:
-                print(f"❌ Strategy {i} failed: {e}")
+                print(f"Strategy {i} failed: {e}")
                 last_error = e
                 continue
         
         # If all strategies fail, raise the last error
-        print(f"❌ All loading strategies failed. Last error: {last_error}")
+        print(f"All loading strategies failed. Last error: {last_error}")
         raise last_error
     
     def _load_with_cpu_fallback(self):
@@ -137,6 +141,43 @@ class PredictLabel():
         except TypeError:
             # Fallback for older PyTorch versions that don't support weights_only
             return self._load_with_cpu_fallback()
+    
+    def _load_with_weights_only_false(self):
+        """Load model with weights_only=False to handle pickle issues."""
+        import torch
+        try:
+            # Force weights_only=False for corrupted pickle files
+            state_dict = torch.load(self.path_to_model, map_location='cpu', weights_only=False)
+            model = Model(self.classes)
+            model.model.load_state_dict(state_dict, strict=False)
+            return model
+        except Exception as e:
+            print(f"weights_only=False loading failed: {e}")
+            return self._load_with_basic_torch()
+    
+    def _load_with_pickle_protocol(self):
+        """Load model with different pickle protocols to handle version mismatches."""
+        import torch
+        import pickle
+        try:
+            # Try loading with pickle protocol compatibility
+            with open(self.path_to_model, 'rb') as f:
+                # Load raw pickle data
+                state_dict = pickle.load(f)
+                
+            model = Model(self.classes)
+            if isinstance(state_dict, dict):
+                model.model.load_state_dict(state_dict, strict=False)
+            else:
+                # If it's a full model object, extract the state dict
+                if hasattr(state_dict, 'state_dict'):
+                    model.model.load_state_dict(state_dict.state_dict(), strict=False)
+                else:
+                    raise Exception("Unknown state dict format")
+            return model
+        except Exception as e:
+            print(f"Pickle protocol loading failed: {e}")
+            return self._load_with_basic_torch()
     
     def _load_with_basic_torch(self):
         """Most basic torch loading as last resort."""
