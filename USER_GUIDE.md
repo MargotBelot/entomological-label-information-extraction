@@ -4,6 +4,59 @@
 
 This guide shows you how to use the entomological label extraction tool with practical examples and visual explanations.
 
+## Table of Contents
+- [User Guide](#user-guide)
+  - [Table of Contents](#table-of-contents)
+  - [What This Tool Does (For Beginners)](#what-this-tool-does-for-beginners)
+    - [**Two Ways to Use This Tool:**](#two-ways-to-use-this-tool)
+    - [**Which Pipeline Should I Use?**](#which-pipeline-should-i-use)
+  - [Prerequisites](#prerequisites)
+  - [Quick Start with Sample Data](#quick-start-with-sample-data)
+  - [Basic Usage](#basic-usage)
+  - [Command Options](#command-options)
+  - [Understanding the Output](#understanding-the-output)
+  - [Working with Your Own Images](#working-with-your-own-images)
+  - [Real-World Examples](#real-world-examples)
+  - [Batch Processing Tips](#batch-processing-tips)
+  - [Docker Pipeline Usage](#docker-pipeline-usage)
+    - [**Docker Pipeline Options**](#docker-pipeline-options)
+      - [**1. Multi-Label Pipeline** (`multi-label-docker-compose.yaml`)](#1-multi-label-pipeline-multi-label-docker-composeyaml)
+      - [**2. Single-Label Pipeline** (`single-label-docker-compose.yaml`)](#2-single-label-pipeline-single-label-docker-composeyaml)
+    - [**Running Docker Pipelines**](#running-docker-pipelines)
+      - [**Quick Start (Multi-Label):**](#quick-start-multi-label)
+      - [**Quick Start (Single-Label):**](#quick-start-single-label)
+      - [**Using Your Own Images:**](#using-your-own-images)
+    - [**Visual Pipeline Flow**](#visual-pipeline-flow)
+      - [**Multi-Label Pipeline:**](#multi-label-pipeline)
+      - [**Single-Label Pipeline:**](#single-label-pipeline)
+    - [**Docker Pipeline Control**](#docker-pipeline-control)
+    - [**Understanding Your Results**](#understanding-your-results)
+      - [**Output Directory Structure:**](#output-directory-structure)
+      - [**What Each File Contains:**](#what-each-file-contains)
+  - [Step-by-Step Pipeline (Python Scripts)](#step-by-step-pipeline-python-scripts)
+    - [**Multi-Label Workflow (Specimen Photos)**](#multi-label-workflow-specimen-photos)
+      - [**Step 1: Label Detection**](#step-1-label-detection)
+      - [**Step 2: Empty Label Analysis**](#step-2-empty-label-analysis)
+      - [**Step 3: Identifier Classification**](#step-3-identifier-classification)
+      - [**Step 4: Handwritten/Printed Classification**](#step-4-handwrittenprinted-classification)
+      - [**Step 5: OCR Text Extraction**](#step-5-ocr-text-extraction)
+      - [**Step 6: Post-processing**](#step-6-post-processing)
+    - [**Single-Label Workflow (Pre-cropped Labels)**](#single-label-workflow-pre-cropped-labels)
+      - [**Step 1: Empty Label Analysis**](#step-1-empty-label-analysis)
+      - [**Step 2: Identifier Classification**](#step-2-identifier-classification)
+      - [**Step 3: Handwritten/Printed Classification**](#step-3-handwrittenprinted-classification)
+      - [**Step 4: Rotation Correction**](#step-4-rotation-correction)
+      - [**Step 5: OCR Text Extraction**](#step-5-ocr-text-extraction-1)
+      - [**Step 6: Post-processing**](#step-6-post-processing-1)
+    - [**Script Options Reference**](#script-options-reference)
+      - [**Detection Script Options:**](#detection-script-options)
+      - [**Classification Script Options:**](#classification-script-options)
+      - [**OCR Script Options:**](#ocr-script-options)
+      - [**Rotation Script Options:**](#rotation-script-options)
+  - [Using the Python API](#using-the-python-api)
+  - [Getting Help](#getting-help)
+  - [Next Steps](#next-steps)
+
 ## What This Tool Does (For Beginners)
 
 **If you're new to this:** This tool automatically reads text from insect specimen labels and converts it into spreadsheet data.
@@ -11,31 +64,31 @@ This guide shows you how to use the entomological label extraction tool with pra
 
 ### **Two Ways to Use This Tool:**
 
-🐳 **Docker (Beginner-Friendly):** Automated, one-click processing
-🐍 **Python Scripts (Advanced):** Step-by-step control for custom workflows
+- 🐳 **Docker (Beginner-Friendly):** Automated, one-click processing
+- 🐍 **Python Scripts (Advanced):** Step-by-step control for custom workflows
 
 ### **Which Pipeline Should I Use?**
 
 ```
 🤔 What type of images do you have?
-┌──────────────────────────────────────────────────┐
-│                                                  │
-│ 📸 Full specimen photos                        │
-│ (insects with multiple labels visible)         │
-│                    ↓                          │
-│        🐳 Use MULTI-LABEL PIPELINE            │
-│     docker compose -f multi-label-docker-     │
+┌────────────────────────────────────────────────┐
+│                                                │
+│           📸 Full specimen photos               │
+│   (insects with multiple labels visible)       │
+│                        ↓                       │
+│          🐳 Use MULTI-LABEL PIPELINE            │
+│      docker compose -f multi-label-docker-     │
 │            compose.yaml up --build             │
-└──────────────────────────────────────────────────┘
+└────────────────────────────────────────────────┘
 
 ┌──────────────────────────────────────────────────┐
 │                                                  │
-│ 🏷️ Individual label images                      │
-│ (already cropped, one label per image)         │
-│                    ↓                          │
-│        🐳 Use SINGLE-LABEL PIPELINE           │
-│     docker compose -f single-label-docker-     │
-│            compose.yaml up --build             │
+│           🏷️ Individual label images             │
+│      (already cropped, one label per image)      │
+│                         ↓                        │
+│           🐳 Use SINGLE-LABEL PIPELINE           │
+│      docker compose -f single-label-docker-      │
+│              compose.yaml up --build             │
 └──────────────────────────────────────────────────┘
 ```
 
