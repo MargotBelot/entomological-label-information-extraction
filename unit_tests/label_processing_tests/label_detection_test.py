@@ -6,9 +6,13 @@ import pandas as pd
 import cv2
 import os
 import glob
+import platform
+import sys
+import torch
 
 # Import the necessary module from the 'label_processing' module package
 from label_processing.label_detection import *
+from label_processing.config import config
 
 class TestSegmentationCropping(unittest.TestCase):
     """
@@ -16,22 +20,69 @@ class TestSegmentationCropping(unittest.TestCase):
     This test suite verifies the functionality of the PredictLabel class, including image loading,
     model prediction, thresholding, and cropping operations.
     """
-    path_to_model = str(Path(__file__).parent.resolve() / "../../models/label_detection_model.pth")
-    jpg_path: Path = Path(__file__).parent / ".." / "testdata" / "uncropped" / "CASENT0922705_L.jpg"
+    @classmethod
+    def setUpClass(cls):
+        """Set up class-level attributes using centralized configuration."""
+        cls.path_to_model = str(config.get_model_path("detection"))
+        cls.jpg_path = config.test_data_dir / "uncropped" / "CASENT0922705_L.jpg"
+        cls.testdata_dir = config.test_data_dir
 
     def setUp(self):
         """
-        Setup method to initialize the model before each test.
+        Setup method to validate model and test data availability before each test.
 
-        Initializes the PredictLabel instance with the provided model path and image path.
-        This method runs before each test to ensure that the label predictor is available for testing.
-        If initialization fails, it sets `label_predictor` to `None`.
+        Performs comprehensive checks for cross-platform compatibility:
+        - Validates model file existence and integrity
+        - Validates test data availability
+        - Attempts model initialization with error handling
+        - Sets up proper environment variables for cross-platform testing
         """
+        import platform
+        
+        # Set up cross-platform environment
+        os.environ['CUDA_VISIBLE_DEVICES'] = ''  # Force CPU for consistent testing
+        
+        # Check model file existence and integrity
+        if not os.path.exists(self.path_to_model):
+            self.skipTest(f"Model file not found: {self.path_to_model}")
+            
+        if os.path.getsize(self.path_to_model) == 0:
+            self.skipTest(f"Model file is empty: {self.path_to_model}")
+            
+        # Check test image existence
+        if not os.path.exists(self.jpg_path):
+            self.skipTest(f"Test image not found: {self.jpg_path}")
+            
+        # Validate test image integrity
+        test_img = cv2.imread(str(self.jpg_path))
+        if test_img is None:
+            self.skipTest(f"Test image is corrupted or unreadable: {self.jpg_path}")
+            
+        # Try to initialize PredictLabel with comprehensive error handling
         try:
+            print(f"\nTesting on {platform.system()} {platform.release()}")
+            print(f"Python version: {platform.python_version()}")
+            
             self.label_predictor = PredictLabel(self.path_to_model, ["label"], self.jpg_path)
+            print("✓ PredictLabel initialized successfully in setUp")
+            
+        except FileNotFoundError as e:
+            self.skipTest(f"Model file not found during initialization: {e}")
+        except ImportError as e:
+            self.skipTest(f"Missing dependencies for model loading: {e}")
+        except RuntimeError as e:
+            self.skipTest(f"Runtime error during model loading (possibly CUDA/CPU mismatch): {e}")
         except Exception as e:
             print(f"Error loading model or initializing PredictLabel: {e}")
+            # Print additional debugging info on Linux
+            if platform.system() == 'Linux':
+                print(f"Linux-specific debugging:")
+                print(f"  PyTorch version: {torch.__version__ if 'torch' in sys.modules else 'Not loaded'}")
+                print(f"  CUDA available: {torch.cuda.is_available() if 'torch' in sys.modules else 'Unknown'}")
+                print(f"  Environment CUDA_VISIBLE_DEVICES: {os.environ.get('CUDA_VISIBLE_DEVICES', 'Not set')}")
+            
             self.label_predictor = None
+            self.skipTest(f"PredictLabel model could not be initialized: {e}")
 
     def test_predict_label_constructor(self):
         """
@@ -79,11 +130,11 @@ class TestSegmentationCropping(unittest.TestCase):
         if self.label_predictor is None:
             self.skipTest("PredictLabel model could not be initialized.")
         
-        # Get the parent directory of the image from self.label_predictor
-        image_folder = str(self.label_predictor.jpg_path.parent)
+        # Use project root-based paths
+        uncropped_dir = self.testdata_dir / "uncropped"
         
         label_predictor = PredictLabel(self.path_to_model, ["label"])
-        df = prediction_parallel(Path(__file__).parent / ".." / "testdata" / "uncropped" / image_folder, label_predictor, n_processes=4)
+        df = prediction_parallel(uncropped_dir, label_predictor, n_processes=4)
 
         self.assertIsInstance(df, pd.DataFrame)
         self.assertEqual(len(df.columns), 7)
@@ -110,10 +161,10 @@ class TestSegmentationCropping(unittest.TestCase):
         if self.label_predictor is None:
             self.skipTest("PredictLabel model could not be initialized.")
         
-        # Get the parent directory of the image from self.label_predictor
-        image_folder = str(self.label_predictor.jpg_path.parent)
+        # Use project root-based paths
+        uncropped_dir = self.testdata_dir / "uncropped"
         label_predictor = PredictLabel(self.path_to_model, ["label"])
-        df = prediction_parallel(Path(__file__).parent / ".." / "testdata" / "uncropped" / image_folder, label_predictor, n_processes=4)
+        df = prediction_parallel(uncropped_dir, label_predictor, n_processes=4)
 
         self.assertEqual(len(df), 20)
 
@@ -127,13 +178,13 @@ class TestSegmentationCropping(unittest.TestCase):
         if self.label_predictor is None:
             self.skipTest("PredictLabel model could not be initialized.")
         
-        # Get the parent directory of the image from self.label_predictor
-        image_folder = str(self.label_predictor.jpg_path.parent)
+        # Use project root-based paths
+        uncropped_dir = self.testdata_dir / "uncropped"
         
         label_predictor = PredictLabel(self.path_to_model, ["label"])
-        df = prediction_parallel(Path(__file__).parent / ".." / "testdata" / "uncropped" / image_folder, label_predictor, n_processes=4)
+        df = prediction_parallel(uncropped_dir, label_predictor, n_processes=4)
 
-        clean_df = clean_predictions(Path(__file__).parent / ".." / "testdata" / "uncropped", df, 1.0)
+        clean_df = clean_predictions(uncropped_dir, df, 1.0)
         self.assertEqual(len(clean_df), 0)
 
     def test_crops(self):
@@ -145,17 +196,18 @@ class TestSegmentationCropping(unittest.TestCase):
         if self.label_predictor is None:
             self.skipTest("PredictLabel model could not be initialized.")
         
-        # Get the parent directory of the image from self.label_predictor
-        image_folder = str(self.label_predictor.jpg_path.parent)
+        # Use project root-based paths
+        uncropped_dir = self.testdata_dir / "uncropped"
+        check_crops_dir = self.testdata_dir / "check_crops"
         
         label_predictor = PredictLabel(self.path_to_model, ["label"])
-        df = prediction_parallel(Path(__file__).parent / ".." / "testdata" / "uncropped" / image_folder, label_predictor, n_processes=4)
+        df = prediction_parallel(uncropped_dir, label_predictor, n_processes=4)
         
         # Log the number of predictions
         print(f"Number of predictions: {len(df)}")
         
-        create_crops(Path(__file__).parent / ".." / "testdata" / "uncropped", df, out_dir=Path(__file__).parent / ".." / "testdata" / "check_crops")
-        crop_files = list((Path(__file__).parent / ".." / "testdata" / "check_crops" / "uncropped_cropped").glob('*.jpg'))
+        create_crops(uncropped_dir, df, out_dir=check_crops_dir)
+        crop_files = list((check_crops_dir / "uncropped_cropped").glob('*.jpg'))
         
         # Log the number of crop files created
         print(f"Number of crop files: {len(crop_files)}")
@@ -181,16 +233,14 @@ class TestSegmentationCropping(unittest.TestCase):
         This method is called after each test to remove temporary directories and crop files created
         during the test. This ensures that each test starts with a clean slate.
         """
-        check_crops_path = Path(__file__).parent / ".." / "testdata" / "check_crops"
+        check_crops_path = self.testdata_dir / "check_crops"
         if check_crops_path.exists():
-            for f in check_crops_path.iterdir():
-                try:
-                    os.chmod(f, 0o777)  # Ensure write permission
-                    os.remove(f)
-                except PermissionError:
-                    print(f"Permission denied while deleting {f}.")
-                    continue
+            import shutil
             try:
-                check_crops_path.rmdir()  # Remove the empty directory
+                # Use shutil.rmtree for more reliable cleanup across platforms
+                shutil.rmtree(check_crops_path)
+                print(f"✓ Cleaned up {check_crops_path}")
+            except PermissionError as e:
+                print(f"Permission denied while deleting {check_crops_path}: {e}")
             except OSError as e:
                 print(f"Failed to remove 'check_crops' directory: {e}")

@@ -1,6 +1,45 @@
 # User Guide
 
-This guide shows you how to use the entomological label extraction tool with practical examples.
+🐛 **Complete guide to extracting text from insect specimen labels using AI**
+
+This guide shows you how to use the entomological label extraction tool with practical examples and visual explanations.
+
+## What This Tool Does (For Beginners)
+
+**If you're new to this:** This tool automatically reads text from insect specimen labels and converts it into spreadsheet data.
+
+
+### **Two Ways to Use This Tool:**
+
+🐳 **Docker (Beginner-Friendly):** Automated, one-click processing
+🐍 **Python Scripts (Advanced):** Step-by-step control for custom workflows
+
+### **Which Pipeline Should I Use?**
+
+```
+🤔 What type of images do you have?
+┌──────────────────────────────────────────────────┐
+│                                                  │
+│ 📸 Full specimen photos                        │
+│ (insects with multiple labels visible)         │
+│                    ↓                          │
+│        🐳 Use MULTI-LABEL PIPELINE            │
+│     docker compose -f multi-label-docker-     │
+│            compose.yaml up --build             │
+└──────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────┐
+│                                                  │
+│ 🏷️ Individual label images                      │
+│ (already cropped, one label per image)         │
+│                    ↓                          │
+│        🐳 Use SINGLE-LABEL PIPELINE           │
+│     docker compose -f single-label-docker-     │
+│            compose.yaml up --build             │
+└──────────────────────────────────────────────────┘
+```
+
+**Still not sure?** Start with the **Multi-Label Pipeline** – it works for both types!
 
 ## Prerequisites
 
@@ -114,7 +153,7 @@ input_cropped/
 
 **Image Requirements:**
 
-✅ **Supported formats:** .jpg, .jpeg, .png, .tiff
+✅ **Required format:** .jpg, .jpeg only
 
 ✅ **Best quality results:**
 - High resolution (300+ DPI)
@@ -194,50 +233,366 @@ python3 scripts/processing/detection.py -j images/ -o results/ --batch-size 4
 python3 scripts/processing/detection.py -j images/ -o results/ --batch-size 32
 ```
 
-## Docker Usage
+## Docker Pipeline Usage
 
 **Prerequisites:**
 - Docker Desktop installed and running
 - 8GB+ RAM allocated to Docker
+- At least 4GB free disk space
 
-**Available Docker Pipelines:**
+### **Docker Pipeline Options**
 
-1. **Multi-label Pipeline** (`multi-label-docker-compose.yaml`)
-   - Full pipeline including label detection
-   - Input: Specimen photos with multiple labels
-   - Includes: Detection → Classification → OCR → Post-processing
+#### **1. Multi-Label Pipeline** (`multi-label-docker-compose.yaml`)
+**Use this when:** You have full specimen photographs with multiple labels per image
 
-2. **Single-label Pipeline** (`single-label-docker-compose.yaml`)
-   - For pre-cropped individual labels
-   - Input: Individual label images
-   - Includes: Classification → OCR → Post-processing
+**What it does:**
+1. **🔍 Detection** - Finds and extracts labels from specimen photos
+2. **🏷️ Empty Filter** - Removes blank labels
+3. **🎯 Identifier Filter** - Separates catalog numbers from descriptive labels
+4. **✍️ Text Type Classification** - Sorts handwritten vs. printed labels
+5. **📝 OCR Processing** - Extracts text from printed labels
+6. **⚙️ Post-processing** - Creates final structured data
 
-**Using Your Own Images with Docker:**
+**Input:** Full specimen photos in `data/MLI/input/`
+**Final Output:** `data/MLI/output/final_processed_data.csv`
 
+#### **2. Single-Label Pipeline** (`single-label-docker-compose.yaml`)
+**Use this when:** You have pre-cropped individual label images
+
+**What it does:**
+1. **🏷️ Empty Filter** - Removes blank labels
+2. **🎯 Identifier Filter** - Separates catalog numbers from descriptive labels  
+3. **✍️ Text Type Classification** - Sorts handwritten vs. printed labels
+4. **🔄 Rotation Correction** - Aligns text for better OCR
+5. **📝 OCR Processing** - Extracts text from printed labels
+6. **⚙️ Post-processing** - Creates final structured data
+
+**Input:** Individual label images in `data/SLI/input/`
+**Final Output:** `data/SLI/output/final_processed_data.csv`
+
+### **Running Docker Pipelines**
+
+#### **Quick Start (Multi-Label):**
 ```bash
-# 1. Place your images in the appropriate input folder
-cp your_specimens/*.jpg data/MLI/input/     # For multi-label pipeline
-cp your_labels/*.jpg data/SLI/input/        # For single-label pipeline
-
-# 2. Run the pipeline
+# Run with sample data
 docker compose -f multi-label-docker-compose.yaml up --build
 
-# 3. Results will be in the output folder
+# Check results
 ls data/MLI/output/
+head data/MLI/output/final_processed_data.csv
 ```
 
-**Docker Troubleshooting:**
-
+#### **Quick Start (Single-Label):**
 ```bash
-# Stop all containers
-docker compose down
+# Run with sample data
+docker compose -f single-label-docker-compose.yaml up --build
 
-# Clean up and rebuild
-docker compose down --remove-orphans
+# Check results
+ls data/SLI/output/
+head data/SLI/output/final_processed_data.csv
+```
+
+#### **Using Your Own Images:**
+
+**For Multi-Label Pipeline (Full Specimens):**
+```bash
+# 1. Prepare your data
+mkdir -p data/MLI/input
+cp your_specimen_photos/*.jpg data/MLI/input/
+
+# 2. Clear previous results
+rm -rf data/MLI/output/*
+
+# 3. Run the complete pipeline
 docker compose -f multi-label-docker-compose.yaml up --build
 
-# Check container logs
-docker compose logs
+# 4. View results
+echo "📊 Final Results:"
+ls data/MLI/output/
+echo "\n📈 Summary:"
+wc -l data/MLI/output/final_processed_data.csv
+```
+
+**For Single-Label Pipeline (Pre-cropped Labels):**
+```bash
+# 1. Prepare your data
+mkdir -p data/SLI/input
+cp your_label_images/*.jpg data/SLI/input/
+
+# 2. Clear previous results
+rm -rf data/SLI/output/*
+
+# 3. Run the complete pipeline
+docker compose -f single-label-docker-compose.yaml up --build
+
+# 4. View results
+echo "📊 Final Results:"
+ls data/SLI/output/
+echo "\n📈 Summary:"
+wc -l data/SLI/output/final_processed_data.csv
+```
+
+### **Visual Pipeline Flow**
+
+#### **Multi-Label Pipeline:**
+```
+📸 Specimen Photos (data/MLI/input/)
+    ↓
+🔍 Detection → 📋 input_predictions.csv + 🖼️ input_cropped/
+    ↓
+🏷️ Empty Filter → 📁 not_empty/ + 🗑️ empty/
+    ↓
+🎯 Identifier Filter → 📁 identifier/ + 📁 not_identifier/
+    ↓
+✍️ Text Type Filter → 📁 handwritten/ + 📁 printed/
+    ↓
+📝 OCR Processing → 📄 ocr_preprocessed.json
+    ↓
+⚙️ Post-processing → 📊 final_processed_data.csv
+```
+
+#### **Single-Label Pipeline:**
+```
+🏷️ Label Images (data/SLI/input/)
+    ↓
+🏷️ Empty Filter → 📁 not_empty/ + 🗑️ empty/
+    ↓
+🎯 Identifier Filter → 📁 identifier/ + 📁 not_identifier/
+    ↓
+✍️ Text Type Filter → 📁 handwritten/ + 📁 printed/
+    ↓
+🔄 Rotation Correction → 📁 rotated/
+    ↓
+📝 OCR Processing → 📄 ocr_preprocessed.json
+    ↓
+⚙️ Post-processing → 📊 final_processed_data.csv
+```
+
+### **Docker Pipeline Control**
+
+**Run specific steps only:**
+```bash
+# Run only detection step
+docker compose -f multi-label-docker-compose.yaml up detection
+
+# Run detection + classification (stop before OCR)
+docker compose -f multi-label-docker-compose.yaml up detection handwriten_printed_classifier
+
+# Continue from OCR step
+docker compose -f multi-label-docker-compose.yaml up tesseract postprocessing
+```
+
+**Monitor progress:**
+```bash
+# Watch real-time logs
+docker compose -f multi-label-docker-compose.yaml up --build | tee pipeline.log
+
+# Check specific service logs
+docker compose logs detection
+docker compose logs tesseract
+```
+
+**Restart and cleanup:**
+```bash
+# Stop all containers
+docker compose -f multi-label-docker-compose.yaml down
+
+# Clean restart
+docker compose -f multi-label-docker-compose.yaml down --remove-orphans
+docker compose -f multi-label-docker-compose.yaml up --build
+```
+
+### **Understanding Your Results**
+
+#### **Output Directory Structure:**
+```
+data/MLI/output/ (or data/SLI/output/)
+├── 📊 final_processed_data.csv    ← 🎯 MAIN RESULT (structured data)
+├── 📋 input_predictions.csv       ← Detection coordinates
+├── 📄 ocr_preprocessed.json       ← Raw text extraction
+├── 📁 input_cropped/              ← Individual label images
+│   ├── specimen1_1.jpg
+│   ├── specimen1_2.jpg
+│   └── specimen2_1.jpg
+├── 📁 not_empty/                  ← Labels with content
+├── 📁 identifier/                 ← Catalog numbers, IDs
+├── 📁 not_identifier/             ← Descriptive labels
+├── 📁 handwritten/                ← Hand-written text
+├── 📁 printed/                    ← Machine-printed text
+└── 📁 rotated/                    ← Text-aligned images (SLI only)
+```
+
+#### **What Each File Contains:**
+
+**📊 `final_processed_data.csv`** - **This is your main result!**
+```csv
+specimen_id,species,location,date,collector,method
+CASENT123456,"Lepidoptera sp.","Texas, USA","1995-06-15","J. Smith","AI_extraction"
+```
+
+**📋 `input_predictions.csv`** - Detection details
+```csv
+filename,class,score,xmin,ymin,xmax,ymax
+specimen1.jpg,label,0.95,100,150,300,250
+```
+
+**📄 `ocr_preprocessed.json`** - Raw OCR text
+```json
+{
+  "ID": "specimen1_1.jpg",
+  "text": "Lepidoptera\nTexas, USA\nJune 15, 1995"
+}
+```
+
+## Step-by-Step Pipeline (Python Scripts)
+
+**For users who want more control or to run individual steps:**
+
+### **Multi-Label Workflow (Specimen Photos)**
+
+#### **Step 1: Label Detection**
+```bash
+# Find and extract labels from specimen photos
+python3 scripts/processing/detection.py -j data/MLI/input -o data/MLI/output
+
+# What this creates:
+# - input_predictions.csv (detection results)
+# - input_cropped/ (individual label images)
+```
+
+#### **Step 2: Empty Label Analysis**
+```bash
+# Filter out blank or illegible labels
+python3 scripts/processing/analysis.py -o data/MLI/output -i data/MLI/output/input_cropped
+
+# What this creates:
+# - not_empty/ (labels with content)
+# - empty/ (blank labels, filtered out)
+```
+
+#### **Step 3: Identifier Classification**
+```bash
+# Separate specimen IDs from descriptive labels
+python3 scripts/processing/classifiers.py -m 1 -j data/MLI/output/not_empty -o data/MLI/output
+
+# What this creates:
+# - identifier/ (catalog numbers, specimen IDs)
+# - not_identifier/ (locality, date, collector info)
+```
+
+#### **Step 4: Handwritten/Printed Classification**
+```bash
+# Categorize labels by text type
+python3 scripts/processing/classifiers.py -m 2 -j data/MLI/output/not_identifier -o data/MLI/output
+
+# What this creates:
+# - handwritten/ (hand-written labels)
+# - printed/ (machine-printed labels, ready for OCR)
+```
+
+#### **Step 5: OCR Text Extraction**
+```bash
+# Extract text from printed labels
+python3 scripts/processing/tesseract.py -d data/MLI/output/printed -o data/MLI/output
+
+# What this creates:
+# - ocr_preprocessed.json (extracted text with metadata)
+```
+
+#### **Step 6: Post-processing**
+```bash
+# Clean and structure the extracted data
+python3 scripts/postprocessing/process.py -j data/MLI/output/ocr_preprocessed.json -o data/MLI/output
+
+# What this creates:
+# - final_processed_data.csv (clean, structured specimen data)
+```
+
+### **Single-Label Workflow (Pre-cropped Labels)**
+
+#### **Step 1: Empty Label Analysis**
+```bash
+# Filter out blank labels
+python3 scripts/processing/analysis.py -o data/SLI/output -i data/SLI/input
+
+# Creates: not_empty/, empty/
+```
+
+#### **Step 2: Identifier Classification**
+```bash
+# Separate IDs from descriptive content
+python3 scripts/processing/classifiers.py -m 1 -j data/SLI/output/not_empty -o data/SLI/output
+
+# Creates: identifier/, not_identifier/
+```
+
+#### **Step 3: Handwritten/Printed Classification**
+```bash
+# Sort by text type
+python3 scripts/processing/classifiers.py -m 2 -j data/SLI/output/not_identifier -o data/SLI/output
+
+# Creates: handwritten/, printed/
+```
+
+#### **Step 4: Rotation Correction**
+```bash
+# Align text horizontally for better OCR
+python3 scripts/processing/rotation.py -o data/SLI/output/rotated -i data/SLI/output/printed
+
+# Creates: rotated/ (text-aligned images)
+```
+
+#### **Step 5: OCR Text Extraction**
+```bash
+# Extract text from aligned labels
+python3 scripts/processing/tesseract.py -d data/SLI/output/rotated -o data/SLI/output
+
+# Creates: ocr_preprocessed.json
+```
+
+#### **Step 6: Post-processing**
+```bash
+# Create final structured dataset
+python3 scripts/postprocessing/process.py -j data/SLI/output/ocr_preprocessed.json -o data/SLI/output
+
+# Creates: final_processed_data.csv
+```
+
+### **Script Options Reference**
+
+#### **Detection Script Options:**
+```bash
+python3 scripts/processing/detection.py [OPTIONS]
+  -j, --input-dir DIR      # Directory with specimen photos
+  -i, --input-image FILE   # Single specimen photo  
+  -o, --output-dir DIR     # Where to save results
+  --confidence FLOAT       # Detection threshold (0.3-0.9, default: 0.5)
+  --batch-size INT         # Processing batch size (default: 16)
+  --device TEXT            # 'cpu', 'cuda', or 'auto'
+```
+
+#### **Classification Script Options:**
+```bash
+python3 scripts/processing/classifiers.py [OPTIONS]
+  -m, --model INT          # 1=identifier, 2=handwritten/printed, 3=multi/single
+  -j, --jpg_dir DIR        # Input directory with label images
+  -o, --out_dir DIR        # Output directory
+```
+
+#### **OCR Script Options:**
+```bash
+python3 scripts/processing/tesseract.py [OPTIONS]
+  -d, --dir DIR            # Directory with label images
+  -o, --outdir DIR         # Output directory for JSON results
+  -v, --verbose            # Show detailed processing info
+  -t, --thresholding INT   # 1=Otsu, 2=Adaptive, 3=Gaussian (default: 1)
+```
+
+#### **Rotation Script Options:**
+```bash
+python3 scripts/processing/rotation.py [OPTIONS]
+  -i, --input_dir DIR      # Directory with images to rotate
+  -o, --output_dir DIR     # Directory for rotated images
 ```
 
 ## Using the Python API
