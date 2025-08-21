@@ -9,32 +9,85 @@ from tensorflow import keras
 
 # Import the necessary module from the 'label_processing' module package
 from label_processing.tensorflow_classifier import *
+from label_processing.config import config
 
 class TestTFClassifier(unittest.TestCase):
     """
     A test suite for the TensorFlow classifier module.
     """
-    model_path = Path(__file__).parent / ".." / ".." / "models" / "label_classifier_hp"
-    classes = ['handwritten', 'printed']
-    outdir = Path(__file__).parent / ".." / "testdata" / "output"
-    jpg_dir = Path(__file__).parent / ".." / "testdata" / "not_empty"
+    @classmethod
+    def setUpClass(cls):
+        """Set up class-level attributes using centralized configuration."""
+        cls.model_path = config.get_model_path("handwritten_printed")
+        cls.classes = config.get_class_names("handwritten_printed")
+        cls.testdata_dir = config.test_data_dir
+        cls.outdir = cls.testdata_dir / "output"
+        cls.jpg_dir = cls.testdata_dir / "not_empty"
     
     def setUp(self):
-        """Set up test fixtures before each test method."""
+        """Set up test fixtures before each test method with cross-platform compatibility."""
+        import platform
+        import tensorflow as tf
+        
         # Ensure output directory exists
         os.makedirs(self.outdir, exist_ok=True)
         
+        # Set up cross-platform environment
+        os.environ['CUDA_VISIBLE_DEVICES'] = ''  # Force CPU for consistent testing
+        os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'  # Suppress TensorFlow logs
+        
+        # Linux-specific environment setup
+        if platform.system() == 'Linux':
+            os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
+            os.environ['OMP_NUM_THREADS'] = '1'
+            os.environ['MKL_NUM_THREADS'] = '1'
+            
+        # Validate model directory and files
+        if not os.path.exists(self.model_path):
+            self.skipTest(f"Model directory not found at {self.model_path}")
+            
+        saved_model_pb = os.path.join(self.model_path, "saved_model.pb")
+        if not os.path.exists(saved_model_pb):
+            self.skipTest(f"saved_model.pb not found in {self.model_path}")
+            
+        # Check if the protobuf file is readable
         try:
-            # Try to load the model
-            if os.path.exists(self.model_path):
-                # Set TensorFlow to use CPU only in tests
-                os.environ['CUDA_VISIBLE_DEVICES'] = ''
-                os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
-                self.model = get_model(self.model_path)
-            else:
-                self.skipTest(f"Model not found at {self.model_path}")
+            with open(saved_model_pb, 'rb') as f:
+                # Try to read first few bytes to verify file integrity
+                header = f.read(100)
+                if len(header) == 0:
+                    self.skipTest(f"saved_model.pb appears to be empty")
         except Exception as e:
-            self.skipTest(f"Failed to load model: {str(e)}")
+            self.skipTest(f"Cannot read saved_model.pb: {e}")
+            
+        # Check variables directory
+        variables_dir = os.path.join(self.model_path, "variables")
+        if not os.path.exists(variables_dir):
+            self.skipTest(f"Model variables directory not found in {self.model_path}")
+        
+        try:
+            print(f"\nTesting TensorFlow on {platform.system()} {platform.release()}")
+            print(f"TensorFlow version: {tf.__version__}")
+            print(f"Python version: {platform.python_version()}")
+            
+            # Try to load the model with error handling
+            self.model = get_model(str(self.model_path))
+            print("✓ TensorFlow model initialized successfully in setUp")
+            
+        except ImportError as e:
+            self.skipTest(f"Missing TensorFlow dependencies: {e}")
+        except Exception as e:
+            error_msg = str(e)
+            
+            # Provide specific guidance for common Linux issues
+            if platform.system() == 'Linux' and 'protobuf' in error_msg.lower():
+                self.skipTest(f"Protobuf compatibility issue on Linux. "
+                             f"Consider upgrading protobuf or using tensorflow-cpu. Error: {e}")
+            elif 'parse' in error_msg.lower() and 'message' in error_msg.lower():
+                self.skipTest(f"Model file parsing error, likely protobuf version mismatch. "
+                             f"Model may need to be regenerated. Error: {e}")
+            else:
+                self.skipTest(f"Failed to load model: {str(e)}")
 
     def test_class_prediction_normal(self):
         """
@@ -61,12 +114,12 @@ class TestTFClassifier(unittest.TestCase):
 
         This test checks if the function raises a FileNotFoundError when given an empty input directory.
         """
-        empty_dir = Path(__file__).parent / ".." / "testdata" / "empty_dir"
-        Path(empty_dir).mkdir(parents=True, exist_ok=True)
+        empty_dir = self.testdata_dir / "empty_dir"
+        empty_dir.mkdir(parents=True, exist_ok=True)
 
         # Check that FileNotFoundError is raised
         with self.assertRaises(FileNotFoundError):
-            class_prediction(self.model, self.classes, empty_dir, self.outdir)
+            class_prediction(self.model, self.classes, str(empty_dir), str(self.outdir))
 
     def test_create_dirs(self):
         """

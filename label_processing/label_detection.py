@@ -13,6 +13,8 @@ from detecto.core import Model
 import pickle
 
 import warnings
+import platform
+import sys
 
 # Suppress torchvision deprecation warnings from detecto library
 warnings.filterwarnings('ignore', message='The parameter \'pretrained\' is deprecated.*')
@@ -81,16 +83,19 @@ class PredictLabel():
         
         print("Loading model from:", self.path_to_model)
         
+        # Set environment for cross-platform compatibility
+        self._setup_cross_platform_environment()
+        
         # Try multiple loading strategies for cross-platform compatibility
         loading_strategies = [
-            # Strategy 1: Direct detecto loading
+            # Strategy 1: PyTorch 2.6+ compatible loading with weights_only=False
+            lambda: self._load_pytorch_2_6_compatible(),
+            # Strategy 2: Direct detecto loading (legacy)
             lambda: Model.load(self.path_to_model, self.classes),
-            # Strategy 2: Force CPU loading (for CUDA/CPU mismatch issues)
+            # Strategy 3: Force CPU loading (for CUDA/CPU mismatch issues)
             lambda: self._load_with_cpu_fallback(),
-            # Strategy 3: Force weights_only=False (for corrupted pickle issues)
+            # Strategy 4: Force weights_only=False (for corrupted pickle issues)
             lambda: self._load_with_weights_only_false(),
-            # Strategy 4: Load with weights_only=True (for newer PyTorch versions)
-            lambda: self._load_with_weights_only(),
             # Strategy 5: Pickle protocol fallback
             lambda: self._load_with_pickle_protocol(),
         ]
@@ -111,11 +116,101 @@ class PredictLabel():
         print(f"All loading strategies failed. Last error: {last_error}")
         raise last_error
     
+    def _setup_cross_platform_environment(self):
+        """Setup environment variables for cross-platform compatibility."""
+        import platform
+        
+        # Force CPU-only execution to avoid CUDA issues on Linux servers
+        os.environ['CUDA_VISIBLE_DEVICES'] = ''
+        
+        # Set multiprocessing start method for Linux compatibility
+        if platform.system() == 'Linux':
+            try:
+                mp.set_start_method('spawn', force=True)
+            except RuntimeError:
+                # Method already set, ignore
+                pass
+        
+        # Set PyTorch thread limits for stable performance
+        torch.set_num_threads(1)
+        
+        # Disable MKL optimizations that can cause issues on some Linux distributions
+        if platform.system() == 'Linux':
+            os.environ['OMP_NUM_THREADS'] = '1'
+            os.environ['MKL_NUM_THREADS'] = '1'
+            os.environ['NUMEXPR_NUM_THREADS'] = '1'
+    
+    def _load_pytorch_2_6_compatible(self):
+        """PyTorch 2.6+ compatible loading with explicit weights_only=False."""
+        try:
+            # PyTorch 2.6+ requires explicit weights_only=False for models with custom objects
+            # This is the most direct fix for the "Unsupported operand 118" error
+            print("Attempting PyTorch 2.6+ compatible loading with weights_only=False")
+            
+            # Monkey-patch torch.load to always use weights_only=False
+            original_torch_load = torch.load
+            
+            def patched_load(*args, **kwargs):
+                kwargs['weights_only'] = False
+                return original_torch_load(*args, **kwargs)
+            
+            # Temporarily replace torch.load
+            torch.load = patched_load
+            
+            try:
+                # Use detecto's built-in loading with patched torch.load
+                model = Model.load(self.path_to_model, self.classes)
+                return model
+            finally:
+                # Restore original torch.load
+                torch.load = original_torch_load
+                
+        except Exception as e:
+            print(f"PyTorch 2.6 compatible loading failed: {e}")
+            # Fallback to manual loading with weights_only=False
+            return self._load_with_manual_weights_only_false()
+    
+    def _load_with_manual_weights_only_false(self):
+        """Manual loading with weights_only=False and proper error handling."""
+        try:
+            print("Attempting manual loading with weights_only=False")
+            # Force weights_only=False with explicit error handling for corrupted files
+            state_dict = torch.load(self.path_to_model, map_location='cpu', weights_only=False)
+            
+            # Create a new model instance
+            model = Model(self.classes)
+            
+            # Handle different possible state dict formats
+            if isinstance(state_dict, dict):
+                # If it's a plain state dict
+                try:
+                    model.model.load_state_dict(state_dict, strict=False)
+                except Exception:
+                    # Try alternative model attribute
+                    model._model.load_state_dict(state_dict, strict=False)
+            else:
+                # If it's a model object, extract state dict
+                if hasattr(state_dict, 'state_dict'):
+                    actual_state_dict = state_dict.state_dict()
+                    try:
+                        model.model.load_state_dict(actual_state_dict, strict=False)
+                    except Exception:
+                        model._model.load_state_dict(actual_state_dict, strict=False)
+                else:
+                    raise Exception(f"Unknown model format: {type(state_dict)}")
+            
+            print("Manual loading successful")
+            return model
+            
+        except Exception as e:
+            print(f"Manual weights_only=False loading failed: {e}")
+            raise e
+    
     def _load_with_cpu_fallback(self):
         """Load model with CPU map_location to handle CUDA/CPU mismatches."""
         try:
-            # First load the state dict to CPU
-            state_dict = torch.load(self.path_to_model, map_location='cpu')
+            # First try with weights_only=False to handle PyTorch 2.6+ compatibility
+            state_dict = torch.load(self.path_to_model, map_location='cpu', weights_only=False)
             # Create a new model instance and load the state dict
             model = Model(self.classes)
             # Handle potential state dict key mismatches
@@ -179,7 +274,8 @@ class PredictLabel():
     def _load_with_basic_torch(self):
         """Most basic torch loading as last resort."""
         # Just load the state dict and create a minimal wrapper
-        state_dict = torch.load(self.path_to_model, map_location=torch.device('cpu'))
+        # Use weights_only=False for PyTorch 2.6+ compatibility
+        state_dict = torch.load(self.path_to_model, map_location=torch.device('cpu'), weights_only=False)
         
         # Try to create a detecto model the most basic way possible
         try:

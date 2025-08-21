@@ -182,15 +182,21 @@ sudo apt install build-essential python3-dev  # Ubuntu/Debian
 
 ### Model Loading Issues
 
-**Problem: "invalid load key, 'v'" or "Model loading failed"**
+**Problem: "invalid load key, 'v'" or "Unsupported operand 118" (PyTorch 2.6+)**
 
-This is typically a CUDA/CPU compatibility issue. The improved model loading code in the label_processing package automatically handles this by trying multiple loading strategies:
+This error occurs with PyTorch 2.6+ due to security changes in `torch.load()`. The package automatically handles this with improved loading strategies:
 
-- Normal PyTorch loading
-- CPU fallback with map_location='cpu'
-- weights_only mode for newer PyTorch versions
+1. **PyTorch 2.6+ Compatible Loading** - Uses `weights_only=False` with smart monkey-patching
+2. **CPU/CUDA Fallback** - Handles device mismatches across platforms
+3. **Legacy Support** - Maintains compatibility with older PyTorch versions
+4. **Error Recovery** - 5 different loading strategies for maximum compatibility
 
-This should resolve cross-platform model loading issues automatically.
+The system automatically detects your PyTorch version and uses the appropriate loading method. No manual intervention required.
+
+**Cross-Platform Compatibility:**
+- **Linux** (including PyTorch 2.6+)
+- **macOS** (all PyTorch versions)
+- **Windows** (via Docker or WSL2)
 
 **Problem: "CUDA out of memory"**
 
@@ -310,12 +316,31 @@ sudo usermod -aG docker $USER
 **Environment Variables:**
 
 ```bash
-# Set custom model paths
-export DETECTION_MODEL_PATH="/path/to/custom/model.pth"
-export TESSERACT_CMD="/usr/local/bin/tesseract"
+# Override default paths (optional)
+export ENTOMOLOGICAL_PROJECT_ROOT="/custom/path/to/project"
+export ENTOMOLOGICAL_MODELS_DIR="/custom/models/path"
+export ENTOMOLOGICAL_DETECTION_MODEL_PATH="/custom/detection/model.pth"
 
-# OCR language configuration
+# System configuration
+export TESSERACT_CMD="/usr/local/bin/tesseract"
 export TESSERACT_LANG="eng+fra+deu"  # Multiple languages
+```
+
+**Path Configuration:**
+
+The package uses centralized path configuration through `label_processing/config.py` that automatically:
+- **Detects project root** by looking for `pyproject.toml`, `.git`, or `models/` directory
+- **Works from any directory** - scripts can be run from anywhere
+- **Handles different users** - no hardcoded user paths like `/home/username/`
+- **Supports environment overrides** - can customize paths if needed
+
+```python
+# In your code, paths are automatically resolved:
+from label_processing.config import config, get_model_path
+
+# Get dynamically resolved paths
+model_path = get_model_path("detection")  # Auto-finds the model
+test_data = config.test_data_dir / "uncropped" / "image.jpg"
 ```
 
 **Custom Model Training:**
@@ -460,8 +485,6 @@ python3 scripts/processing/vision.py [options]
 
 **Supported Input Formats:**
 - JPEG (.jpg, .jpeg) - Recommended
-- PNG (.png) - Supported
-- TIFF (.tiff, .tif) - Supported
 
 **Output Formats:**
 - CSV files for tabular data

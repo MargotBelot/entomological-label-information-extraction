@@ -7,6 +7,8 @@ from pathlib import Path
 import tensorflow as tf
 from tensorflow import keras
 import warnings
+import platform
+import sys
 
 # Import the necessary module from the 'label_processing' module package
 from label_processing import utils
@@ -20,7 +22,7 @@ warnings.filterwarnings('ignore')
 
 def get_model(path_to_model: str) -> tf.keras.Sequential:
     """
-    Load a trained Keras Sequential image classifier model.
+    Load a trained Keras Sequential image classifier model with cross-platform compatibility.
 
     Args:
         path_to_model (str): Path to the model file.
@@ -29,8 +31,39 @@ def get_model(path_to_model: str) -> tf.keras.Sequential:
         model (tf.keras.Sequential): Trained Keras Sequential image classifier model.
     """
     print("\nCalling classification model")
-    model = tf.keras.models.load_model(path_to_model)
-    return model
+    
+    # Set up cross-platform environment
+    _setup_tensorflow_cross_platform_environment()
+    
+    # Try multiple loading strategies for cross-platform compatibility
+    loading_strategies = [
+        # Strategy 1: Standard TensorFlow loading
+        lambda: tf.keras.models.load_model(path_to_model),
+        # Strategy 2: Loading with compile=False to avoid optimizer issues
+        lambda: tf.keras.models.load_model(path_to_model, compile=False),
+        # Strategy 3: Loading with custom options for protobuf compatibility
+        lambda: _load_with_protobuf_compatibility(path_to_model),
+        # Strategy 4: Loading with SavedModel format explicitly
+        lambda: _load_with_saved_model_format(path_to_model),
+    ]
+    
+    last_error = None
+    for i, strategy in enumerate(loading_strategies, 1):
+        try:
+            print(f"Trying TensorFlow loading strategy {i}...")
+            model = strategy()
+            print("TensorFlow model loaded successfully")
+            return model
+        except Exception as e:
+            print(f"TensorFlow strategy {i} failed: {e}")
+            last_error = e
+            continue
+    
+    # If all strategies fail, raise the last error with helpful message
+    print(f"All TensorFlow loading strategies failed. Last error: {last_error}")
+    raise Exception(f"Failed to load TensorFlow model from {path_to_model}. "
+                   f"This might be due to protobuf version incompatibility or "
+                   f"model corruption. Last error: {last_error}")
 
 def class_prediction(model: tf.keras.Sequential, class_names: list, jpg_dir: str, out_dir=None) -> pd.DataFrame:
     """
@@ -134,3 +167,104 @@ def filter_pictures(jpg_dir: Path, dataframe: pd.DataFrame, out_dir: Path = Path
             filename = make_file_name(label_id, pic_class)
             rename_picture(image_raw, out_dir, filename, pic_class)
     print(f"\nThe images have been successfully saved in {out_dir}")
+
+
+#--------------------------------Cross-Platform Compatibility--------------------------------#
+
+
+def _setup_tensorflow_cross_platform_environment():
+    """Setup TensorFlow environment for cross-platform compatibility."""
+    # Force CPU-only execution to avoid CUDA/GPU issues
+    os.environ['CUDA_VISIBLE_DEVICES'] = ''
+    os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'  # Suppress TensorFlow logs
+    
+    # Linux-specific optimizations
+    if platform.system() == 'Linux':
+        # Disable problematic optimizations on Linux
+        os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
+        os.environ['OMP_NUM_THREADS'] = '1'
+        os.environ['MKL_NUM_THREADS'] = '1'
+        os.environ['NUMEXPR_NUM_THREADS'] = '1'
+        
+        # Configure TensorFlow for better Linux compatibility
+        tf.config.set_visible_devices([], 'GPU')  # Force CPU usage
+        
+        # Set memory growth for any GPU that might be detected
+        try:
+            gpus = tf.config.experimental.list_physical_devices('GPU')
+            if gpus:
+                for gpu in gpus:
+                    tf.config.experimental.set_memory_growth(gpu, True)
+        except:
+            pass  # Ignore if GPU configuration fails
+
+def _load_with_protobuf_compatibility(path_to_model: str) -> tf.keras.Sequential:
+    """Load model with protobuf compatibility fixes for Linux.
+    Arg: 
+        path_to_model (str): Path to the model file.
+    Returns:
+        model (tf.keras.Sequential): Loaded Keras Sequential model.
+    """
+    try:
+        # Try to load with specific protobuf handling
+        import google.protobuf.message
+        
+        # Set protobuf message size limits for large models
+        google.protobuf.message.Message.SetAllowOversizeProtos(True)
+        
+        # Load with explicit options
+        model = tf.keras.models.load_model(
+            path_to_model,
+            compile=False,
+            custom_objects=None,
+            options=tf.saved_model.LoadOptions(experimental_io_device='/job:localhost')
+        )
+        
+        return model
+    except Exception as e:
+        raise Exception(f"Protobuf compatibility loading failed: {e}")
+
+def _load_with_saved_model_format(path_to_model: str) -> tf.keras.Sequential:
+    """Load model using explicit SavedModel format.
+    Args:        
+        path_to_model (str): Path to the model file.
+    Returns:
+        model (tf.keras.Sequential): Loaded Keras Sequential model or a wrapper."""
+    try:
+        # Load using tf.saved_model API directly
+        imported = tf.saved_model.load(path_to_model)
+        
+        # Convert to Keras model if possible
+        if hasattr(imported, 'signatures'):
+            # Try to get the serving signature
+            if 'serving_default' in imported.signatures:
+                # Wrap in a Keras model-like interface
+                signature = imported.signatures['serving_default']
+                
+                class SavedModelWrapper:
+                    def __init__(self, signature_fn):
+                        self.signature_fn = signature_fn
+                    
+                    def predict(self, x):
+                        # Convert numpy array to tensor if needed
+                        if isinstance(x, np.ndarray):
+                            x = tf.convert_to_tensor(x, dtype=tf.float32)
+                        
+                        # Call the signature function
+                        result = self.signature_fn(x)
+                        
+                        # Return numpy array for compatibility
+                        if isinstance(result, dict):
+                            # Get the first output if multiple outputs
+                            output_key = list(result.keys())[0]
+                            return result[output_key].numpy()
+                        else:
+                            return result.numpy()
+                
+                return SavedModelWrapper(signature)
+        
+        # If no serving signature, try to use the model directly
+        return imported
+        
+    except Exception as e:
+        raise Exception(f"SavedModel format loading failed: {e}")
