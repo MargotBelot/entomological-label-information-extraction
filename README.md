@@ -4,6 +4,26 @@
 
 This package automatically extracts and digitizes text information from entomological (insect) specimen labels using artificial intelligence.
 
+## Table of Contents
+- [Entomological Label Information Extraction](#entomological-label-information-extraction)
+  - [Table of Contents](#table-of-contents)
+  - [What This Tool Does](#what-this-tool-does)
+  - [Pipeline Workflow](#pipeline-workflow)
+    - [**Pipeline Modules Explained**](#pipeline-modules-explained)
+      - [**1. 🔍 Label Detection**](#1--label-detection)
+      - [**2. 🏷️ Empty Label Classification**](#2-️-empty-label-classification)
+      - [**3. 🎯 Identifier Classification**](#3--identifier-classification)
+      - [**4. ✍️ Handwritten/Printed Classification**](#4-️-handwrittenprinted-classification)
+      - [**5. 🔄 Rotation Correction** _(Single-Label Pipeline Only)_](#5--rotation-correction-single-label-pipeline-only)
+      - [**6. 📝 Text Extraction (OCR)**](#6--text-extraction-ocr)
+      - [**7. ⚙️ Post-processing**](#7-️-post-processing)
+    - [**Final Output**](#final-output)
+  - [Documentation](#documentation)
+  - [Repository Structure](#repository-structure)
+  - [Testing \& Compatibility](#testing--compatibility)
+  - [Datasets](#datasets)
+  - [License](#license)
+
 ## What This Tool Does
 
 **The Problem:** Museums and researchers have millions of insect specimens with handwritten and printed labels that contain valuable scientific data, but manually transcribing this information is extremely time-consuming.
@@ -13,17 +33,6 @@ This package automatically extracts and digitizes text information from entomolo
 - 🤖 **Reads the text** using computer vision
 - 📊 **Organizes the data** into spreadsheets
 - ⚡ **Processes thousands** of specimens quickly
-
-```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Specimen      │───▶│   AI Pipeline   │───▶│  Structured     │
-│   Photos        │    │   Processing    │    │  Data (CSV)     │
-│                 │    │                 │    │                 │
-│ 📷 IMG_001.jpg  │    │ 🤖 Detection    │    │ 📊 Species data │
-│ 📷 IMG_002.jpg  │    │ 🤖 Recognition  │    │ 📊 Location data│
-│ 📷 IMG_003.jpg  │    │ 🤖 Extraction   │    │ 📊 Date data    │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-```
 
 **Real-World Impact:**
 - ⏱️ **Time Savings:** Process 1000s of specimens in hours
