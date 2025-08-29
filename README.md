@@ -91,8 +91,12 @@ flowchart TD
     %% Quality Metrics
     U1 --> V1[📈 Quality Metrics<br/>• Detection Confidence<br/>• Classification Probabilities<br/>• OCR Statistics]
     
-    %% Optional Clustering Evaluation (separate tool)
-    U1 -.->|Optional| W1[🎯 Clustering Analysis<br/>Word2Vec + t-SNE<br/>cluster_eval.py]
+    %% Final Stage: Clustering Analysis
+    U1 --> W1[🎯 Clustering Analysis<br/>Word2Vec + t-SNE + K-medoids<br/>cluster_eval.py]
+    
+    %% Complete Analysis
+    V1 --> X1[📋 Complete Analysis<br/>Ready for Research]
+    W1 --> X1
     
     %% Styling
     classDef input fill:#e1f5fe,stroke:#0277bd,stroke-width:2px
@@ -111,6 +115,7 @@ flowchart TD
     class G,I,K decision
     class H filtered
     class W1 analysis
+    class X1 final
 ```
 
 ### **Pipeline Modules Explained**
