@@ -85,20 +85,14 @@ flowchart TD
     L1 --> T1
     
     %% Final Outputs
-    T1 --> U1[📊 Final Outputs<br/>• identifier.csv<br/>• corrected_transcripts.json<br/>• plausible_transcripts.json]
+    T1 --> U1[📊 Final Outputs<br/>• identifier.csv<br/>• corrected_transcripts.json<br/>• plausible_transcripts.json<br/>• empty_transcripts.csv]
     E --> U1
     
-    %% Analysis and Clustering
-    U1 --> V1[🔬 Text Analysis<br/>Word2Vec Embeddings]
-    V1 --> W1[🎯 Semantic Clustering<br/>t-SNE Visualization]
+    %% Quality Metrics
+    U1 --> V1[📈 Quality Metrics<br/>• Detection Confidence<br/>• Classification Probabilities<br/>• OCR Statistics]
     
-    %% Quality Metrics and Evaluation
-    U1 --> X1[📈 Quality Metrics<br/>• Detection Confidence<br/>• Classification Probabilities<br/>• OCR Statistics]
-    W1 --> Y1[📊 Cluster Evaluation<br/>• Cluster Quality<br/>• Label Similarity<br/>• Visual Analysis]
-    
-    %% Final Analysis Output
-    X1 --> Z1[📋 Complete Analysis<br/>Ready for Research]
-    Y1 --> Z1
+    %% Optional Clustering Evaluation (separate tool)
+    U1 -.->|Optional| W1[🎯 Clustering Analysis<br/>Word2Vec + t-SNE<br/>cluster_eval.py]
     
     %% Styling
     classDef input fill:#e1f5fe,stroke:#0277bd,stroke-width:2px
@@ -112,12 +106,11 @@ flowchart TD
     
     class A input
     class B,O pipeline
-    class C,N,P,Q,T1,V1 process
-    class D,E,F,J,L,M,L1,R,S,U1,X1 output
+    class C,N,P,Q,T1 process
+    class D,E,F,J,L,M,L1,R,S,U1,V1 output
     class G,I,K decision
     class H filtered
-    class W1,Y1 analysis
-    class Z1 final
+    class W1 analysis
 ```
 
 ### **Pipeline Modules Explained**
