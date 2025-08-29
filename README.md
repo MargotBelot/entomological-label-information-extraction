@@ -51,7 +51,7 @@ flowchart TD
     
     %% Multi-Label Detection Path
     C --> E[📊 Detection Results<br/>input_predictions.csv]
-    C --> F[🖼️ Cropped Labels<br/>input_cropped/]
+    C --> F[🖼️ Cropped Labels<br/>input_cropped/<br/>MLI → SLI Conversion]
     
     %% Merge paths for classification
     F --> G{🏷️ Empty Label<br/>Classification}
@@ -66,6 +66,9 @@ flowchart TD
     
     K -->|Handwritten| L[✍️ Handwritten Labels<br/>handwritten/]
     K -->|Printed| M[🖨️ Printed Labels<br/>printed/]
+    
+    %% Manual transcription for handwritten
+    L --> L1[👤 Manual Transcription<br/>Human Expert Review]
     
     %% Pipeline Split for OCR Processing
     M --> N{🔄 Pipeline Branch}
@@ -85,22 +88,14 @@ flowchart TD
     
     S1 --> T1[⚙️ Post-processing<br/>Clean & Structure]
     S2 --> T1
+    L1 --> T1
     
     %% Final Outputs
-    T1 --> U1[📊 Final Dataset<br/>final_processed_data.csv]
+    T1 --> U1[📊 Final Outputs<br/>• identifier.csv<br/>• corrected_transcripts.json<br/>• plausible_transcripts.json]
     E --> U1
     
-    %% Analysis and Clustering
-    U1 --> V1[🔬 Text Analysis<br/>Word2Vec Embeddings]
-    V1 --> W1[🎯 Semantic Clustering<br/>t-SNE Visualization]
-    
-    %% Quality Metrics and Evaluation
-    U1 --> X1[📈 Quality Metrics<br/>• Detection Confidence<br/>• Classification Probabilities<br/>• OCR Statistics]
-    W1 --> Y1[📊 Cluster Evaluation<br/>• Cluster Quality<br/>• Label Similarity<br/>• Visual Analysis]
-    
-    %% Final Analysis Output
-    X1 --> Z1[📋 Complete Analysis<br/>Ready for Research]
-    Y1 --> Z1
+    %% Quality Metrics
+    U1 --> V1[📈 Quality Metrics<br/>• Detection Confidence<br/>• Classification Probabilities<br/>• OCR Statistics]
     
     %% Styling
     classDef input fill:#e1f5fe,stroke:#0277bd,stroke-width:2px
@@ -114,12 +109,10 @@ flowchart TD
     
     class A input
     class B,N,P,Q pipeline
-    class C,O,T1,V1 process
-    class D,E,F,J,L,M,R1,R2,R3,R4,S1,S2,U1,X1 output
+    class C,O,T1 process
+    class D,E,F,J,L,M,L1,R1,R2,R3,R4,S1,S2,U1,V1 output
     class G,I,K decision
     class H filtered
-    class W1,Y1 analysis
-    class Z1 final
 ```
 
 ### **Pipeline Modules Explained**
