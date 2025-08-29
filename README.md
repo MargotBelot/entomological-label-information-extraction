@@ -42,7 +42,56 @@ This package automatically extracts and digitizes text information from entomolo
 
 ## Pipeline Workflow
 
-![ELIE Pipeline Flowchart](docs/images/pipeline_flowchart.png)
+```mermaid
+flowchart TD
+    %% Input
+    A[📸 Specimen Images<br/>JPG Format] --> B[🔍 Label Detection<br/>YOLO PyTorch]
+    
+    %% Detection Results
+    B --> C[📊 Detection Results<br/>input_predictions.csv]
+    B --> D[🖼️ Cropped Labels<br/>input_cropped/]
+    
+    %% Classification Pipeline
+    D --> E{🏷️ Empty Label<br/>Classification}
+    E -->|Empty| F[❌ Filtered Out<br/>empty/]
+    E -->|Not Empty| G{🎯 Identifier<br/>Classification}
+    
+    G -->|Identifier| H[🆔 QR Codes<br/>identifier/]
+    G -->|Not Identifier| I{✍️ Text Type<br/>Classification}
+    
+    I -->|Handwritten| J[✍️ Handwritten Labels<br/>handwritten/]
+    I -->|Printed| K[🖨️ Printed Labels<br/>printed/]
+    
+    %% Single-Label Pipeline Only
+    K --> L{🔄 Rotation Check<br/>Single-Label Only}
+    L -->|Needs Rotation| M[🔄 Rotation Correction<br/>rotated/]
+    L -->|No Rotation| N[📝 OCR Processing]
+    M --> N
+    
+    %% OCR and Processing
+    N --> O[📄 Raw OCR Results<br/>ocr_preprocessed.json]
+    O --> P[⚙️ Post-processing<br/>Clean & Structure]
+    
+    %% Final Outputs
+    P --> Q[📊 Final Dataset<br/>final_processed_data.csv]
+    C --> Q
+    
+    %% Quality Metrics
+    Q --> R[📈 Quality Metrics<br/>• Detection Confidence<br/>• Classification Probabilities<br/>• OCR Statistics]
+    
+    %% Styling
+    classDef input fill:#e1f5fe,stroke:#0277bd,stroke-width:2px
+    classDef process fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    classDef output fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px
+    classDef decision fill:#fff3e0,stroke:#ef6c00,stroke-width:2px
+    classDef filtered fill:#ffebee,stroke:#c62828,stroke-width:2px
+    
+    class A input
+    class B,L,M,N,P process
+    class C,D,H,J,K,O,Q,R output
+    class E,G,I decision
+    class F filtered
+```
 
 ### **Pipeline Modules Explained**
 
