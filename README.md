@@ -84,19 +84,18 @@ flowchart TD
     S --> T1
     L1 --> T1
     
+    %% Clustering Analysis (immediately after post-processing)
+    T1 --> W1[🎯 Clustering Analysis<br/>Word2Vec + t-SNE + K-medoids<br/>cluster_eval.py]
+    
     %% Final Outputs
-    T1 --> U1[📊 Final Outputs<br/>• identifier.csv<br/>• corrected_transcripts.json<br/>• plausible_transcripts.json<br/>• empty_transcripts.csv]
+    W1 --> U1[📊 Final Outputs<br/>• identifier.csv<br/>• corrected_transcripts.json<br/>• plausible_transcripts.json<br/>• empty_transcripts.csv]
     E --> U1
     
     %% Quality Metrics
     U1 --> V1[📈 Quality Metrics<br/>• Detection Confidence<br/>• Classification Probabilities<br/>• OCR Statistics]
     
-    %% Final Stage: Clustering Analysis
-    U1 --> W1[🎯 Clustering Analysis<br/>Word2Vec + t-SNE + K-medoids<br/>cluster_eval.py]
-    
     %% Complete Analysis
     V1 --> X1[📋 Complete Analysis<br/>Ready for Research]
-    W1 --> X1
     
     %% Styling
     classDef input fill:#e1f5fe,stroke:#0277bd,stroke-width:2px
