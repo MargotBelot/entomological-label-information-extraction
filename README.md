@@ -70,24 +70,18 @@ flowchart TD
     %% Manual transcription for handwritten
     L --> L1[👤 Manual Transcription<br/>Human Expert Review]
     
-    %% Pipeline Split for OCR Processing
+    %% Pipeline Split for OCR Processing  
     M --> N{🔄 Pipeline Branch}
     N -->|Single-Label Pipeline| O[🔄 Rotation Correction<br/>rotated/]
-    N -->|Multi-Label Pipeline| P{📝 OCR Method}
+    N -->|Multi-Label Pipeline| P[🔧 Tesseract OCR<br/>Direct Processing]
     
-    O --> Q{📝 OCR Method}
-    P -->|Tesseract| R1[🔧 Tesseract OCR<br/>Local Processing]
-    P -->|Google Vision| R2[☁️ Google Vision API<br/>Cloud Processing]
-    Q -->|Tesseract| R3[🔧 Tesseract OCR<br/>Local Processing]
-    Q -->|Google Vision| R4[☁️ Google Vision API<br/>Cloud Processing]
+    O --> Q[🔧 Tesseract OCR<br/>After Rotation]
     
-    R1 --> S1[📄 OCR Results<br/>ocr_preprocessed.json]
-    R2 --> S2[📄 OCR Results<br/>ocr_google_vision.json]
-    R3 --> S1
-    R4 --> S2
+    %% OCR Results
+    P --> R[📄 OCR Results<br/>ocr_preprocessed.json]
+    Q --> R
     
-    S1 --> T1[⚙️ Post-processing<br/>Clean & Structure]
-    S2 --> T1
+    R --> T1[⚙️ Post-processing<br/>Clean & Structure]
     L1 --> T1
     
     %% Final Outputs
@@ -108,9 +102,9 @@ flowchart TD
     classDef final fill:#f1f8e9,stroke:#388e3c,stroke-width:3px
     
     class A input
-    class B,N,P,Q pipeline
-    class C,O,T1 process
-    class D,E,F,J,L,M,L1,R1,R2,R3,R4,S1,S2,U1,V1 output
+    class B,N pipeline
+    class C,O,P,Q,T1 process
+    class D,E,F,J,L,M,L1,R,U1,V1 output
     class G,I,K decision
     class H filtered
 ```
