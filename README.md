@@ -88,7 +88,7 @@ flowchart TD
     T1 --> W1[🎯 Clustering Analysis<br/>Word2Vec + t-SNE + K-medoids<br/>cluster_eval.py]
     
     %% Final Outputs
-    W1 --> U1[📊 Final Outputs<br/>• identifier.csv<br/>• corrected_transcripts.json<br/>• plausible_transcripts.json<br/>• empty_transcripts.csv]
+    W1 --> U1[📊 Final Outputs<br/>• identifier.csv <br/>•corrected_transcripts.json<br/>• plausible_transcripts.json<br/>• empty_transcripts.csv]
     E --> U1
     
     %% Quality Metrics
