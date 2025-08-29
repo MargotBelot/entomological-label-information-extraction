@@ -44,53 +44,82 @@ This package automatically extracts and digitizes text information from entomolo
 
 ```mermaid
 flowchart TD
-    %% Input
-    A[📸 Specimen Images<br/>JPG Format] --> B[🔍 Label Detection<br/>YOLO PyTorch]
+    %% Input and Pipeline Selection
+    A[📸 Specimen Images<br/>JPG Format] --> B{📋 Pipeline Type}
+    B -->|Multi-Label Images| C[🔍 Label Detection<br/>YOLO PyTorch]
+    B -->|Single-Label Images| D[🖼️ Pre-cropped Labels<br/>SLI Input]
     
-    %% Detection Results
-    B --> C[📊 Detection Results<br/>input_predictions.csv]
-    B --> D[🖼️ Cropped Labels<br/>input_cropped/]
+    %% Multi-Label Detection Path
+    C --> E[📊 Detection Results<br/>input_predictions.csv]
+    C --> F[🖼️ Cropped Labels<br/>input_cropped/]
     
-    %% Classification Pipeline
-    D --> E{🏷️ Empty Label<br/>Classification}
-    E -->|Empty| F[❌ Filtered Out<br/>empty/]
-    E -->|Not Empty| G{🎯 Identifier<br/>Classification}
+    %% Merge paths for classification
+    F --> G{🏷️ Empty Label<br/>Classification}
+    D --> G
     
-    G -->|Identifier| H[🆔 QR Codes<br/>identifier/]
-    G -->|Not Identifier| I{✍️ Text Type<br/>Classification}
+    %% Common Classification Pipeline
+    G -->|Empty| H[❌ Filtered Out<br/>empty/]
+    G -->|Not Empty| I{🎯 Identifier<br/>Classification}
     
-    I -->|Handwritten| J[✍️ Handwritten Labels<br/>handwritten/]
-    I -->|Printed| K[🖨️ Printed Labels<br/>printed/]
+    I -->|Identifier| J[🆔 QR Codes<br/>identifier/]
+    I -->|Not Identifier| K{✍️ Text Type<br/>Classification}
     
-    %% Single-Label Pipeline Only
-    K --> L{🔄 Rotation Check<br/>Single-Label Only}
-    L -->|Needs Rotation| M[🔄 Rotation Correction<br/>rotated/]
-    L -->|No Rotation| N[📝 OCR Processing]
-    M --> N
+    K -->|Handwritten| L[✍️ Handwritten Labels<br/>handwritten/]
+    K -->|Printed| M[🖨️ Printed Labels<br/>printed/]
     
-    %% OCR and Processing
-    N --> O[📄 Raw OCR Results<br/>ocr_preprocessed.json]
-    O --> P[⚙️ Post-processing<br/>Clean & Structure]
+    %% Pipeline Split for OCR Processing
+    M --> N{🔄 Pipeline Branch}
+    N -->|Single-Label Pipeline| O[🔄 Rotation Correction<br/>rotated/]
+    N -->|Multi-Label Pipeline| P{📝 OCR Method}
+    
+    O --> Q{📝 OCR Method}
+    P -->|Tesseract| R1[🔧 Tesseract OCR<br/>Local Processing]
+    P -->|Google Vision| R2[☁️ Google Vision API<br/>Cloud Processing]
+    Q -->|Tesseract| R3[🔧 Tesseract OCR<br/>Local Processing]
+    Q -->|Google Vision| R4[☁️ Google Vision API<br/>Cloud Processing]
+    
+    R1 --> S1[📄 OCR Results<br/>ocr_preprocessed.json]
+    R2 --> S2[📄 OCR Results<br/>ocr_google_vision.json]
+    R3 --> S1
+    R4 --> S2
+    
+    S1 --> T1[⚙️ Post-processing<br/>Clean & Structure]
+    S2 --> T1
     
     %% Final Outputs
-    P --> Q[📊 Final Dataset<br/>final_processed_data.csv]
-    C --> Q
+    T1 --> U1[📊 Final Dataset<br/>final_processed_data.csv]
+    E --> U1
     
-    %% Quality Metrics
-    Q --> R[📈 Quality Metrics<br/>• Detection Confidence<br/>• Classification Probabilities<br/>• OCR Statistics]
+    %% Analysis and Clustering
+    U1 --> V1[🔬 Text Analysis<br/>Word2Vec Embeddings]
+    V1 --> W1[🎯 Semantic Clustering<br/>t-SNE Visualization]
+    
+    %% Quality Metrics and Evaluation
+    U1 --> X1[📈 Quality Metrics<br/>• Detection Confidence<br/>• Classification Probabilities<br/>• OCR Statistics]
+    W1 --> Y1[📊 Cluster Evaluation<br/>• Cluster Quality<br/>• Label Similarity<br/>• Visual Analysis]
+    
+    %% Final Analysis Output
+    X1 --> Z1[📋 Complete Analysis<br/>Ready for Research]
+    Y1 --> Z1
     
     %% Styling
     classDef input fill:#e1f5fe,stroke:#0277bd,stroke-width:2px
+    classDef pipeline fill:#fff8e1,stroke:#f57c00,stroke-width:3px
     classDef process fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
     classDef output fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px
     classDef decision fill:#fff3e0,stroke:#ef6c00,stroke-width:2px
     classDef filtered fill:#ffebee,stroke:#c62828,stroke-width:2px
+    classDef analysis fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
+    classDef final fill:#f1f8e9,stroke:#388e3c,stroke-width:3px
     
     class A input
-    class B,L,M,N,P process
-    class C,D,H,J,K,O,Q,R output
-    class E,G,I decision
-    class F filtered
+    class B,N,P,Q pipeline
+    class C,O,T1,V1 process
+    class D,E,F,J,L,M,R1,R2,R3,R4,S1,S2,U1,X1 output
+    class G,I,K decision
+    class H filtered
+    class W1,Y1 analysis
+    class Z1 final
 ```
 
 ### **Pipeline Modules Explained**
