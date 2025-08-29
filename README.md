@@ -70,26 +70,35 @@ flowchart TD
     %% Manual transcription for handwritten
     L --> L1[👤 Manual Transcription<br/>Human Expert Review]
     
-    %% Pipeline Split for OCR Processing  
-    M --> N{🔄 Pipeline Branch}
-    N -->|Single-Label Pipeline| O[🔄 Rotation Correction<br/>rotated/]
-    N -->|Multi-Label Pipeline| P[🔧 Tesseract OCR<br/>Direct Processing]
+    %% Single-Label Pipeline Only (MLI stops after detection)
+    M --> N[🔄 Rotation Correction<br/>rotated/]
     
-    O --> Q[🔧 Tesseract OCR<br/>After Rotation]
+    N --> O{📝 OCR Method}
+    O -->|Tesseract| P[🔧 Tesseract OCR<br/>Local Processing]
+    O -->|Google Vision| Q[☁️ Google Vision API<br/>Cloud Processing]
     
-    %% OCR Results
     P --> R[📄 OCR Results<br/>ocr_preprocessed.json]
-    Q --> R
+    Q --> S[📄 OCR Results<br/>ocr_google_vision.json]
     
     R --> T1[⚙️ Post-processing<br/>Clean & Structure]
+    S --> T1
     L1 --> T1
     
     %% Final Outputs
     T1 --> U1[📊 Final Outputs<br/>• identifier.csv<br/>• corrected_transcripts.json<br/>• plausible_transcripts.json]
     E --> U1
     
-    %% Quality Metrics
-    U1 --> V1[📈 Quality Metrics<br/>• Detection Confidence<br/>• Classification Probabilities<br/>• OCR Statistics]
+    %% Analysis and Clustering
+    U1 --> V1[🔬 Text Analysis<br/>Word2Vec Embeddings]
+    V1 --> W1[🎯 Semantic Clustering<br/>t-SNE Visualization]
+    
+    %% Quality Metrics and Evaluation
+    U1 --> X1[📈 Quality Metrics<br/>• Detection Confidence<br/>• Classification Probabilities<br/>• OCR Statistics]
+    W1 --> Y1[📊 Cluster Evaluation<br/>• Cluster Quality<br/>• Label Similarity<br/>• Visual Analysis]
+    
+    %% Final Analysis Output
+    X1 --> Z1[📋 Complete Analysis<br/>Ready for Research]
+    Y1 --> Z1
     
     %% Styling
     classDef input fill:#e1f5fe,stroke:#0277bd,stroke-width:2px
@@ -102,11 +111,13 @@ flowchart TD
     classDef final fill:#f1f8e9,stroke:#388e3c,stroke-width:3px
     
     class A input
-    class B,N pipeline
-    class C,O,P,Q,T1 process
-    class D,E,F,J,L,M,L1,R,U1,V1 output
+    class B,O pipeline
+    class C,N,P,Q,T1,V1 process
+    class D,E,F,J,L,M,L1,R,S,U1,X1 output
     class G,I,K decision
     class H filtered
+    class W1,Y1 analysis
+    class Z1 final
 ```
 
 ### **Pipeline Modules Explained**
