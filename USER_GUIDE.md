@@ -96,7 +96,39 @@ This guide shows you how to use the entomological label extraction tool with pra
 
 ## Prerequisites
 
-Before starting, make sure you have completed the installation process described in [TECHNICAL_GUIDE.md](TECHNICAL_GUIDE.md).
+To use this project, ensure the following are installed and set up. If you need detailed installation steps, see [TECHNICAL_GUIDE.md](TECHNICAL_GUIDE.md).
+
+**System Requirements:**
+- Python 3.9+ (required for running scripts locally or customizing the code)
+- Docker Desktop (required for the containerized pipelines)
+- 8GB+ RAM recommended for image processing and Docker
+- 2GB+ free disk space (more recommended for large batches)
+
+**Setup Options (choose one):**
+
+- Option 1: Docker-Only (Simplest)
+  - Install Docker Desktop and ensure it is running
+  - No local Python environment is required
+  - Use only the Docker Compose commands in this guide
+
+- Option 2: Mixed Development (Recommended for customization)
+  - Install Python 3.9+
+  - Create and activate the conda environment using the provided file:
+    - conda env create -f environment.yml
+    - conda activate entomological-label
+  - Install the package locally:
+    - pip install -e .
+  - Install and run Docker Desktop for the end-to-end pipelines
+  - This lets you run/verify Python scripts locally and then execute the full Docker pipeline
+
+- Option 3: Pure Python (Advanced users)
+  - Complete the Python setup as above (conda + pip install -e .)
+  - Run the individual scripts without Docker
+
+**Recommended order if you plan to use Docker but also customize code:**
+1) Set up and test the Python environment (environment.yml + pip install -e .)
+2) Verify a script runs locally on sample data
+3) Run the Docker pipeline
 
 ## Quick Start with Sample Data
 
