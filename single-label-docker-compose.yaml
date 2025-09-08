@@ -17,7 +17,7 @@ services:
       dockerfile: pipelines/empty_labels.dockerfile
     volumes:
       - ./data:/app/data
-    command: python3 analysis.py -o data/SLI/output -i data/SLI/input
+    command: python3 scripts/processing/analysis.py -o data/SLI/output -i data/SLI/input
 
   nuri_notnuri_classifier:
     stdin_open: true # docker run -i
