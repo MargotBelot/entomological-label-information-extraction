@@ -271,4 +271,4 @@ The training and testing datasets used for models development are publicly avail
 
 ## License
 
-MIT License - see LICENSE file for details
+MIT License - see [LICENSE](LICENSE) file for details
