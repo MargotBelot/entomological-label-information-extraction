@@ -4,18 +4,30 @@
 
 This package automatically extracts and digitizes text information from entomological (insect) specimen labels using artificial intelligence.
 
+## Quick Start
+
+**Easiest way to get started (recommended):**
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/[username]/entomological-label-information-extraction.git
+cd entomological-label-information-extraction
+
+# 2. Run the interactive pipeline launcher
+./run-pipeline.sh
+```
+
+That's it! The script will handle Docker setup, environment checks, and guide you through choosing the right pipeline for your data.
+
 ## Table of Contents
-- [Entomological Label Information Extraction](#entomological-label-information-extraction)
-  - [Table of Contents](#table-of-contents)
-  - [What This Tool Does](#what-this-tool-does)
-  - [Pipeline Workflow](#pipeline-workflow)
-    - [**Pipeline Overview**](#pipeline-overview)
-    - [**Key Outputs**](#key-outputs)
-  - [Documentation](#documentation)
-  - [Repository Structure](#repository-structure)
-  - [Testing \& Compatibility](#testing--compatibility)
-  - [Datasets](#datasets)
-  - [License](#license)
+- [Quick Start](#quick-start)
+- [What This Tool Does](#what-this-tool-does)
+- [Pipeline Workflow](#pipeline-workflow)
+- [Documentation](#documentation)
+- [Repository Structure](#repository-structure)
+- [Testing & Compatibility](#testing--compatibility)
+- [Datasets](#datasets)
+- [License](#license)
 
 ## What This Tool Does
 
@@ -78,15 +90,9 @@ flowchart TD
     S --> T1
     L1 --> T1
     
-    %% Clustering Analysis (immediately after post-processing)
-    T1 --> W1[Clustering Analysis<br/>Word2Vec + t-SNE + K-medoids<br/>cluster_eval.py]
-    
-    %% Final Outputs
-    W1 --> U1[Final Outputs<br/>• identifier.csv <br/>•corrected_transcripts.json<br/>• plausible_transcripts.json<br/>• empty_transcripts.csv]
-    E --> U1
-    
-    %% Quality Metrics
-    U1 --> V1[Quality Metrics<br/>• Detection Confidence<br/>• Classification Probabilities<br/>• OCR Statistics]
+    %% Final Outputs with Consolidation
+    T1 --> U1[Consolidation<br/>Link All Results]
+    U1 --> V1[Final Output<br/>consolidated_results.json]
     
     %% Complete Analysis
     V1 --> X1[Complete Analysis<br/>Ready for Research]
@@ -98,48 +104,56 @@ flowchart TD
     classDef output fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px
     classDef decision fill:#fff3e0,stroke:#ef6c00,stroke-width:2px
     classDef filtered fill:#ffebee,stroke:#c62828,stroke-width:2px
-    classDef analysis fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
     classDef final fill:#f1f8e9,stroke:#388e3c,stroke-width:3px
     
     class A input
     class B,O pipeline
-    class C,N,P,Q,T1 process
-    class D,E,F,J,L,M,L1,R,S,U1,V1 output
+    class C,N,P,Q,T1,U1 process
+    class D,E,F,J,L,M,L1,R,S output
     class G,I,K decision
     class H filtered
-    class W1 analysis
-    class X1 final
+    class V1,X1 final
 ```
 
 ### **Pipeline Overview**
 
-The visual flowchart above shows the complete processing workflow. For detailed technical information about each module, see [TECHNICAL_GUIDE.md](TECHNICAL_GUIDE.md).
+The visual flowchart above shows the complete processing workflow. For detailed technical information about each module, see [TECHNICAL_GUIDE.md](docs/TECHNICAL_GUIDE.md).
 
 **Key Processing Steps:**
 1. **Label Detection** - Finds labels in specimen photos (PyTorch YOLO)
 2. **Classification Pipeline** - Filters empty labels, identifies specimen IDs, sorts by text type (TensorFlow CNN)
 3. **Text Processing** - Rotation correction + OCR extraction (Tesseract/Google Vision)
 4. **Post-processing** - Structured data output and quality analysis
+5. **Consolidation** - Links all results into comprehensive JSON output
 
 ### **Key Outputs**
 
-- **`final_processed_data.csv`** - Main result with structured specimen data
+- **`consolidated_results.json`** - Comprehensive linked results for each processed file
+- **`corrected_transcripts.json`** - Cleaned OCR text results  
+- **`identifier.csv`** - Specimen catalog numbers and IDs
 - **`input_cropped/`** - Individual label images for review
-- **Quality metrics** - Confidence scores and processing statistics
 
-For complete output descriptions, see [USER_GUIDE.md](USER_GUIDE.md).
+For complete output descriptions, see [USER_GUIDE.md](docs/USER_GUIDE.md).
 
 ## Documentation
 
-**[USER_GUIDE.md](USER_GUIDE.md)** - Complete usage instructions with examples
+**Complete Documentation:**
+
+**[DOCKER_SETUP.md](docs/DOCKER_SETUP.md)** - **Start here!** Docker pipeline setup (recommended)
+   - One-command pipeline execution
+   - Cross-platform Docker setup  
+   - Automatic environment management
+   - Troubleshooting guide
+
+**[USER_GUIDE.md](docs/USER_GUIDE.md)** - Complete usage instructions with examples
    - Quick start with sample data
-   - Docker pipeline instructions
    - Command-line options and examples
    - Real-world workflows
+   - Output format reference
 
-**[TECHNICAL_GUIDE.md](TECHNICAL_GUIDE.md)** - Installation, setup, and troubleshooting
+**[TECHNICAL_GUIDE.md](docs/TECHNICAL_GUIDE.md)** - Installation, setup, and troubleshooting
    - System requirements and installation
-   - Docker setup
+   - Manual setup (advanced users)
    - GPU configuration
    - Development environment
    - API reference
@@ -151,17 +165,23 @@ For complete output descriptions, see [USER_GUIDE.md](USER_GUIDE.md).
 ## Repository Structure
 
 ```
+├── run-pipeline.sh         # Main pipeline launcher
 ├── scripts/
-│   ├── processing/          # Main processing scripts (detection, classification, OCR)
-│   ├── evaluation/          # Model evaluation and performance analysis
-│   └── postprocessing/      # Data cleaning and output formatting
-├── label_processing/        # Core Python package
-├── label_evaluation/        # Model evaluation utilities
-├── label_postprocessing/    # Post-processing utilities
-├── pipelines/               # Docker pipeline configurations
+│   ├── docker/             # Docker management scripts
+│   ├── processing/         # Main processing scripts (detection, classification, OCR)
+│   ├── evaluation/         # Model evaluation and performance analysis
+│   └── postprocessing/     # Data cleaning and output formatting
+├── label_processing/       # Core Python package
+├── label_evaluation/       # Model evaluation utilities
+├── label_postprocessing/   # Post-processing utilities
+├── pipelines/              # Docker pipeline configurations
+│   ├── *.dockerfile       # Service definitions
+│   ├── multi-label-docker-compose.yaml    # Multi-label pipeline
+│   ├── single-label-docker-compose.yaml   # Single-label pipeline  
+│   └── requirements/      # Python dependencies
 ├── data/
-│   ├── MLI/                # Multi-label specimen images (sample data)
-│   └── SLI/                # Single-label images (sample data)
+│   ├── MLI/               # Multi-label specimen images (sample data)
+│   └── SLI/               # Single-label images (sample data)
 ├── models/
 │   ├── label_detection_model.pth           # PyTorch detection model
 │   ├── rotation_model.h5                   # TensorFlow rotation model
@@ -171,21 +191,24 @@ For complete output descriptions, see [USER_GUIDE.md](USER_GUIDE.md).
 │   └── classes/                            # Class definitions
 ├── training_notebooks/    # Jupyter notebooks for model training
 ├── unit_tests/            # Test suite
-└── docs/                  # Technical documentation
+└── docs/                  # Documentation
+    ├── DOCKER_SETUP.md    # Docker setup guide
+    ├── TECHNICAL_GUIDE.md # Technical documentation
+    └── USER_GUIDE.md      # User manual
 ```
 
-**New users**: Start with [USER_GUIDE.md](USER_GUIDE.md) for complete instructions
+**New users**: Start with [DOCKER_SETUP.md](docs/DOCKER_SETUP.md) for the easiest setup, or [USER_GUIDE.md](docs/USER_GUIDE.md) for complete instructions.
 
-**Quick Docker setup** (recommended):
+**Quick Docker setup** (alternative to `./run-pipeline.sh`):
 
 ```bash
 # Clone and run with sample data
 git clone https://github.com/[username]/entomological-label-information-extraction.git
 cd entomological-label-information-extraction
-docker compose -f multi-label-docker-compose.yaml up --build
+docker compose -f pipelines/multi-label-docker-compose.yaml up --build
 ```
 
-**Installation issues**: See [TECHNICAL_GUIDE.md](TECHNICAL_GUIDE.md)
+**Installation issues**: See [TECHNICAL_GUIDE.md](docs/TECHNICAL_GUIDE.md)
 
 ## Testing & Compatibility
 
@@ -196,7 +219,6 @@ docker compose -f multi-label-docker-compose.yaml up --build
 - **Automatic Fallbacks** - CPU/GPU detection and error recovery
 
 ```bash
-
 # Run full test suite
 python3 -m pytest unit_tests/ -v
 ```
