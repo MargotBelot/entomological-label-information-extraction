@@ -29,6 +29,79 @@ Automatically extract and digitize text from museum specimen labels using artifi
 
 **Why It Works:** AI models specifically trained on entomological data with high accuracy and reproducible results.
 
+## Pipeline Workflow
+
+```mermaid
+flowchart TD
+    %% Input and Pipeline Selection
+    A[📸 Specimen Images<br/>JPG Format] --> B{📋 Pipeline Type}
+    B -->|Multi-Label Images| C[🔍 Label Detection<br/>YOLO PyTorch]
+    B -->|Single-Label Images| D[🖼️ Pre-cropped Labels<br/>SLI Input]
+    
+    %% Multi-Label Detection Path
+    C --> E[📊 Detection Results<br/>input_predictions.csv]
+    C --> F[🖼️ Cropped Labels<br/>input_cropped/<br/>MLI → SLI Conversion]
+    
+    %% Merge paths for classification
+    F --> G{🏷️ Empty Label<br/>Classification}
+    D --> G
+    
+    %% Common Classification Pipeline
+    G -->|Empty| H[❌ Filtered Out<br/>empty/]
+    G -->|Not Empty| I{🎯 Identifier<br/>Classification}
+    
+    I -->|Identifier| J[🆔 QR Codes<br/>identifier/]
+    I -->|Not Identifier| K{✍️ Text Type<br/>Classification}
+    
+    K -->|Handwritten| L[✍️ Handwritten Labels<br/>handwritten/]
+    K -->|Printed| M[🖨️ Printed Labels<br/>printed/]
+    
+    %% Manual transcription for handwritten
+    L --> L1[👤 Manual Transcription<br/>Human Expert Review]
+    
+    %% Single-Label Pipeline Only (MLI stops after detection)
+    M --> N[🔄 Rotation Correction<br/>rotated/]
+    
+    N --> O{📝 OCR Method}
+    O -->|Tesseract| P[🔧 Tesseract OCR<br/>Local Processing]
+    O -->|Google Vision| Q[☁️ Google Vision API<br/>Cloud Processing]
+    
+    P --> R[📄 OCR Results<br/>ocr_preprocessed.json]
+    Q --> S[📄 OCR Results<br/>ocr_google_vision.json]
+    
+    R --> T1[⚙️ Post-processing<br/>Clean & Structure]
+    S --> T1
+    L1 --> T1
+    
+    %% Final Outputs
+    T1 --> U1[📊 Final Outputs<br/>• identifier.csv<br/>• corrected_transcripts.json<br/>• plausible_transcripts.json<br/>• empty_transcripts.csv]
+    E --> U1
+    
+    %% Quality Metrics
+    U1 --> V1[📈 Quality Metrics<br/>• Detection Confidence<br/>• Classification Probabilities<br/>• OCR Statistics]
+    
+    %% Optional Clustering Evaluation (separate tool)
+    U1 -.->|Optional| W1[🎯 Clustering Analysis<br/>Word2Vec + t-SNE<br/>cluster_eval.py]
+    
+    %% Styling
+    classDef input fill:#e1f5fe,stroke:#0277bd,stroke-width:2px
+    classDef pipeline fill:#fff8e1,stroke:#f57c00,stroke-width:3px
+    classDef process fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    classDef output fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px
+    classDef decision fill:#fff3e0,stroke:#ef6c00,stroke-width:2px
+    classDef filtered fill:#ffebee,stroke:#c62828,stroke-width:2px
+    classDef analysis fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
+    classDef final fill:#f1f8e9,stroke:#388e3c,stroke-width:3px
+    
+    class A input
+    class B,O pipeline
+    class C,N,P,Q,T1 process
+    class D,E,F,J,L,M,L1,R,S,U1,V1 output
+    class G,I,K decision
+    class H filtered
+    class W1 analysis
+```
+
 ## Prerequisites
 
 **Before you start, you need:**
