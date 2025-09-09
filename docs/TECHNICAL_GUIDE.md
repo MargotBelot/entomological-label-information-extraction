@@ -1,6 +1,20 @@
 # Technical Guide
 
-This guide covers installation, system setup, troubleshooting, and advanced technical topics.
+**Installation, system setup, troubleshooting, and advanced technical topics**
+
+## New to Technical Setup?
+
+**Most users should start with Docker instead!**
+- **Easy path:** [DOCKER_SETUP.md](DOCKER_SETUP.md) - Zero configuration, works everywhere
+- **For most users:** [USER_GUIDE.md](USER_GUIDE.md) - Complete usage guide
+
+**Only use this guide if you need to:**
+- Run scripts individually (not full pipeline)
+- Customize or modify the code
+- Set up a development environment
+- Troubleshoot specific technical issues
+
+---
 
 ## Table of Contents
 - [Technical Guide](#technical-guide)
@@ -38,12 +52,10 @@ This guide covers installation, system setup, troubleshooting, and advanced tech
 
 ## Installation
 
-**Installation Options Summary:**
-- `pip install -e .` - Basic installation (runtime dependencies only)
-- `pip install -e .[dev]` - Development installation (includes testing, linting, formatting tools)
-- `pip install -e ".[test]"` - Testing installation (includes pytest and coverage tools)
-- `pip install -e ".[docs]"` - Documentation installation (includes Sphinx and themes)
-- `pip install -e ".[dev,test,docs]"` - Complete installation (all optional dependencies)
+**Installation Options:**
+- **Most users:** `pip install -e .` (basic runtime)
+- **Developers:** `pip install -e .[dev]` (includes testing & linting tools)
+- **Advanced:** `pip install -e ".[dev,test,docs]"` (everything)
 
 **Step 1: Clone the Repository**
 

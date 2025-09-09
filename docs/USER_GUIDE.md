@@ -4,14 +4,34 @@
 
 This guide shows you how to use the entomological label extraction tool with practical examples and visual explanations.
 
+## New to This? Start Here!
+
+**Never used AI image processing before? No problem!**
+
+This tool is like having a super-fast research assistant that can:
+1. **Look at your specimen photos** and find all the labels
+2. **Read the text** on those labels (even handwritten ones!)
+3. **Organize everything** into spreadsheet files you can use
+
+**The easiest way to start:**
+```bash
+# Get the code and run it (takes 5 minutes)
+git clone https://github.com/MargotBelot/entomological-label-information-extraction.git
+cd entomological-label-information-extraction
+./run-pipeline.sh
+```
+
+That's it! The tool includes sample data, so you can see results immediately.
+
 ## Table of Contents
+- [New to This? Start Here!](#new-to-this-start-here)
 - [What This Tool Does (For Beginners)](#what-this-tool-does-for-beginners)
 - [Quick Start with Sample Data](#quick-start-with-sample-data)
 - [Docker Pipeline Usage](#docker-pipeline-usage)
+- [FAQ](#faq)
 - [Understanding the Output](#understanding-the-output)
 - [Prerequisites](#prerequisites)
 - [Basic Usage](#basic-usage)
-- [Command Options](#command-options)
 - [Working with Your Own Images](#working-with-your-own-images)
 - [Real-World Examples](#real-world-examples)
 - [Batch Processing Tips](#batch-processing-tips)
@@ -19,6 +39,7 @@ This guide shows you how to use the entomological label extraction tool with pra
 - [Using the Python API](#using-the-python-api)
 - [Getting Help](#getting-help)
 - [Next Steps](#next-steps)
+- [Appendix: Command Options Reference](#appendix-command-options-reference)
 
 ## What This Tool Does (For Beginners)
 
@@ -289,61 +310,7 @@ python3 scripts/processing/detection.py -j /path/to/your/images -o /path/to/outp
 python3 scripts/processing/detection.py -i specimen.jpg -o results/
 ```
 
-## Command Options
-
-The main detection script supports these options:
-
-```bash
-python3 scripts/processing/detection.py [OPTIONS]
-```
-
-**Required (choose one):**
-- `-j, --input-dir` - Directory containing specimen images
-- `-i, --input-image` - Single image file
-
-**Required:**
-- `-o, --output-dir` - Where to save results
-
-**Optional:**
-- `--confidence FLOAT` - Detection confidence threshold (default: 0.5)
-- `--batch-size INT` - Images processed simultaneously (default: 16)
-- `--device TEXT` - Device to use: 'auto', 'cpu', 'cuda', or 'mps' (default: auto)
-- `--no-cache` - Disable model caching for this run
-- `--clear-cache` - Clear all cached models before running
-
-**Examples:**
-
-```bash
-# High confidence, smaller batches
-python3 scripts/processing/detection.py -j images/ -o results/ --confidence 0.8 --batch-size 8
-
-# Force CPU usage
-python3 scripts/processing/detection.py -j images/ -o results/ --device cpu
-
-# Use Apple Silicon GPU acceleration (M1/M2/M3 Macs)
-python3 scripts/processing/detection.py -j images/ -o results/ --device mps
-
-# Clear model cache if needed
-python3 scripts/processing/detection.py --clear-cache
-```
-
-## Performance Optimizations
-
-The detection script includes several performance optimizations:
-
-**Model Caching:**
-- Models are automatically cached after first load for 50-90% faster startup
-- Cached models are stored in `~/.entomological_cache/`
-- Use `--clear-cache` if you encounter loading issues
-
-**GPU Acceleration:**
-- Automatically detects and uses available GPUs (CUDA, Apple MPS)
-- Falls back to optimized CPU processing if no GPU available
-- Use `--device cpu` to force CPU-only processing
-
-**Expected Performance:**
-- First run: 50-75% faster than original
-- Subsequent runs: 80-90% faster (due to caching)
+**For advanced Python script usage:** See [Appendix: Command Options Reference](#appendix-command-options-reference)
 
 ## Understanding the Output
 
@@ -815,6 +782,32 @@ for img in image_list:
     print(f"{img}: {len(results)} labels detected")
 ```
 
+## FAQ
+
+**Q: My labels are rotated/sideways - which pipeline should I use?**  
+A: Use the **Single-Label Pipeline** - it includes automatic rotation correction. The Multi-Label Pipeline doesn't rotate images.
+
+**Q: I only have cropped label images - do I need detection?**  
+A: No! Use the **Single-Label Pipeline** and put your images directly in `data/SLI/input/`.
+
+**Q: Where do my results go?**  
+A: **Multi-Label:** `data/MLI/output/consolidated_results.json` | **Single-Label:** `data/SLI/output/consolidated_results.json`
+
+**Q: How do I rerun only the OCR part?**  
+A: For Docker: `docker compose -f pipelines/[pipeline-name].yaml up tesseract postprocessing` | For Python: see [Step-by-Step Pipeline](#step-by-step-pipeline-python-scripts)
+
+**Q: No labels detected in my images?**  
+A: Try lowering confidence: `--confidence 0.3` for more sensitive detection. Check that labels are clearly visible and images are .jpg format.
+
+**Q: Too many false detections?**  
+A: Try higher confidence: `--confidence 0.8` for more selective detection.
+
+**Q: Processing is very slow?**  
+A: First run is slower (downloads models). Subsequent runs use cached models and are 80-90% faster. Use `--device cpu` to force CPU-only.
+
+**Q: Can I process non-English labels?**  
+A: Yes! Detection works with any language. OCR supports multiple languages (check TECHNICAL_GUIDE.md for setup).
+
 ## Getting Help
 
 **If something goes wrong:**
@@ -861,3 +854,32 @@ After extracting labels successfully:
 4. **Customize settings** - Adjust parameters for your specific image types
 
 For advanced usage, model training, and troubleshooting, see [TECHNICAL_GUIDE.md](TECHNICAL_GUIDE.md).
+
+## Appendix: Command Options Reference
+
+For users who want to run Python scripts directly instead of using Docker:
+
+**Main detection script options:**
+
+```bash
+python3 scripts/processing/detection.py [OPTIONS]
+```
+
+**Required (choose one):**
+- `-j, --input-dir` - Directory containing specimen images
+- `-i, --input-image` - Single image file
+
+**Required:**
+- `-o, --output-dir` - Where to save results
+
+**Optional:**
+- `--confidence FLOAT` - Detection confidence threshold (default: 0.5)
+- `--batch-size INT` - Images processed simultaneously (default: 16)
+- `--device TEXT` - Device to use: 'auto', 'cpu', 'cuda', or 'mps' (default: auto)
+- `--no-cache` - Disable model caching for this run
+- `--clear-cache` - Clear all cached models before running
+
+**Performance tips:**
+- First run downloads models (slower), subsequent runs use cache (80-90% faster)
+- Use `--device mps` for Apple Silicon Macs (M1/M2/M3)
+- Reduce `--batch-size 4` for limited RAM systems

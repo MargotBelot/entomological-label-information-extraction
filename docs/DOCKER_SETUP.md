@@ -1,8 +1,31 @@
 # Docker Pipeline Setup
 
-This document explains the Docker-based pipeline setup for entomological label processing. Docker provides the **easiest way** to run the complete pipeline with zero configuration.
+**Docker provides the easiest way to run the complete pipeline with zero configuration.**
+
+## TL;DR - Just Run It!
+
+**Got specimen images? Want results fast?**
+
+```bash
+# Clone and run (takes 5 minutes)
+git clone https://github.com/MargotBelot/entomological-label-information-extraction.git
+cd entomological-label-information-extraction
+./run-pipeline.sh
+```
+
+That's it! The script will:
+- Detect if Docker is running (starts it if needed)
+- Ask you a few simple questions
+- Process the included sample images
+- Show you where results are saved
+
+**Don't have Docker?** [Quick Install](#environment-setup) | **Need help?** [Troubleshooting](#troubleshooting)
+
+---
 
 ## Pipeline Types
+
+**Simple decision guide:**
 
 **Choose the right pipeline for your data:**
 
@@ -10,13 +33,17 @@ This document explains the Docker-based pipeline setup for entomological label p
 - **Input**: Full specimen images in `data/MLI/input/`
 - **Process**: Detection → Classification → OCR → Post-processing
 - **Output**: `data/MLI/output/consolidated_results.json`
+- **Note**: Multi-label pipeline does **NOT** include rotation correction
 
 ### Single-Label Pipeline  
 - **Input**: Pre-cropped label images in `data/SLI/input/`
-- **Process**: Classification → Rotation → OCR → Post-processing
+- **Process**: Classification → **Rotation Correction** → OCR → Post-processing
 - **Output**: `data/SLI/output/consolidated_results.json`
+- **Note**: Single-label pipeline **includes** rotation correction for printed labels
 
 ## Quick Start
+
+Recommended for most users:
 
 ### Option 1: Use the Main Launcher (Recommended)
 ```bash
@@ -26,16 +53,26 @@ This document explains the Docker-based pipeline setup for entomological label p
 ### Option 2: Run Specific Pipelines Directly
 ```bash
 # Multi-label pipeline (full specimen images → detected labels)
-./scripts/docker/start-multi-label-pipeline.sh
+docker compose -f pipelines/multi-label-docker-compose.yaml up --build
 
-# Single-label pipeline (pre-cropped images → processed text)  
-./scripts/docker/start-single-label-pipeline.sh
+# Single-label pipeline (pre-cropped images → processed text)
+docker compose -f pipelines/single-label-docker-compose.yaml up --build
 ```
 
 ### Option 3: Validate Setup
 ```bash
 ./scripts/docker/validate-docker-setup.sh
 ```
+
+**What this validation script does:**
+- Checks if Docker is installed and running
+- Verifies Docker Compose is available
+- Tests Docker daemon connectivity 
+- Validates required directories exist
+- Checks model files are accessible
+- Runs container health checks
+- Provides troubleshooting information if issues are found
+- Recommends fixes for common setup problems
 
 ## Features
 
@@ -99,11 +136,13 @@ docs/                      # Documentation
 5. **tesseract** - OCR text extraction
 6. **postprocessing** - Clean text and consolidate results
 
+**No rotation service** - Multi-label pipeline does not include rotation correction
+
 ### Single-Label Pipeline Services
 1. **empty_not_empty_classifier** - Filter empty labels
 2. **nuri_notnuri_classifier** - Classify identifier vs description
 3. **handwritten_printed_classifier** - Classify text type
-4. **rotator** - Correct text orientation
+4. **rotator** - Correct text orientation (Only in Single-Label Pipeline)
 5. **tesseract** - OCR text extraction
 6. **postprocessing** - Clean text and consolidate results
 
