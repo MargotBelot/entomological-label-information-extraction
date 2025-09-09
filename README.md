@@ -2,7 +2,7 @@
 
 **AI-powered text extraction from insect specimen labels**
 
-Automatically extract and digitize text from museum specimen labels using artificial intelligence. Process thousands of specimens in hours instead of weeks.
+Automatically extract and digitize text from museum specimen labels using artificial intelligence. Process thousands of specimens.
 
 ## Table of Contents
 - [Entomological Label Information Extraction](#entomological-label-information-extraction)
