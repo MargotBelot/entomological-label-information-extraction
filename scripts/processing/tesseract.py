@@ -11,6 +11,10 @@ from typing import Callable
 import warnings
 import time
 
+# Add project root to Python path
+current_dir = Path(__file__).parent.absolute()
+project_root = current_dir.parent.parent
+sys.path.insert(0, str(project_root))
 
 # Import the necessary module from the 'label_processing' module package
 from label_processing.text_recognition import (Tesseract, 

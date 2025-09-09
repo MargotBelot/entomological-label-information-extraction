@@ -8,8 +8,6 @@
 # The final output is stored in the `data/MLI/output` directory,
 # which can be accessed after the pipeline completes.
 
-version: '3'
-
 services:
   detection:
     stdin_open: true
@@ -39,31 +37,27 @@ services:
   nuri_notnuri_classifier:
     stdin_open: true # docker run -i
     tty: true        # docker run -t
-    image: 
-      classification
+    image: classification
     build: 
       context: .
       dockerfile: pipelines/classification.dockerfile
     volumes:
       - ./data:/app/data
-    command:
-      python3 classifiers.py -m 1 -j data/MLI/output/not_empty -o data/MLI/output
+    command: python3 scripts/processing/classifiers.py -m 1 -j data/MLI/output/not_empty -o data/MLI/output
     depends_on:
       empty_not_empty_classifier:
         condition: service_completed_successfully
 
-  handwriten_printed_classifier:
+  handwritten_printed_classifier:
     stdin_open: true # docker run -i
     tty: true        # docker run -t
-    image: 
-      classification
+    image: classification
     build: 
       context: .
       dockerfile: pipelines/classification.dockerfile
     volumes:
       - ./data:/app/data
-    command:
-      python3 classifiers.py -m 2 -j data/MLI/output/not_identifier -o data/MLI/output/
+    command: python3 scripts/processing/classifiers.py -m 2 -j data/MLI/output/not_identifier -o data/MLI/output
     depends_on:
       nuri_notnuri_classifier:
         condition: service_completed_successfully
@@ -71,31 +65,28 @@ services:
   tesseract:
     stdin_open: true
     tty: true
-    image: 
-      tesseract
+    image: tesseract
     build: 
       context: .
       dockerfile: pipelines/tesseract.dockerfile
     volumes:
       - ./data:/app/data
-    command:
-      python3 tesseract.py -d data/MLI/output/printed -o data/MLI/output/
+    command: python3 scripts/processing/tesseract.py -d data/MLI/output/printed -o data/MLI/output
     depends_on:
-      handwriten_printed_classifier:
+      handwritten_printed_classifier:
         condition: service_completed_successfully
 
   postprocessing:
     stdin_open: true
     tty: true
-    image: 
-      postprocessing
+    image: postprocessing
     build: 
       context: .
       dockerfile: pipelines/postprocessing.dockerfile
     volumes:
       - ./data:/app/data
     command: >
-      bash -c "python3 process.py -j data/MLI/output/ocr_preprocessed.json -o data/MLI/output/ && echo 'Pipeline complete! Final output is in data/MLI/output'"
+      bash -c "python3 scripts/postprocessing/process.py -j data/MLI/output/ocr_preprocessed.json -o data/MLI/output && echo 'Pipeline complete! Final output is in data/MLI/output'"
     depends_on:
-      tesseract:  
+      tesseract:
         condition: service_completed_successfully

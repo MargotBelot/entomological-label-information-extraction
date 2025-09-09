@@ -9,6 +9,11 @@ import time
 import logging
 from pathlib import Path
 
+# Add project root to Python path
+current_dir = Path(__file__).parent.absolute()
+project_root = current_dir.parent.parent
+sys.path.insert(0, str(project_root))
+
 # Import project configuration
 from label_processing.config import get_model_path, config
 

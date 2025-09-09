@@ -5,11 +5,18 @@ from __future__ import annotations
 import argparse
 import glob
 import os
+import sys
 import warnings
 import time
 import cv2  # OpenCV for QR code detection
+from pathlib import Path
 from google.cloud import vision
 from google.oauth2 import service_account
+
+# Add project root to Python path
+current_dir = Path(__file__).parent.absolute()
+project_root = current_dir.parent.parent
+sys.path.insert(0, str(project_root))
 
 # Import the necessary module from the 'label_processing' module package
 from label_processing import utils
