@@ -18,6 +18,7 @@ venv/
 
 # macOS system files
 .DS_Store
+._*
 
 # VS Code settings
 *.code-workspace
