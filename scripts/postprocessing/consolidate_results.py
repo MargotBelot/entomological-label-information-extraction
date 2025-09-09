@@ -172,20 +172,22 @@ def load_rotation_results(output_dir: str) -> Dict[str, Dict[str, Any]]:
     printed_dir = os.path.join(output_dir, 'printed')
     
     if os.path.exists(rotated_dir):
-        # Files in rotated directory had rotation correction
+        # Files in rotated directory had rotation correction applied
+        # We can't determine the exact rotation angle from the current implementation
+        # but we know rotation was applied
         for filename in os.listdir(rotated_dir):
             if filename.lower().endswith(('.jpg', '.jpeg', '.png')):
                 rotation_results[filename] = {
-                    'angle': None,  # Angle not stored in current implementation
-                    'corrected': True
+                    'rotation_applied': True,  # Rotation was applied
+                    'original_angle': 'unknown'  # Original angle classification not stored
                 }
     elif os.path.exists(printed_dir):
-        # Files went directly to printed (multi-label pipeline, no rotation)
+        # Files went directly to printed (multi-label pipeline, no rotation step)
         for filename in os.listdir(printed_dir):
             if filename.lower().endswith(('.jpg', '.jpeg', '.png')):
                 rotation_results[filename] = {
-                    'angle': 0,
-                    'corrected': False
+                    'rotation_applied': False,  # No rotation step in multi-label pipeline
+                    'original_angle': 'not_applicable'  # Multi-label doesn't use rotation
                 }
     
     return rotation_results
@@ -217,8 +219,8 @@ def load_ocr_results(output_dir: str) -> Dict[str, Dict[str, Any]]:
                         if file_id:
                             ocr_results[file_id] = {
                                 'method': method,
-                                'raw_text': item.get('text', ''),
-                                'confidence': item.get('confidence', 0.0)
+                                'raw_text': item.get('text', '')
+                                # Note: Tesseract OCR doesn't provide confidence scores in our implementation
                             }
                 elif isinstance(ocr_data, dict):
                     for file_id, content in ocr_data.items():
@@ -229,8 +231,8 @@ def load_ocr_results(output_dir: str) -> Dict[str, Dict[str, Any]]:
                         
                         ocr_results[file_id] = {
                             'method': method,
-                            'raw_text': text,
-                            'confidence': content.get('confidence', 0.0) if isinstance(content, dict) else 0.0
+                            'raw_text': text
+                            # Note: Tesseract OCR doesn't provide confidence scores in our implementation
                         }
             except Exception as e:
                 print(f"Error loading OCR results from {ocr_file}: {e}")
@@ -292,7 +294,7 @@ def load_postprocessing_results(output_dir: str) -> Dict[str, Dict[str, Any]]:
     return postprocessing_results
 
 def consolidate_results(output_dir: str) -> List[Dict[str, Any]]:
-    """Consolidate all pipeline results for files that completed the full pipeline."""
+    """Consolidate all pipeline results for files that completed OCR processing."""
     print("Loading pipeline results...")
     
     # Load all result components
@@ -308,14 +310,8 @@ def consolidate_results(output_dir: str) -> List[Dict[str, Any]]:
     
     consolidated = []
     
-    # Get all unique filenames that have processing results
-    all_files = set()
-    all_files.update(detection_results.keys())
-    all_files.update(rotation_results.keys())
-    all_files.update(ocr_results.keys())
-    all_files.update(postprocessing_results.keys())
-    
-    for filename in sorted(all_files):
+    # Only process files that have OCR results (completed the full pipeline)
+    for filename in sorted(ocr_results.keys()):
         # Build consolidated result for this file
         result = {
             'filename': filename,
@@ -326,16 +322,8 @@ def consolidate_results(output_dir: str) -> List[Dict[str, Any]]:
             'postprocessing': postprocessing_results.get(filename, {})
         }
         
-        # Only include files that have some meaningful processing results
-        has_content = any([
-            result['detection'],
-            any(result['classification'].values()),
-            result['rotation'],
-            result['ocr'],
-            result['postprocessing']
-        ])
-        
-        if has_content:
+        # Only include files that have OCR results (ensuring they went through the full pipeline)
+        if result['ocr']:
             consolidated.append(result)
     
     return consolidated
