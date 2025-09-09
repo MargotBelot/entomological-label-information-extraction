@@ -7,6 +7,11 @@ import sys
 import cv2
 from pathlib import Path
 
+# Add project root to Python path
+current_dir = Path(__file__).parent.absolute()
+project_root = current_dir.parent.parent
+sys.path.insert(0, str(project_root))
+
 # Import the necessary module from the 'label_processing' module package
 from label_processing.label_rotation import predict_angles
 

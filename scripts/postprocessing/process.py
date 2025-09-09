@@ -2,7 +2,14 @@
 import json
 import os
 import argparse
+import sys
 import time
+from pathlib import Path
+
+# Add project root to Python path
+current_dir = Path(__file__).parent.absolute()
+project_root = current_dir.parent.parent
+sys.path.insert(0, str(project_root))
 
 # Import the necessary module from the 'label_processing' and `label_postprocessing` module packages
 import label_processing.utils as utils

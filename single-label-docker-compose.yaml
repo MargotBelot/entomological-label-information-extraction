@@ -6,8 +6,6 @@
 # and finally a post-processing service that processes the OCR results.
 
 
-version: '3'
-
 services:
   empty_not_empty_classifier:
     stdin_open: true
@@ -22,79 +20,70 @@ services:
   nuri_notnuri_classifier:
     stdin_open: true # docker run -i
     tty: true        # docker run -t
-    image: 
-      classification
+    image: classification
     build: 
       context: .
       dockerfile: pipelines/classification.dockerfile
     volumes:
       - ./data:/app/data
-    command:
-      python3 classifiers.py -m 1 -j data/SLI/output/not_empty -o data/SLI/output
+    command: python3 scripts/processing/classifiers.py -m 1 -j data/SLI/output/not_empty -o data/SLI/output
     depends_on:
       empty_not_empty_classifier:
         condition: service_completed_successfully
 
-  handwriten_printed_classifier:
+  handwritten_printed_classifier:
     stdin_open: true # docker run -i
     tty: true        # docker run -t
-    image: 
-      classification
+    image: classification
     build: 
       context: .
       dockerfile: pipelines/classification.dockerfile
     volumes:
       - ./data:/app/data
-    command:
-      python3 classifiers.py -m 2 -j data/SLI/output/not_identifier -o data/SLI/output/
+    command: python3 scripts/processing/classifiers.py -m 2 -j data/SLI/output/not_identifier -o data/SLI/output
     depends_on:
       nuri_notnuri_classifier:
         condition: service_completed_successfully
 
   rotator:
-      stdin_open: true # docker run -i
-      tty: true        # docker run -t
-      image: 
-        rotation
-      build: 
-        context: .
-        dockerfile: pipelines/rotation.dockerfile
-      volumes:
-        - ./data:/app/data
-      command: 
-        python3 rotation.py -o data/SLI/output/rotated -i data/SLI/output/printed
-      depends_on:
-        handwriten_printed_classifier:
-          condition: service_completed_successfully
+    stdin_open: true # docker run -i
+    tty: true        # docker run -t
+    image: rotation
+    build: 
+      context: .
+      dockerfile: pipelines/rotation.dockerfile
+    volumes:
+      - ./data:/app/data
+    command: python3 scripts/processing/rotation.py -o data/SLI/output/rotated -i data/SLI/output/printed
+    depends_on:
+      handwritten_printed_classifier:
+        condition: service_completed_successfully
 
   tesseract:
     stdin_open: true # docker run -i
     tty: true        # docker run -t
-    image: 
-      tesseract
+    image: tesseract
     build: 
       context: .
       dockerfile: pipelines/tesseract.dockerfile
     volumes:
       - ./data:/app/data
-    command:
-      python3 tesseract.py -d data/SLI/output/rotated -o data/SLI/output/
+    command: python3 scripts/processing/tesseract.py -d data/SLI/output/rotated -o data/SLI/output
     depends_on:
-      rotator:  
+      rotator:
         condition: service_completed_successfully
 
   postprocessing:
     stdin_open: true # docker run -i
     tty: true        # docker run -t
-    image: 
-      postprocessing
+    image: postprocessing
     build: 
       context: .
       dockerfile: pipelines/postprocessing.dockerfile
     volumes:
       - ./data:/app/data
     command: >
-      bash -c "python3 process.py -j data/SLI/output/ocr_preprocessed.json -o data/SLI/output/ && echo 'Pipeline complete! Final output is in data/SLI/output'"
+      bash -c "python3 scripts/postprocessing/process.py -j data/SLI/output/ocr_preprocessed.json -o data/SLI/output && echo 'Pipeline complete! Final output is in data/SLI/output'"
     depends_on:
-      tesseract:  
+      tesseract:
         condition: service_completed_successfully
