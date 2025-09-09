@@ -71,29 +71,23 @@ conda activate entomological-label
 
 There is no need to create a new environment file, just use the one provided.
 
-**Install the package (basic installation):**
+**Install the package:**
 ```bash
+# Basic installation (runtime only)
 pip install -e .
-```
 
-**OR for development (includes testing, linting, formatting tools):**
-```bash
+# OR for development (includes testing, linting tools) 
 pip install -e .[dev]
 ```
 
 **Option B: Virtual Environment**
 
 ```bash
-# Create virtual environment
+# Create and activate virtual environment
 python3 -m venv elie-env
-
-# Activate environment
 source elie-env/bin/activate  # Mac/Linux
 
-# Install the package (basic installation)
-pip install -e .
-
-# OR for development (includes testing, linting, formatting tools)
+# Install package (choose basic or dev as above)
 pip install -e .[dev]
 ```
 
@@ -149,9 +143,9 @@ python3 -m pytest unit_tests/ -v
 **Quick Start:**
 
 ```bash
-# Clone repository
-git clone https://github.com/[your-username]/entomological-label-information-extraction.git
-cd entomological-label-information-extraction
+# Clone repository (if not already done)
+# git clone https://github.com/[your-username]/entomological-label-information-extraction.git
+# cd entomological-label-information-extraction
 
 # Run multi-label pipeline (includes sample data)
 docker compose -f multi-label-docker-compose.yaml up --build
@@ -406,33 +400,18 @@ pre-commit install
 # Run tests
 python3 -m pytest unit_tests/ -v
 
-# Run with coverage
-python3 -m pytest unit_tests/ --cov=. --cov-report=html
+# Run with coverage  
+python3 -m pytest unit_tests/ --cov=label_processing --cov-report=html
+
+# Run specific test modules
+python3 -m pytest unit_tests/label_processing_tests/
 ```
 
 **Code Quality Tools:**
 
 ```bash
-# Format code
-black .
-isort .
-
-# Lint code
-flake8 .
-mypy .
-```
-
-**Testing:**
-
-```bash
-# Run all tests
-python3 -m pytest unit_tests/ -v
-
-# Run specific test modules
-python3 -m pytest unit_tests/label_processing_tests/
-
-# Run with coverage
-python3 -m pytest unit_tests/ --cov=label_processing --cov-report=html
+# Format and lint code
+black . && isort . && flake8 . && mypy .
 ```
 
 ## API Reference
@@ -520,17 +499,7 @@ python3 scripts/processing/vision.py [options]
 
 **Diagnostic Tools:**
 
-```bash
-# Check package installation
-python3 -c "import label_processing; print('Package working')"
-
-# Test system dependencies
-tesseract --version
-python3 -c "import cv2; print('OpenCV working')"
-
-# Run test suite
-python3 -m pytest unit_tests/ -v
-```
+For package verification commands, see [Step 4: Verify Installation](#installation) above.
 
 **Support Channels:**
 
