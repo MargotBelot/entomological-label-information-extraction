@@ -1,6 +1,20 @@
 # Docker Pipeline Setup
 
-This document explains the Docker-based pipeline setup for entomological label processing.
+This document explains the Docker-based pipeline setup for entomological label processing. Docker provides the **easiest way** to run the complete pipeline with zero configuration.
+
+## Pipeline Types
+
+**Choose the right pipeline for your data:**
+
+### Multi-Label Pipeline
+- **Input**: Full specimen images in `data/MLI/input/`
+- **Process**: Detection → Classification → OCR → Post-processing
+- **Output**: `data/MLI/output/consolidated_results.json`
+
+### Single-Label Pipeline  
+- **Input**: Pre-cropped label images in `data/SLI/input/`
+- **Process**: Classification → Rotation → OCR → Post-processing
+- **Output**: `data/SLI/output/consolidated_results.json`
 
 ## Quick Start
 
@@ -22,18 +36,6 @@ This document explains the Docker-based pipeline setup for entomological label p
 ```bash
 ./scripts/docker/validate-docker-setup.sh
 ```
-
-## Pipeline Types
-
-### Multi-Label Pipeline
-- **Input**: Full specimen images in `data/MLI/input/`
-- **Process**: Detection → Classification → OCR → Post-processing
-- **Output**: `data/MLI/output/consolidated_results.json`
-
-### Single-Label Pipeline  
-- **Input**: Pre-cropped label images in `data/SLI/input/`
-- **Process**: Classification → Rotation → OCR → Post-processing
-- **Output**: `data/SLI/output/consolidated_results.json`
 
 ## Features
 
