@@ -5,53 +5,20 @@
 This guide shows you how to use the entomological label extraction tool with practical examples and visual explanations.
 
 ## Table of Contents
-- [User Guide](#user-guide)
-  - [Table of Contents](#table-of-contents)
-  - [What This Tool Does (For Beginners)](#what-this-tool-does-for-beginners)
-    - [**Two Ways to Use This Tool:**](#two-ways-to-use-this-tool)
-    - [**Which Pipeline Should I Use?**](#which-pipeline-should-i-use)
-  - [Prerequisites](#prerequisites)
-  - [Quick Start with Sample Data](#quick-start-with-sample-data)
-  - [Basic Usage](#basic-usage)
-  - [Command Options](#command-options)
-  - [Understanding the Output](#understanding-the-output)
-  - [Working with Your Own Images](#working-with-your-own-images)
-  - [Real-World Examples](#real-world-examples)
-  - [Batch Processing Tips](#batch-processing-tips)
-  - [Docker Pipeline Usage](#docker-pipeline-usage)
-    - [**Docker Pipeline Options**](#docker-pipeline-options)
-      - [**1. Multi-Label Pipeline** (`multi-label-docker-compose.yaml`)](#1-multi-label-pipeline-multi-label-docker-composeyaml)
-      - [**2. Single-Label Pipeline** (`single-label-docker-compose.yaml`)](#2-single-label-pipeline-single-label-docker-composeyaml)
-    - [**Running Docker Pipelines**](#running-docker-pipelines)
-      - [**Quick Start (Multi-Label):**](#quick-start-multi-label)
-      - [**Quick Start (Single-Label):**](#quick-start-single-label)
-      - [**Using Your Own Images:**](#using-your-own-images)
-    - [**Visual Pipeline Flow**](#visual-pipeline-flow)
-      - [**Multi-Label Pipeline:**](#multi-label-pipeline)
-      - [**Single-Label Pipeline:**](#single-label-pipeline)
-    - [**Docker Pipeline Control**](#docker-pipeline-control)
-    - [**Understanding Your Results**](#understanding-your-results)
-      - [**Output Directory Structure:**](#output-directory-structure)
-      - [**What Each File Contains:**](#what-each-file-contains)
-  - [Step-by-Step Pipeline (Python Scripts)](#step-by-step-pipeline-python-scripts)
-    - [**Multi-Label Workflow (Specimen Photos)**](#multi-label-workflow-specimen-photos)
-      - [**Step 1: Label Detection**](#step-1-label-detection)
-      - [**Step 2: Empty Label Analysis**](#step-2-empty-label-analysis)
-      - [**Step 3: Identifier Classification**](#step-3-identifier-classification)
-      - [**Step 4: Handwritten/Printed Classification**](#step-4-handwrittenprinted-classification)
-      - [**Step 5: OCR Text Extraction**](#step-5-ocr-text-extraction)
-      - [**Step 6: Post-processing**](#step-6-post-processing)
-    - [**Single-Label Workflow (Pre-cropped Labels)**](#single-label-workflow-pre-cropped-labels)
-      - [**Step 1: Empty Label Analysis**](#step-1-empty-label-analysis)
-      - [**Step 2: Identifier Classification**](#step-2-identifier-classification)
-      - [**Step 3: Handwritten/Printed Classification**](#step-3-handwrittenprinted-classification)
-      - [**Step 4: Rotation Correction**](#step-4-rotation-correction)
-      - [**Step 5: OCR Text Extraction**](#step-5-ocr-text-extraction-1)
-      - [**Step 6: Post-processing**](#step-6-post-processing-1)
-    - [**Additional Script Options**](#additional-script-options)
-  - [Using the Python API](#using-the-python-api)
-  - [Getting Help](#getting-help)
-  - [Next Steps](#next-steps)
+- [What This Tool Does (For Beginners)](#what-this-tool-does-for-beginners)
+- [Quick Start with Sample Data](#quick-start-with-sample-data)
+- [Docker Pipeline Usage](#docker-pipeline-usage)
+- [Understanding the Output](#understanding-the-output)
+- [Prerequisites](#prerequisites)
+- [Basic Usage](#basic-usage)
+- [Command Options](#command-options)
+- [Working with Your Own Images](#working-with-your-own-images)
+- [Real-World Examples](#real-world-examples)
+- [Batch Processing Tips](#batch-processing-tips)
+- [Step-by-Step Pipeline (Python Scripts)](#step-by-step-pipeline-python-scripts)
+- [Using the Python API](#using-the-python-api)
+- [Getting Help](#getting-help)
+- [Next Steps](#next-steps)
 
 ## What This Tool Does (For Beginners)
 
@@ -157,6 +124,155 @@ python3 scripts/processing/detection.py -j data/MLI/input -o data/MLI/output
 
 # Process the single-label samples  
 python3 scripts/processing/detection.py -j data/SLI/input -o data/SLI/output
+```
+
+## Docker Pipeline Usage
+
+**Prerequisites:**
+- Docker Desktop installed and running
+- 8GB+ RAM allocated to Docker
+- At least 4GB free disk space
+
+### **Docker Pipeline Options**
+
+#### **1. Multi-Label Pipeline** (`pipelines/multi-label-docker-compose.yaml`)
+**Use this when:** You have full specimen photographs with multiple labels per image
+
+**Input:** Full specimen photos in `data/MLI/input/`
+**Final Output:** `data/MLI/output/consolidated_results.json`
+
+#### **2. Single-Label Pipeline** (`pipelines/single-label-docker-compose.yaml`)
+**Use this when:** You have pre-cropped individual label images
+
+**Input:** Individual label images in `data/SLI/input/`
+**Final Output:** `data/SLI/output/consolidated_results.json`
+
+### **Running Docker Pipelines**
+
+#### **Quick Start (Multi-Label):**
+```bash
+# Run with sample data
+docker compose -f pipelines/multi-label-docker-compose.yaml up --build
+
+# Check results
+ls data/MLI/output/
+head data/MLI/output/consolidated_results.json
+```
+
+#### **Quick Start (Single-Label):**
+```bash
+# Run with sample data
+docker compose -f pipelines/single-label-docker-compose.yaml up --build
+
+# Check results
+ls data/SLI/output/
+head data/SLI/output/consolidated_results.json
+```
+
+#### **Using Your Own Images:**
+
+**For Multi-Label Pipeline (Full Specimens):**
+```bash
+# 1. Prepare your data
+mkdir -p data/MLI/input
+cp your_specimen_photos/*.jpg data/MLI/input/
+
+# 2. Clear previous results (optional)
+rm -rf data/MLI/output/*
+
+# 3. Run the complete pipeline
+docker compose -f pipelines/multi-label-docker-compose.yaml up --build
+
+# 4. View results
+ls data/MLI/output/
+head data/MLI/output/consolidated_results.json
+```
+
+**For Single-Label Pipeline (Pre-cropped Labels):**
+```bash
+# 1. Prepare your data
+mkdir -p data/SLI/input
+cp your_label_images/*.jpg data/SLI/input/
+
+# 2. Clear previous results (optional)
+rm -rf data/SLI/output/*
+
+# 3. Run the complete pipeline
+docker compose -f pipelines/single-label-docker-compose.yaml up --build
+
+# 4. View results
+ls data/SLI/output/
+head data/SLI/output/consolidated_results.json
+```
+
+### **Visual Pipeline Flow**
+
+#### **Multi-Label Pipeline:**
+```
+Specimen Photos (data/MLI/input/)
+    ↓
+Detection → input_predictions.csv + input_cropped/
+    ↓
+Empty Filter → not_empty/ + empty/
+    ↓
+Identifier Filter → identifier/ + not_identifier/
+    ↓
+Text Type Filter → handwritten/ + printed/
+    ↓
+OCR Processing → ocr_preprocessed.json
+    ↓
+Post-processing → consolidated_results.json
+```
+
+#### **Single-Label Pipeline:**
+```
+Label Images (data/SLI/input/)
+    ↓
+Empty Filter → not_empty/ + empty/
+    ↓
+Identifier Filter → identifier/ + not_identifier/
+    ↓
+Text Type Filter → handwritten/ + printed/
+    ↓
+Rotation Correction → rotated/
+    ↓
+OCR Processing → ocr_preprocessed.json
+    ↓
+Post-processing → consolidated_results.json
+```
+
+### **Docker Pipeline Control**
+
+**Run specific steps only:**
+```bash
+# Run only detection step
+docker compose -f pipelines/multi-label-docker-compose.yaml up detection
+
+# Run detection + classification (stop before OCR)
+docker compose -f pipelines/multi-label-docker-compose.yaml up detection handwritten_printed_classifier
+
+# Continue from OCR step
+docker compose -f pipelines/multi-label-docker-compose.yaml up tesseract postprocessing
+```
+
+**Monitor progress:**
+```bash
+# Watch real-time logs
+docker compose -f pipelines/multi-label-docker-compose.yaml up --build | tee pipeline.log
+
+# Check specific service logs
+docker compose logs detection
+docker compose logs tesseract
+```
+
+**Restart and cleanup:**
+```bash
+# Stop all containers
+docker compose -f pipelines/multi-label-docker-compose.yaml down
+
+# Clean restart
+docker compose -f pipelines/multi-label-docker-compose.yaml down --remove-orphans
+docker compose -f pipelines/multi-label-docker-compose.yaml up --build
 ```
 
 ## Basic Usage

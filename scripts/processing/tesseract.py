@@ -5,6 +5,7 @@ import argparse
 import os
 import glob
 import multiprocessing as mp
+import sys
 from enum import Enum
 from pathlib import Path
 from typing import Callable

@@ -4,25 +4,10 @@
 
 This package automatically extracts and digitizes text information from entomological (insect) specimen labels using artificial intelligence.
 
-## Quick Start
-
-**Easiest way to get started (recommended):**
-
-```bash
-# 1. Clone the repository
-git clone https://github.com/[username]/entomological-label-information-extraction.git
-cd entomological-label-information-extraction
-
-# 2. Run the interactive pipeline launcher
-./run-pipeline.sh
-```
-
-That's it! The script will handle Docker setup, environment checks, and guide you through choosing the right pipeline for your data.
-
 ## Table of Contents
-- [Quick Start](#quick-start)
 - [What This Tool Does](#what-this-tool-does)
 - [Pipeline Workflow](#pipeline-workflow)
+- [Quick Start](#quick-start)
 - [Documentation](#documentation)
 - [Repository Structure](#repository-structure)
 - [Testing & Compatibility](#testing--compatibility)
@@ -134,6 +119,21 @@ The visual flowchart above shows the complete processing workflow. For detailed 
 - **`input_cropped/`** - Individual label images for review
 
 For complete output descriptions, see [USER_GUIDE.md](docs/USER_GUIDE.md).
+
+## Quick Start
+
+**Easiest way to get started (recommended):**
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/[username]/entomological-label-information-extraction.git
+cd entomological-label-information-extraction
+
+# 2. Run the interactive pipeline launcher
+./run-pipeline.sh
+```
+
+That's it! The script will handle Docker setup, environment checks, and guide you through choosing the right pipeline for your data.
 
 ## Documentation
 
