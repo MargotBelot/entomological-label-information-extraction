@@ -8,7 +8,8 @@ RUN mkdir -p /app/label_processing/models
 COPY ./models/label_classifier_hp /app/label_processing/models/label_classifier_hp
 COPY ./models/label_classifier_identifier_not_identifier /app/label_processing/models/label_classifier_identifier_not_identifier
 COPY ./models/label_classifier_multi_single /app/label_processing/models/label_classifier_multi_single
-COPY ./scripts/processing/classifiers.py /app/classifiers.py
+RUN mkdir -p /app/scripts/processing
+COPY ./scripts/processing/classifiers.py /app/scripts/processing/classifiers.py
 COPY ./pipelines/requirements/classifier.txt /app/classifier.txt
 RUN apt-get update
 RUN yes | apt-get install python3-opencv
