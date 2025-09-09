@@ -2,52 +2,24 @@
 
 **AI-powered text extraction from insect specimen labels**
 
-This package automatically extracts and digitizes text information from entomological (insect) specimen labels using artificial intelligence.
-
-## TL;DR - Start Here (60 seconds)
-
-**Got full specimen photos with multiple labels?**
-```bash
-git clone https://github.com/MargotBelot/entomological-label-information-extraction.git
-cd entomological-label-information-extraction
-./run-pipeline.sh  # Choose "Multi-Label"
-```
-
-**Got individual cropped label images?**
-```bash
-./run-pipeline.sh  # Choose "Single-Label"
-```
-
-**Results appear in:** `data/MLI/output/consolidated_results.json` (Multi-Label) or `data/SLI/output/consolidated_results.json` (Single-Label)
-
-**Need help?** Problems starting? [Quick Troubleshooting](#quick-troubleshooting)
-
----
-
-## Key Terms (Glossary)
-
-- **MLI** = Multi-Label Images (full specimen photos)
-- **SLI** = Single-Label Images (cropped individual labels)
-- **Printed** = Machine/typewritten text labels
-- **Handwritten** = Hand-written text labels
-- **Identifier** = Catalog numbers, QR codes, specimen IDs
+Automatically extract and digitize text from museum specimen labels using artificial intelligence. Process thousands of specimens in hours instead of weeks.
 
 ## Table of Contents
-- [What This Tool Does](#what-this-tool-does)
-- [5-Minute Complete Example](#5-minute-complete-example)
-- [Pipeline Workflow](#pipeline-workflow)
-- [Which Pipeline Should I Use?](#which-pipeline-should-i-use)
-- [Quick Troubleshooting](#quick-troubleshooting)
-- [Quick Start](#quick-start)
-- [Documentation](#documentation)
-- [Repository Structure](#repository-structure)
-- [Testing & Compatibility](#testing--compatibility)
-- [Datasets](#datasets)
-- [License](#license)
+- [Entomological Label Information Extraction](#entomological-label-information-extraction)
+  - [Table of Contents](#table-of-contents)
+  - [What This Tool Does](#what-this-tool-does)
+  - [Prerequisites](#prerequisites)
+  - [Try It Right Now (2 minutes)](#try-it-right-now-2-minutes)
+  - [Need Help Getting Started?](#need-help-getting-started)
+  - [Using Your Own Images](#using-your-own-images)
+  - [Understanding the Results](#understanding-the-results)
+  - [Want to Learn More?](#want-to-learn-more)
+  - [Technical Details](#technical-details)
+  - [Sample Data and Training](#sample-data-and-training)
 
 ## What This Tool Does
 
-**The Problem:** Museums and researchers have millions of insect specimens with handwritten and printed labels that contain valuable scientific data, but manually transcribing this information is extremely time-consuming.
+**The Problem:** Museums have millions of insect specimens with handwritten and printed labels containing valuable scientific data, but manual transcription is extremely time-consuming.
 
 **The Solution:** This AI system automatically:
 - **Finds labels** in specimen photos
@@ -55,277 +27,128 @@ cd entomological-label-information-extraction
 - **Organizes the data** into spreadsheets
 - **Processes thousands** of specimens quickly
 
-**Real-World Impact:**
-- **Time Savings:** Process 1000s of specimens in hours
-- **High Accuracy:** AI models trained specifically on entomological data
-- **Scalable:** Works for museum collections of any size
-- **Reproducible:** Consistent results across different users and institutions
-- **Performance Optimized:** 50-90% faster processing with automatic caching and GPU acceleration
+**Why It Works:** AI models specifically trained on entomological data with high accuracy and reproducible results.
 
-## 5-Minute Complete Example
+## Prerequisites
 
-**Try it right now with included sample data:**
+**Before you start, you need:**
 
+1. **Docker Desktop** (recommended - easiest setup)
+   - Download from [docker.com](https://docker.com)
+   - Make sure it's running before starting the pipeline
+   - Allocate 8GB+ RAM to Docker in settings
+
+**Alternative:** Manual Python setup
+   - Python 3.9+ with conda or pip
+   - See [TECHNICAL_GUIDE.md](docs/TECHNICAL_GUIDE.md) for detailed installation
+
+**System requirements:**
+- 8GB+ RAM, 2GB+ disk space
+- Works on Linux, macOS, Windows
+
+## Try It Right Now (2 minutes)
+
+**Make sure you have [Docker Desktop running first](#prerequisites)!**
+
+**Step 1:** Get the code and run it
 ```bash
-# 1. Get the code
 git clone https://github.com/MargotBelot/entomological-label-information-extraction.git
 cd entomological-label-information-extraction
-
-# 2. Run with sample specimen photos (2 images included)
-./run-pipeline.sh
-# When prompted: Choose "Multi-Label Pipeline"
-# When prompted: Use default settings
-
-# 3. Check your results (while it runs, this takes ~2-3 minutes)
-ls data/MLI/output/                    # See all output files
-cat data/MLI/output/consolidated_results.json | head -20  # Final results
-ls data/MLI/output/input_cropped/      # Individual label images found
-```
-
-**What you'll get:**
-- `consolidated_results.json` - Complete processing results for each file
-- `input_cropped/` folder - Individual label images automatically detected
-- `identifier.csv` - Catalog numbers and specimen IDs found
-- `printed/`, `handwritten/` folders - Labels sorted by text type
-
-**Next steps:** Replace sample data with your images in `data/MLI/input/` and re-run!
-
-## Quick Troubleshooting
-
-**Common issues and instant fixes:**
-
-- **"Docker not found" or "command not found"** - Install and start Docker Desktop
-- **"No such file or directory"** - Make sure you're in the project folder: `cd entomological-label-information-extraction`
-- **"No output files generated"** - Check that `data/MLI/input/` contains .jpg files
-- **"Out of memory" errors** - Try fewer images at once, or close other applications
-- **"Permission denied"** - Make sure `run-pipeline.sh` is executable: `chmod +x run-pipeline.sh`
-- **Pipeline seems stuck** - Check Docker Desktop is running and has enough RAM allocated (8GB+)
-
-**Still stuck?** Check [TECHNICAL_GUIDE.md](docs/TECHNICAL_GUIDE.md) for detailed troubleshooting.
-
-## Pipeline Workflow
-
-```mermaid
-flowchart TD
-    %% Input and Pipeline Selection
-    A[Specimen Images<br/>JPG Format] --> B{Pipeline Type}
-    B -->|Multi-Label Images| C[Label Detection<br/>YOLO PyTorch]
-    B -->|Single-Label Images| D[Pre-cropped Labels<br/>SLI Input]
-    
-    %% Multi-Label Detection Path
-    C --> E[Detection Results<br/>input_predictions.csv]
-    C --> F[Cropped Labels<br/>input_cropped/<br/>MLI → SLI Conversion]
-    
-    %% Merge paths for classification
-    F --> G{Empty Label<br/>Classification}
-    D --> G
-    
-    %% Common Classification Pipeline
-    G -->|Empty| H[Filtered Out<br/>empty/]
-    G -->|Not Empty| I{Identifier<br/>Classification}
-    
-    I -->|Identifier| J[QR Codes<br/>identifier/]
-    I -->|Not Identifier| K{Text Type<br/>Classification}
-    
-    K -->|Handwritten| L[Handwritten Labels<br/>handwritten/]
-    K -->|Printed| M[Printed Labels<br/>printed/]
-    
-    %% Manual transcription for handwritten
-    L --> L1[Manual Transcription<br/>Human Expert Review]
-    
-    %% IMPORTANT: Multi-Label Pipeline STOPS HERE (no rotation)
-    %% ONLY Single-Label Pipeline continues to rotation correction
-    M --> N[Rotation Correction<br/>rotated/<br/>SINGLE-LABEL ONLY]
-    
-    N --> O{OCR Method}
-    O -->|Tesseract| P[Tesseract OCR<br/>Local Processing]
-    O -->|Google Vision| Q[Google Vision API<br/>Cloud Processing]
-    
-    P --> R[OCR Results<br/>ocr_preprocessed.json]
-    Q --> S[OCR Results<br/>ocr_google_vision.json]
-    
-    R --> T1[Post-processing<br/>Clean & Structure]
-    S --> T1
-    L1 --> T1
-    
-    %% Final Outputs with Consolidation
-    T1 --> U1[Consolidation<br/>Link All Results]
-    U1 --> V1[Final Output<br/>consolidated_results.json]
-    
-    %% Complete Analysis
-    V1 --> X1[Complete Analysis<br/>Ready for Research]
-    
-    %% Styling
-    classDef input fill:#e1f5fe,stroke:#0277bd,stroke-width:2px
-    classDef pipeline fill:#fff8e1,stroke:#f57c00,stroke-width:3px
-    classDef process fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
-    classDef output fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px
-    classDef decision fill:#fff3e0,stroke:#ef6c00,stroke-width:2px
-    classDef filtered fill:#ffebee,stroke:#c62828,stroke-width:2px
-    classDef final fill:#f1f8e9,stroke:#388e3c,stroke-width:3px
-    
-    class A input
-    class B,O pipeline
-    class C,N,P,Q,T1,U1 process
-    class D,E,F,J,L,M,L1,R,S output
-    class G,I,K decision
-    class H filtered
-    class V1,X1 final
-```
-
-### **Pipeline Overview**
-
-The visual flowchart above shows the complete processing workflow. For detailed technical information about each module, see [TECHNICAL_GUIDE.md](docs/TECHNICAL_GUIDE.md).
-
-**Key Processing Steps:**
-1. **Label Detection** - Finds labels in specimen photos (PyTorch YOLO)
-2. **Classification Pipeline** - Filters empty labels, identifies specimen IDs, sorts by text type (TensorFlow CNN)
-3. **Text Processing** - OCR extraction (Tesseract/Google Vision)
-   - **Rotation correction ONLY in Single-Label Pipeline**
-   - **Multi-Label Pipeline skips rotation step**
-4. **Post-processing** - Structured data output and quality analysis
-5. **Consolidation** - Links all results into comprehensive JSON output
-
-### **Key Outputs**
-
-- **`consolidated_results.json`** - Comprehensive linked results for each processed file
-- **`corrected_transcripts.json`** - Cleaned OCR text results  
-- **`identifier.csv`** - Specimen catalog numbers and IDs
-- **`input_cropped/`** - Individual label images for review
-
-For complete output descriptions, see [USER_GUIDE.md](docs/USER_GUIDE.md).
-
-## Which Pipeline Should I Use?
-
-**Simple choice:**
-
-**Full specimen photos with multiple labels?** - Multi-Label Pipeline
-```bash
-./run-pipeline.sh  # Choose "Multi-Label"
-```
-
-**Individual label images (already cropped)?** - Single-Label Pipeline
-```bash
-./run-pipeline.sh  # Choose "Single-Label"
-```
-
-**Not sure?** Start with Multi-Label – it works for both types!
-
-**Advanced details:** For technical pipeline differences, see [TECHNICAL_GUIDE.md](docs/TECHNICAL_GUIDE.md)
-
-## Quick Start
-
-**Easiest way to get started (recommended):**
-
-```bash
-# 1. Clone the repository
-git clone https://github.com/MargotBelot/entomological-label-information-extraction.git
-cd entomological-label-information-extraction
-
-# 2. Run the interactive pipeline launcher
 ./run-pipeline.sh
 ```
 
-That's it! The script will handle Docker setup, environment checks, and guide you through choosing the right pipeline for your data.
+**Step 2:** Choose your pipeline when prompted:
+- **Multi-Label Pipeline** - for full specimen photos
+- **Single-Label Pipeline** - for pre-cropped label images
 
-## Documentation
-
-**Complete Documentation:**
-
-**[DOCKER_SETUP.md](docs/DOCKER_SETUP.md)** - **Start here!** Docker pipeline setup (recommended)
-   - One-command pipeline execution
-   - Cross-platform Docker setup  
-   - Automatic environment management
-   - Troubleshooting guide
-
-**[USER_GUIDE.md](docs/USER_GUIDE.md)** - Complete usage instructions with examples
-   - Quick start with sample data
-   - Command-line options and examples
-   - Real-world workflows
-   - Output format reference
-
-**[TECHNICAL_GUIDE.md](docs/TECHNICAL_GUIDE.md)** - Installation, setup, and troubleshooting
-   - System requirements and installation
-   - Manual setup (advanced users)
-   - GPU configuration
-   - Development environment
-   - API reference
-
-**Additional Documentation:**
-   - `training_notebooks/` - Jupyter notebooks for model retraining
-   - `unit_tests/` - Test suite and usage examples
-
-## Repository Structure
-
-```
-├── run-pipeline.sh         # Main pipeline launcher
-├── scripts/
-│   ├── docker/             # Docker management scripts
-│   ├── processing/         # Main processing scripts (detection, classification, OCR)
-│   ├── evaluation/         # Model evaluation and performance analysis
-│   └── postprocessing/     # Data cleaning and output formatting
-├── label_processing/       # Core Python package
-├── label_evaluation/       # Model evaluation utilities
-├── label_postprocessing/   # Post-processing utilities
-├── pipelines/              # Docker pipeline configurations
-│   ├── *.dockerfile       # Service definitions
-│   ├── multi-label-docker-compose.yaml    # Multi-label pipeline
-│   ├── single-label-docker-compose.yaml   # Single-label pipeline  
-│   └── requirements/      # Python dependencies
-├── data/
-│   ├── MLI/               # Multi-label specimen images (sample data)
-│   └── SLI/               # Single-label images (sample data)
-├── models/
-│   ├── label_detection_model.pth           # PyTorch detection model
-│   ├── rotation_model.h5                   # TensorFlow rotation model
-│   ├── label_classifier_hp/                # Handwritten/printed classifier
-│   ├── label_classifier_identifier_not_identifier/  # Identifier classifier
-│   ├── label_classifier_multi_single/      # Multi/single label classifier
-│   └── classes/                            # Class definitions
-├── training_notebooks/    # Jupyter notebooks for model training
-├── unit_tests/            # Test suite
-└── docs/                  # Documentation
-    ├── DOCKER_SETUP.md    # Docker setup guide
-    ├── TECHNICAL_GUIDE.md # Technical documentation
-    └── USER_GUIDE.md      # User manual
-```
-
-**New users**: Start with [DOCKER_SETUP.md](docs/DOCKER_SETUP.md) for the easiest setup, or [USER_GUIDE.md](docs/USER_GUIDE.md) for complete instructions.
-
-**Quick Docker setup** (alternative to `./run-pipeline.sh`):
-
+**Step 3:** Check your results
 ```bash
-# Clone and run with sample data
-git clone https://github.com/[username]/entomological-label-information-extraction.git
-cd entomological-label-information-extraction
-docker compose -f pipelines/multi-label-docker-compose.yaml up --build
+ls data/MLI/output/                    # Multi-Label results
+ls data/SLI/output/                    # Single-Label results  
 ```
 
-**Installation issues**: See [TECHNICAL_GUIDE.md](docs/TECHNICAL_GUIDE.md)
+**What you'll get:** Individual label images, specimen IDs, and all text extracted into structured JSON and CSV files.
 
-## Testing & Compatibility
+## Need Help Getting Started?
 
-**Cross-platform support:** Linux, macOS, Windows
-- **PyTorch 2.6+ Compatible** - Handles latest PyTorch security changes
-- **Performance Optimized** - Automatic model caching and GPU acceleration
-- **Environment Independent** - Works from any directory or user account
-- **Automatic Fallbacks** - CPU/GPU detection and error recovery
+**Problem installing or running?** Common solutions:
 
-```bash
-# Run full test suite
-python3 -m pytest unit_tests/ -v
-```
+- **"Docker not found"** - Install Docker Desktop from docker.com
+- **"Permission denied"** - Run `chmod +x run-pipeline.sh`
+- **"No output files"** - Make sure your images are in .jpg format
+- **Pipeline stuck** - Check Docker Desktop has 8GB+ RAM allocated
 
-## Datasets
+**Still having issues?** See [TECHNICAL_GUIDE.md](docs/TECHNICAL_GUIDE.md) for detailed troubleshooting.
 
-The training and testing datasets used for models development are publicly available on Zenodo:
+## Using Your Own Images
 
-[https://doi.org/10.7479/khac-x956](https://doi.org/10.7479/khac-x956)
+**Ready to process your specimen collection?** Here's how:
 
-**Sample data included:**
-- `data/MLI/` - Multi-label specimen images (ready to use)
-- `data/SLI/` - Single-label images (ready to use)
+**For full specimen photos:**
+1. Put your .jpg images in `data/MLI/input/`
+2. Run `./run-pipeline.sh` and choose "Multi-Label Pipeline"
+3. Results appear in `data/MLI/output/consolidated_results.json`
 
-## License
+**For pre-cropped label images:**
+1. Put your .jpg images in `data/SLI/input/`
+2. Run `./run-pipeline.sh` and choose "Single-Label Pipeline"
+3. Results appear in `data/SLI/output/consolidated_results.json`
 
-MIT License - see [LICENSE](LICENSE) file for details
+**Best image quality:** High resolution (300+ DPI), clear lighting, .jpg format only.
+
+## Understanding the Results
+
+**After processing, you'll find these key files:**
+
+- **`consolidated_results.json`** - Main result file linking all processing stages for each image
+- **`input_cropped/`** - Individual label images found and extracted
+- **`identifier.csv`** - Catalog numbers and specimen IDs
+- **`printed/`, `handwritten/`** - Labels sorted by text type for further processing
+
+**The processing automatically:**
+1. Detects and crops labels from specimen photos  
+2. Classifies them as empty/useful, identifier/descriptive, handwritten/printed
+3. Applies rotation correction (Single-Label pipeline only)
+4. Extracts text using OCR
+5. Cleans and structures the data
+
+## Want to Learn More?
+
+**Complete guides available:**
+
+- **[USER_GUIDE.md](docs/USER_GUIDE.md)** - Detailed usage with examples and FAQ
+- **[DOCKER_SETUP.md](docs/DOCKER_SETUP.md)** - Docker setup and advanced options
+- **[TECHNICAL_GUIDE.md](docs/TECHNICAL_GUIDE.md)** - Installation, troubleshooting, development setup
+
+## Technical Details
+
+**System Requirements:**
+- Docker Desktop (recommended) OR Python 3.9+ with manual setup
+- 8GB+ RAM, 2GB+ disk space  
+- Cross-platform: Linux, macOS, Windows
+
+**Key Features:**
+- PyTorch 2.6+ compatible with automatic GPU detection
+- Model caching for 50-90% faster subsequent runs
+- Environment independent - works from any directory
+- Automatic fallbacks for CPU/GPU processing
+
+**Pipeline Differences:**
+- **Multi-Label:** Full specimen photos → label detection → classification → OCR
+- **Single-Label:** Pre-cropped labels → classification → rotation correction → OCR
+
+## Sample Data and Training
+
+**Included sample data:**
+- `data/MLI/` - Multi-label specimen images (ready to test)
+- `data/SLI/` - Single-label images (ready to test)
+
+**Training datasets:** Available on Zenodo at [https://doi.org/10.7479/khac-x956](https://doi.org/10.7479/khac-x956)
+
+**Model retraining:** See `training_notebooks/` for Jupyter notebooks
+
+---
+
+**License:** MIT - see [LICENSE](LICENSE) file  
+**Issues:** Report bugs on GitHub  
+**Contributing:** See TECHNICAL_GUIDE.md for development setup
