@@ -4,9 +4,40 @@
 
 This package automatically extracts and digitizes text information from entomological (insect) specimen labels using artificial intelligence.
 
+## TL;DR - Start Here (60 seconds)
+
+**Got full specimen photos with multiple labels?**
+```bash
+git clone https://github.com/MargotBelot/entomological-label-information-extraction.git
+cd entomological-label-information-extraction
+./run-pipeline.sh  # Choose "Multi-Label"
+```
+
+**Got individual cropped label images?**
+```bash
+./run-pipeline.sh  # Choose "Single-Label"
+```
+
+**Results appear in:** `data/MLI/output/consolidated_results.json` (Multi-Label) or `data/SLI/output/consolidated_results.json` (Single-Label)
+
+**Need help?** Problems starting? [Quick Troubleshooting](#quick-troubleshooting)
+
+---
+
+## Key Terms (Glossary)
+
+- **MLI** = Multi-Label Images (full specimen photos)
+- **SLI** = Single-Label Images (cropped individual labels)
+- **Printed** = Machine/typewritten text labels
+- **Handwritten** = Hand-written text labels
+- **Identifier** = Catalog numbers, QR codes, specimen IDs
+
 ## Table of Contents
 - [What This Tool Does](#what-this-tool-does)
+- [5-Minute Complete Example](#5-minute-complete-example)
 - [Pipeline Workflow](#pipeline-workflow)
+- [Which Pipeline Should I Use?](#which-pipeline-should-i-use)
+- [Quick Troubleshooting](#quick-troubleshooting)
 - [Quick Start](#quick-start)
 - [Documentation](#documentation)
 - [Repository Structure](#repository-structure)
@@ -30,6 +61,47 @@ This package automatically extracts and digitizes text information from entomolo
 - **Scalable:** Works for museum collections of any size
 - **Reproducible:** Consistent results across different users and institutions
 - **Performance Optimized:** 50-90% faster processing with automatic caching and GPU acceleration
+
+## 5-Minute Complete Example
+
+**Try it right now with included sample data:**
+
+```bash
+# 1. Get the code
+git clone https://github.com/MargotBelot/entomological-label-information-extraction.git
+cd entomological-label-information-extraction
+
+# 2. Run with sample specimen photos (2 images included)
+./run-pipeline.sh
+# When prompted: Choose "Multi-Label Pipeline"
+# When prompted: Use default settings
+
+# 3. Check your results (while it runs, this takes ~2-3 minutes)
+ls data/MLI/output/                    # See all output files
+cat data/MLI/output/consolidated_results.json | head -20  # Final results
+ls data/MLI/output/input_cropped/      # Individual label images found
+```
+
+**What you'll get:**
+- `consolidated_results.json` - Complete processing results for each file
+- `input_cropped/` folder - Individual label images automatically detected
+- `identifier.csv` - Catalog numbers and specimen IDs found
+- `printed/`, `handwritten/` folders - Labels sorted by text type
+
+**Next steps:** Replace sample data with your images in `data/MLI/input/` and re-run!
+
+## Quick Troubleshooting
+
+**Common issues and instant fixes:**
+
+- **"Docker not found" or "command not found"** - Install and start Docker Desktop
+- **"No such file or directory"** - Make sure you're in the project folder: `cd entomological-label-information-extraction`
+- **"No output files generated"** - Check that `data/MLI/input/` contains .jpg files
+- **"Out of memory" errors** - Try fewer images at once, or close other applications
+- **"Permission denied"** - Make sure `run-pipeline.sh` is executable: `chmod +x run-pipeline.sh`
+- **Pipeline seems stuck** - Check Docker Desktop is running and has enough RAM allocated (8GB+)
+
+**Still stuck?** Check [TECHNICAL_GUIDE.md](docs/TECHNICAL_GUIDE.md) for detailed troubleshooting.
 
 ## Pipeline Workflow
 
@@ -61,8 +133,9 @@ flowchart TD
     %% Manual transcription for handwritten
     L --> L1[Manual Transcription<br/>Human Expert Review]
     
-    %% Single-Label Pipeline Only (MLI stops after detection)
-    M --> N[Rotation Correction<br/>rotated/]
+    %% IMPORTANT: Multi-Label Pipeline STOPS HERE (no rotation)
+    %% ONLY Single-Label Pipeline continues to rotation correction
+    M --> N[Rotation Correction<br/>rotated/<br/>SINGLE-LABEL ONLY]
     
     N --> O{OCR Method}
     O -->|Tesseract| P[Tesseract OCR<br/>Local Processing]
@@ -107,7 +180,9 @@ The visual flowchart above shows the complete processing workflow. For detailed 
 **Key Processing Steps:**
 1. **Label Detection** - Finds labels in specimen photos (PyTorch YOLO)
 2. **Classification Pipeline** - Filters empty labels, identifies specimen IDs, sorts by text type (TensorFlow CNN)
-3. **Text Processing** - Rotation correction + OCR extraction (Tesseract/Google Vision)
+3. **Text Processing** - OCR extraction (Tesseract/Google Vision)
+   - **Rotation correction ONLY in Single-Label Pipeline**
+   - **Multi-Label Pipeline skips rotation step**
 4. **Post-processing** - Structured data output and quality analysis
 5. **Consolidation** - Links all results into comprehensive JSON output
 
@@ -120,13 +195,31 @@ The visual flowchart above shows the complete processing workflow. For detailed 
 
 For complete output descriptions, see [USER_GUIDE.md](docs/USER_GUIDE.md).
 
+## Which Pipeline Should I Use?
+
+**Simple choice:**
+
+**Full specimen photos with multiple labels?** - Multi-Label Pipeline
+```bash
+./run-pipeline.sh  # Choose "Multi-Label"
+```
+
+**Individual label images (already cropped)?** - Single-Label Pipeline
+```bash
+./run-pipeline.sh  # Choose "Single-Label"
+```
+
+**Not sure?** Start with Multi-Label – it works for both types!
+
+**Advanced details:** For technical pipeline differences, see [TECHNICAL_GUIDE.md](docs/TECHNICAL_GUIDE.md)
+
 ## Quick Start
 
 **Easiest way to get started (recommended):**
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/[username]/entomological-label-information-extraction.git
+git clone https://github.com/MargotBelot/entomological-label-information-extraction.git
 cd entomological-label-information-extraction
 
 # 2. Run the interactive pipeline launcher
