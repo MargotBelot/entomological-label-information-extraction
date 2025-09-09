@@ -93,6 +93,10 @@ cleanup_previous_runs() {
     # Clean up any orphaned volumes (optional - comment out if you want to keep data)
     # docker volume prune -f 2>/dev/null || true
     
+    # Remove macOS resource fork files that cause Docker build issues
+    echo "  Cleaning macOS resource fork files..."
+    find "${PROJECT_ROOT}" -name "._*" -type f -delete 2>/dev/null || true
+    
     echo "SUCCESS: Cleanup complete"
 }
 
@@ -147,6 +151,9 @@ main() {
     echo "This may take several minutes on first run..."
     
     # Build and run the pipeline
+    # Disable buildx bake to avoid path issues
+    export DOCKER_BUILDKIT_INLINE_BUILDX_BAKE=0
+    export COMPOSE_DOCKER_CLI_BUILD=0
     if docker-compose -f "$COMPOSE_FILE" up --build; then
         echo "SUCCESS: Pipeline completed successfully!"
         echo "Results are available in: ${PROJECT_ROOT}/data/MLI/output/"

@@ -81,13 +81,13 @@ cleanup_previous_runs() {
     # Stop any running containers from previous runs
     if docker ps --format "table {{.Names}}" | grep -E "(detection|classifier|tesseract|postprocessing)" >/dev/null 2>&1; then
         echo "  Stopping running containers..."
-        docker-compose -f "$COMPOSE_FILE" down --remove-orphans 2>/dev/null || true
+        docker compose -f "$COMPOSE_FILE" down --remove-orphans 2>/dev/null || true
     fi
     
     # Remove any stopped containers from previous runs  
     if docker ps -a --format "table {{.Names}}" | grep -E "(detection|classifier|tesseract|postprocessing)" >/dev/null 2>&1; then
         echo "  Removing stopped containers..."
-        docker-compose -f "$COMPOSE_FILE" rm -f 2>/dev/null || true
+        docker compose -f "$COMPOSE_FILE" rm -f 2>/dev/null || true
     fi
     
     # Clean up any orphaned volumes (optional - comment out if you want to keep data)
@@ -131,7 +131,7 @@ monitor_pipeline() {
     echo "======================================================"
     
     # Follow logs from all services
-    docker-compose -f "$COMPOSE_FILE" logs -f
+    docker compose -f "$COMPOSE_FILE" logs -f
 }
 
 # Main execution
@@ -147,7 +147,7 @@ main() {
     echo "This may take several minutes on first run..."
     
     # Build and run the pipeline
-    if docker-compose -f "$COMPOSE_FILE" up --build; then
+    if docker compose -f "$COMPOSE_FILE" up --build; then
         echo "SUCCESS: Pipeline completed successfully!"
         echo "Results are available in: ${PROJECT_ROOT}/data/SLI/output/"
         echo "Consolidated results: ${PROJECT_ROOT}/data/SLI/output/consolidated_results.json"

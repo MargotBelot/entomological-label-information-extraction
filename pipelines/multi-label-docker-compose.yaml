@@ -19,11 +19,11 @@ services:
     stdin_open: true
     tty: true
     build:
-      context: .
+      context: ..
       dockerfile: pipelines/segmentation.dockerfile
     shm_size: 2g
     volumes:
-      - ./data:/app/data
+      - ${PWD}/data:/app/data
     command: python3 scripts/processing/detection.py -j data/MLI/input -o data/MLI/output
     environment:
       - PYTHONPATH=/app
@@ -37,10 +37,10 @@ services:
     stdin_open: true
     tty: true
     build:
-      context: .
+      context: ..
       dockerfile: pipelines/empty_labels.dockerfile
     volumes:
-      - ./data:/app/data
+      - ${PWD}/data:/app/data
     command: python3 scripts/processing/analysis.py -o data/MLI/output -i data/MLI/output/input_cropped
     environment:
       - PYTHONPATH=/app
@@ -57,10 +57,10 @@ services:
     stdin_open: true
     tty: true
     build: 
-      context: .
+      context: ..
       dockerfile: pipelines/classification.dockerfile
     volumes:
-      - ./data:/app/data
+      - ${PWD}/data:/app/data
     command: python3 scripts/processing/classifiers.py -m 1 -j data/MLI/output/not_empty -o data/MLI/output
     environment:
       - PYTHONPATH=/app
@@ -77,10 +77,10 @@ services:
     stdin_open: true
     tty: true
     build: 
-      context: .
+      context: ..
       dockerfile: pipelines/classification.dockerfile
     volumes:
-      - ./data:/app/data
+      - ${PWD}/data:/app/data
     command: python3 scripts/processing/classifiers.py -m 2 -j data/MLI/output/not_identifier -o data/MLI/output
     environment:
       - PYTHONPATH=/app
@@ -97,10 +97,10 @@ services:
     stdin_open: true
     tty: true
     build: 
-      context: .
+      context: ..
       dockerfile: pipelines/tesseract.dockerfile
     volumes:
-      - ./data:/app/data
+      - ${PWD}/data:/app/data
     command: python3 scripts/processing/tesseract.py -d data/MLI/output/printed -o data/MLI/output
     environment:
       - PYTHONPATH=/app
@@ -117,10 +117,10 @@ services:
     stdin_open: true
     tty: true
     build: 
-      context: .
+      context: ..
       dockerfile: pipelines/postprocessing.dockerfile
     volumes:
-      - ./data:/app/data
+      - ${PWD}/data:/app/data
     command: >
       bash -c "
         echo 'Starting post-processing pipeline...' &&
