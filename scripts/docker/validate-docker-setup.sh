@@ -54,11 +54,11 @@ validate_compose_syntax() {
     local pipeline_name=$2
     
     echo "Validating $pipeline_name compose file syntax..."
-    if docker-compose -f "$compose_file" config >/dev/null 2>&1; then
+    if docker compose -f "$compose_file" config >/dev/null 2>&1; then
         echo "SUCCESS: $pipeline_name compose file syntax is valid"
     else
         echo "ERROR: $pipeline_name compose file has syntax errors:"
-        docker-compose -f "$compose_file" config
+        docker compose -f "$compose_file" config
         return 1
     fi
 }
@@ -184,11 +184,11 @@ test_compose_build() {
     echo "Testing $pipeline_name compose configuration..."
     
     # Just validate the compose file can be parsed (fast)
-    if docker-compose -f "$compose_file" config --quiet; then
+    if docker compose -f "$compose_file" config --quiet; then
         echo "SUCCESS: $pipeline_name configuration is valid"
     else
         echo "ERROR: $pipeline_name has configuration issues"
-        echo "  Run: docker-compose -f $compose_file config"
+        echo "  Run: docker compose -f $compose_file config"
         return 1
     fi
 }
