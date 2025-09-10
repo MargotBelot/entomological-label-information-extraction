@@ -44,7 +44,7 @@ Automatically extract and digitize text from museum specimen labels using artifi
 flowchart TD
     %% Input and Pipeline Selection
     A[📸 Specimen Images<br/>JPG Format] --> B{📋 Pipeline Type}
-    B -->|Multi-Label Images| C[🔍 Label Detection<br/>Faster R-CNN (Detecto)]
+    B -->|Multi-Label Images| C[🔍 Label Detection<br/>Faster R-CNN Detecto]
     B -->|Single-Label Images| D[🖼️ Pre-cropped Labels<br/>SLI Input]
     
     %% Multi-Label Detection Path
