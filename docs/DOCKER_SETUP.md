@@ -2,6 +2,34 @@
 
 **Docker provides the easiest way to run the complete pipeline with zero configuration.**
 
+## Table of Contents
+- [Docker Pipeline Setup](#docker-pipeline-setup)
+  - [Table of Contents](#table-of-contents)
+  - [TL;DR - Just Run It!](#tldr---just-run-it)
+  - [Pipeline Types](#pipeline-types)
+    - [Multi-Label Pipeline](#multi-label-pipeline)
+    - [Single-Label Pipeline](#single-label-pipeline)
+  - [Quick Start](#quick-start)
+    - [Option 1: Use the Main Launcher (Recommended)](#option-1-use-the-main-launcher-recommended)
+    - [Option 2: Run Specific Pipelines Directly](#option-2-run-specific-pipelines-directly)
+    - [Option 3: Validate Setup](#option-3-validate-setup)
+  - [Features](#features)
+    - [Automatic Docker Management](#automatic-docker-management)
+    - [Health Monitoring](#health-monitoring)
+    - [Consolidated Output](#consolidated-output)
+  - [Directory Structure](#directory-structure)
+  - [Docker Compose Services](#docker-compose-services)
+    - [Multi-Label Pipeline Services](#multi-label-pipeline-services)
+    - [Single-Label Pipeline Services](#single-label-pipeline-services)
+  - [Environment Setup](#environment-setup)
+    - [Requirements](#requirements)
+    - [First Run](#first-run)
+  - [Troubleshooting](#troubleshooting)
+    - [Common Issues](#common-issues)
+    - [Manual Docker Commands](#manual-docker-commands)
+  - [Output Format](#output-format)
+  - [Support](#support)
+
 ## TL;DR - Just Run It!
 
 **Got specimen images? Want results fast?**
