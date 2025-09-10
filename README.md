@@ -316,11 +316,11 @@ data/
 ## Cite This Work
 
 ```bibtex
-@software{belot2025entomological,
+@software{anonymous2024entomological,
   title={Entomological Label Information Extraction},
-  author={Belot, Margot and contributors},
-  year={2025},
-  url={https://github.com/MargotBelot/entomological-label-information-extraction},
+  author={Anonymous},
+  year={2024},
+  url={[Repository URL - anonymized for review]},
   note={Training datasets available at https://doi.org/10.7479/khac-x956}
 }
 ```
