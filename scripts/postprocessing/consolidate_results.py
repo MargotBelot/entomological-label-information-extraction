@@ -167,27 +167,45 @@ def load_rotation_results(output_dir: str) -> Dict[str, Dict[str, Any]]:
     """Load rotation correction results."""
     rotation_results = {}
     
-    # Check if rotation was applied (single-label pipeline)
+    # First try to load from rotation metadata file (preferred method)
+    meta_file = os.path.join(output_dir, 'rotation_metadata.csv')
+    if os.path.exists(meta_file):
+        try:
+            with open(meta_file, 'r', encoding='utf-8') as f:
+                reader = csv.DictReader(f)
+                for row in reader:
+                    filename = row.get('filename', '')
+                    if filename:
+                        angle = int(row.get('angle', 0))
+                        corrected = str(row.get('corrected', 'False')).lower() == 'true'
+                        rotation_results[filename] = {
+                            'angle': angle,
+                            'corrected': corrected
+                        }
+            return rotation_results
+        except Exception as e:
+            print(f"Error loading rotation metadata: {e}")
+            # Fall back to directory-based detection
+    
+    # Fallback: directory-based detection (legacy method)
     rotated_dir = os.path.join(output_dir, 'rotated')
     printed_dir = os.path.join(output_dir, 'printed')
     
     if os.path.exists(rotated_dir):
         # Files in rotated directory had rotation correction applied
-        # We can't determine the exact rotation angle from the current implementation
-        # but we know rotation was applied
         for filename in os.listdir(rotated_dir):
             if filename.lower().endswith(('.jpg', '.jpeg', '.png')):
                 rotation_results[filename] = {
-                    'rotation_applied': True,  # Rotation was applied
-                    'original_angle': 'unknown'  # Original angle classification not stored
+                    'rotation_applied': True,  # Legacy field
+                    'original_angle': 'unknown'  # Legacy field
                 }
     elif os.path.exists(printed_dir):
         # Files went directly to printed (multi-label pipeline, no rotation step)
         for filename in os.listdir(printed_dir):
             if filename.lower().endswith(('.jpg', '.jpeg', '.png')):
                 rotation_results[filename] = {
-                    'rotation_applied': False,  # No rotation step in multi-label pipeline
-                    'original_angle': 'not_applicable'  # Multi-label doesn't use rotation
+                    'rotation_applied': False,  # Legacy field
+                    'original_angle': 'not_applicable'  # Legacy field
                 }
     
     return rotation_results
@@ -217,23 +235,33 @@ def load_ocr_results(output_dir: str) -> Dict[str, Dict[str, Any]]:
                     for item in ocr_data:
                         file_id = item.get('ID', '')
                         if file_id:
-                            ocr_results[file_id] = {
+                            entry = {
                                 'method': method,
                                 'raw_text': item.get('text', '')
-                                # Note: Tesseract OCR doesn't provide confidence scores in our implementation
                             }
+                            # Include confidence if available
+                            if 'confidence' in item:
+                                entry['confidence'] = item['confidence']
+                            ocr_results[file_id] = entry
                 elif isinstance(ocr_data, dict):
                     for file_id, content in ocr_data.items():
                         if isinstance(content, dict):
                             text = content.get('text', '')
+                            entry = {
+                                'method': method,
+                                'raw_text': text
+                            }
+                            # Include confidence if available
+                            if 'confidence' in content:
+                                entry['confidence'] = content['confidence']
                         else:
                             text = str(content)
+                            entry = {
+                                'method': method,
+                                'raw_text': text
+                            }
                         
-                        ocr_results[file_id] = {
-                            'method': method,
-                            'raw_text': text
-                            # Note: Tesseract OCR doesn't provide confidence scores in our implementation
-                        }
+                        ocr_results[file_id] = entry
             except Exception as e:
                 print(f"Error loading OCR results from {ocr_file}: {e}")
                 continue

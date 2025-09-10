@@ -18,6 +18,7 @@
 
 ## Table of Contents
 - [Technical Guide](#technical-guide)
+  - [New to Technical Setup?](#new-to-technical-setup)
   - [Table of Contents](#table-of-contents)
   - [System Requirements](#system-requirements)
   - [Installation](#installation)
@@ -322,19 +323,28 @@ sudo usermod -aG docker $USER
 
 **Label Detection Model:**
 - **Framework:** PyTorch
-- **Architecture:** YOLO-based object detection
+- **Architecture:** Faster R-CNN (Detecto library)
 - **Input:** RGB images (any size, automatically resized)
 - **Output:** Bounding boxes with confidence scores
 - **Training Data:** Annotated entomological specimen images
 
 **Classification Models:**
 - **Framework:** TensorFlow
-- **Purpose:** Categorize label types (handwritten vs. printed)
-- **Input:** Cropped label images
+- **Purpose:** Categorize label types (empty/not_empty, identifier/not_identifier, handwritten/printed)
+- **Input:** Cropped label images (224×224 pixels)
 - **Output:** Classification probabilities
+- **Models:** Three specialized classifiers for different binary classifications
+
+**Rotation Correction Model:**
+- **Framework:** TensorFlow/Keras
+- **Architecture:** CNN for rotation angle classification
+- **Input:** Label images resized to 224×224 pixels
+- **Output:** Rotation angle prediction (0°, 90°, 180°, 270°)
+- **Purpose:** Correct label orientation for optimal OCR accuracy
+- **Scope:** Applied to printed labels in both MLI and SLI pipelines
 
 **Text Recognition:**
-- **Primary:** Tesseract OCR (offline, free)
+- **Primary:** Tesseract OCR (offline, free) with confidence scoring
 - **Optional:** Google Cloud Vision API (requires setup and billing)
 
 ## Advanced Configuration
@@ -457,6 +467,9 @@ python3 scripts/processing/detection.py [options]
 
 # Classification
 python3 scripts/processing/classifiers.py [options]
+
+# Rotation correction
+python3 scripts/processing/rotation.py [options]
 
 # OCR processing
 python3 scripts/processing/tesseract.py [options]
