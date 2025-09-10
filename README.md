@@ -316,10 +316,10 @@ data/
 ## Cite This Work
 
 ```bibtex
-@software{anonymous2024entomological,
+@software{anonymous2025entomological,
   title={Entomological Label Information Extraction},
   author={Anonymous},
-  year={2024},
+  year={2025},
   url={[Repository URL - anonymized for review]},
   note={Training datasets available at https://doi.org/10.7479/khac-x956}
 }
