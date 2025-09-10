@@ -245,10 +245,24 @@ def predict_angles(input_image_dir: str, output_image_dir: str, model_path: str,
         debug_save_by_angle(image_paths, predicted_angles, output_base_dir="debug_angles")
 
     print("Rotating images based on predictions...")
-    for image_path, predicted_angle in zip(image_paths, predicted_angles):
-        angle_deg = ANGLE_MAP.get(predicted_angle, 0)
-        # Use your rotate_single_image or PIL-based rotation here
-        rotate_single_image(image_path, angle_deg // 90, output_image_dir)  # if your function expects multiples of 90
+    
+    # Write rotation metadata for consolidation
+    import csv
+    meta_path = os.path.join(output_image_dir, "rotation_metadata.csv")
+    with open(meta_path, "w", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f)
+        writer.writerow(["filename", "angle", "corrected"])
+        
+        for image_path, predicted_angle in zip(image_paths, predicted_angles):
+            angle_deg = ANGLE_MAP.get(predicted_angle, 0)
+            filename = os.path.basename(image_path)
+            corrected = bool(angle_deg != 0)
+            
+            # Write metadata
+            writer.writerow([filename, angle_deg, corrected])
+            
+            # Rotate the image
+            rotate_single_image(image_path, angle_deg // 90, output_image_dir)  # if your function expects multiples of 90
 
 def rotate_image_pil(image_path, angle_deg, output_path):
     with Image.open(image_path) as img:

@@ -4,25 +4,6 @@
 
 This guide shows you how to use the entomological label extraction tool with practical examples and visual explanations.
 
-## New to This? Start Here!
-
-**Never used AI image processing before? No problem!**
-
-This tool is like having a super-fast research assistant that can:
-1. **Look at your specimen photos** and find all the labels
-2. **Read the text** on those labels (even handwritten ones!)
-3. **Organize everything** into spreadsheet files you can use
-
-**The easiest way to start:**
-```bash
-# Get the code and run it (takes 5 minutes)
-git clone https://github.com/MargotBelot/entomological-label-information-extraction.git
-cd entomological-label-information-extraction
-./run-pipeline.sh
-```
-
-That's it! The tool includes sample data, so you can see results immediately.
-
 ## Table of Contents
 - [New to This? Start Here!](#new-to-this-start-here)
 - [What This Tool Does (For Beginners)](#what-this-tool-does-for-beginners)
@@ -41,42 +22,33 @@ That's it! The tool includes sample data, so you can see results immediately.
 - [Next Steps](#next-steps)
 - [Appendix: Command Options Reference](#appendix-command-options-reference)
 
+## New to This? Start Here!
+
+**Never used AI image processing before? No problem!**
+
+This tool is like having a super-fast research assistant that can:
+1. **Look at your specimen photos** and find all the labels
+2. **Read the text** on those labels
+3. **Organize everything** into spreadsheet files you can use
+
+**The easiest way to start:**
+```bash
+# Get the code and run it
+git clone https://github.com/MargotBelot/entomological-label-information-extraction.git
+cd entomological-label-information-extraction
+./run-pipeline.sh
+```
+
+That's it! The tool includes sample data, so you can see results immediately.
+
 ## What This Tool Does (For Beginners)
 
 **If you're new to this:** This tool automatically reads text from insect specimen labels and converts it into spreadsheet data.
-
 
 ### **Two Ways to Use This Tool:**
 
 - **Docker (Beginner-Friendly):** Automated, one-click processing
 - **Python Scripts (Advanced):** Step-by-step control for custom workflows
-
-### **Which Pipeline Should I Use?**
-
-```
-What type of images do you have?
-┌────────────────────────────────────────────────┐
-│                                                │
-│           Full specimen photos               │
-│   (insects with multiple labels visible)       │
-│                        ↓                       │
-│          Use MULTI-LABEL PIPELINE            │
-│      docker compose -f multi-label-docker-     │
-│            compose.yaml up --build             │
-└────────────────────────────────────────────────┘
-
-┌──────────────────────────────────────────────────┐
-│                                                  │
-│           Individual label images             │
-│      (already cropped, one label per image)      │
-│                         ↓                        │
-│           Use SINGLE-LABEL PIPELINE           │
-│      docker compose -f single-label-docker-      │
-│              compose.yaml up --build             │
-└──────────────────────────────────────────────────┘
-```
-
-**Still not sure?** Start with the **Multi-Label Pipeline** – it works for both types!
 
 ## Prerequisites
 
@@ -118,8 +90,8 @@ To use this project, ensure the following are installed and set up. If you need 
 
 The repository includes sample data to help you get started immediately:
 
-- `data/MLI/input/` - Multi-label specimen images (2 sample images)
-- `data/SLI/input/` - Single-label images (6 sample images)
+- `data/MLI/input/` - Multi-label specimen images
+- `data/SLI/input/` - Single-label images
 
 **Option 1: Docker Pipeline (Recommended)**
 
@@ -239,6 +211,8 @@ Empty Filter → not_empty/ + empty/
 Identifier Filter → identifier/ + not_identifier/
     ↓
 Text Type Filter → handwritten/ + printed/
+    ↓
+Rotation Correction → rotated/
     ↓
 OCR Processing → ocr_preprocessed.json
     ↓
@@ -806,7 +780,7 @@ A: Try higher confidence: `--confidence 0.8` for more selective detection.
 A: First run is slower (downloads models). Subsequent runs use cached models and are 80-90% faster. Use `--device cpu` to force CPU-only.
 
 **Q: Can I process non-English labels?**  
-A: Yes! Detection works with any language. OCR supports multiple languages (check TECHNICAL_GUIDE.md for setup).
+A: Yes! Detection and rotation correction work with any language. OCR supports multiple languages (check [TECHNICAL_GUIDE.md](TECHNICAL_GUIDE.md) for setup).
 
 ## Getting Help
 
@@ -835,7 +809,7 @@ A: Yes! Detection works with any language. OCR supports multiple languages (chec
 - Use smaller, lower-resolution images if acceptable
 
 **Q: Can I process non-English labels?**
-- The detection works with any language
+- Detection and rotation correction work with any language
 - OCR text extraction supports multiple languages (see [TECHNICAL_GUIDE.md](TECHNICAL_GUIDE.md))
 
 **Q: Model loading issues?**

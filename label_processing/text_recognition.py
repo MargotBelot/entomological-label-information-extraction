@@ -403,13 +403,34 @@ class Tesseract:
         processed = result_raw.replace('\n', ' ')
         return processed
 
-    def image_to_string(self) -> dict[str, str]:
+    def image_to_string(self) -> dict[str, str | float]:
         """
         Apply OCR and image parameters on JPG images.
 
         Returns:
-            dict[str, str]: A dictionary containing the image ID (filename) and the OCR-processed text.
+            dict[str, str | float]: A dictionary containing the image ID (filename), OCR-processed text, and confidence score.
         """
-        transcript = py.image_to_string(self.image.image, self.languages, self.config)
+        # Get OCR text with confidence data
+        data = py.image_to_data(self.image.image, lang=self.languages, config=self.config, output_type=py.Output.DICT)
+        
+        # Extract text and calculate mean confidence
+        text_parts = []
+        confidences = []
+        
+        for i in range(len(data['text'])):
+            if int(data['conf'][i]) > 0:  # Only include words with positive confidence
+                text_parts.append(data['text'][i])
+                confidences.append(int(data['conf'][i]))
+        
+        # Combine text and calculate average confidence
+        transcript = ' '.join(text_parts)
         transcript = self._process_string(transcript)
-        return {"ID": self.image.filename, "text": transcript}
+        
+        # Calculate mean confidence (0-100 scale, convert to 0-1)
+        mean_confidence = (sum(confidences) / len(confidences) / 100.0) if confidences else 0.0
+        
+        return {
+            "ID": self.image.filename, 
+            "text": transcript,
+            "confidence": round(mean_confidence, 3)
+        }

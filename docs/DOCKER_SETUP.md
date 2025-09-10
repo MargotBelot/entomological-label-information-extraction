@@ -31,15 +31,13 @@ That's it! The script will:
 
 ### Multi-Label Pipeline
 - **Input**: Full specimen images in `data/MLI/input/`
-- **Process**: Detection → Classification → OCR → Post-processing
+- **Process**: Detection → Classification → Rotation Correction → OCR → Post-processing
 - **Output**: `data/MLI/output/consolidated_results.json`
-- **Note**: Multi-label pipeline does **NOT** include rotation correction
 
 ### Single-Label Pipeline  
 - **Input**: Pre-cropped label images in `data/SLI/input/`
-- **Process**: Classification → **Rotation Correction** → OCR → Post-processing
+- **Process**: Classification → Rotation Correction → OCR → Post-processing
 - **Output**: `data/SLI/output/consolidated_results.json`
-- **Note**: Single-label pipeline **includes** rotation correction for printed labels
 
 ## Quick Start
 
@@ -131,18 +129,19 @@ docs/                      # Documentation
 ### Multi-Label Pipeline Services
 1. **detection** - Detect and crop labels from specimen images
 2. **empty_not_empty_classifier** - Filter empty labels
-3. **nuri_notnuri_classifier** - Classify identifier vs description
+3. **nuri_notnuri_classifier** - Classify identifier vs not_identifier
 4. **handwritten_printed_classifier** - Classify text type
-5. **tesseract** - OCR text extraction
-6. **postprocessing** - Clean text and consolidate results
+5. **rotator** - Correct text orientation (Only printed labels)
+6. **tesseract** - OCR text extraction
+7. **postprocessing** - Clean text and consolidate results
 
 **No rotation service** - Multi-label pipeline does not include rotation correction
 
 ### Single-Label Pipeline Services
 1. **empty_not_empty_classifier** - Filter empty labels
-2. **nuri_notnuri_classifier** - Classify identifier vs description
+2. **nuri_notnuri_classifier** - Classify identifier vs not_identifier
 3. **handwritten_printed_classifier** - Classify text type
-4. **rotator** - Correct text orientation (Only in Single-Label Pipeline)
+4. **rotator** - Correct text orientation (Only printed labels)
 5. **tesseract** - OCR text extraction
 6. **postprocessing** - Clean text and consolidate results
 

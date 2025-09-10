@@ -1,5 +1,7 @@
 # Entomological Label Information Extraction
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE) [![CI](https://github.com/MargotBelot/entomological-label-information-extraction/actions/workflows/ci.yml/badge.svg)](.github/workflows/ci.yml) ![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue) ![Docker](https://img.shields.io/badge/docker-ready-2496ED) ![Prototype](https://img.shields.io/badge/status-prototype-orange)
+
 **AI-powered text extraction from insect specimen labels**
 
 Automatically extract and digitize text from museum specimen labels using artificial intelligence. Process thousands of specimens.
@@ -8,14 +10,21 @@ Automatically extract and digitize text from museum specimen labels using artifi
 - [Entomological Label Information Extraction](#entomological-label-information-extraction)
   - [Table of Contents](#table-of-contents)
   - [What This Tool Does](#what-this-tool-does)
+  - [Pipeline Workflow](#pipeline-workflow)
+  - [Module Architecture](#module-architecture)
+    - [Processing Pipeline Scripts](#processing-pipeline-scripts)
+    - [Core Processing Library](#core-processing-library)
+    - [Post-Processing and Evaluation](#post-processing-and-evaluation)
+    - [Support Infrastructure](#support-infrastructure)
   - [Prerequisites](#prerequisites)
-  - [Try It Right Now (2 minutes)](#try-it-right-now-2-minutes)
+  - [Try It Right Now](#try-it-right-now)
   - [Need Help Getting Started?](#need-help-getting-started)
   - [Using Your Own Images](#using-your-own-images)
   - [Understanding the Results](#understanding-the-results)
   - [Want to Learn More?](#want-to-learn-more)
   - [Technical Details](#technical-details)
   - [Sample Data and Training](#sample-data-and-training)
+  - [Cite This Work](#cite-this-work)
 
 ## What This Tool Does
 
@@ -35,7 +44,7 @@ Automatically extract and digitize text from museum specimen labels using artifi
 flowchart TD
     %% Input and Pipeline Selection
     A[📸 Specimen Images<br/>JPG Format] --> B{📋 Pipeline Type}
-    B -->|Multi-Label Images| C[🔍 Label Detection<br/>YOLO PyTorch]
+    B -->|Multi-Label Images| C[🔍 Label Detection<br/>Faster R-CNN (Detecto)]
     B -->|Single-Label Images| D[🖼️ Pre-cropped Labels<br/>SLI Input]
     
     %% Multi-Label Detection Path
@@ -102,6 +111,69 @@ flowchart TD
     class W1 analysis
 ```
 
+## Module Architecture
+
+**Core processing modules and their responsibilities:**
+
+### Processing Pipeline Scripts
+
+- **`scripts/processing/detection.py`** - Object detection (Detecto/Faster R-CNN) for label detection in specimen photos
+  - Finds and crops individual labels from full specimen images
+  - Supports GPU/CPU detection with model caching for faster subsequent runs
+  - Outputs detection confidence scores and bounding box coordinates
+
+- **`scripts/processing/classifiers.py`** - Multi-stage label classification
+  - Classifies labels as empty/not_empty, identifier/not_identifier, handwritten/printed
+  - Uses three specialized TensorFlow models for different classification tasks
+  - Automatically sorts images into appropriate directories for further processing
+
+- **`scripts/processing/rotation.py`** - Label orientation correction (printed labels in both pipelines)
+  - Detects and corrects label rotation using a trained neural network
+  - Ensures optimal text orientation for OCR accuracy
+  - Handles various rotation angles with high precision
+
+- **`scripts/processing/tesseract.py`** - Local OCR text extraction
+  - Processes printed labels using Tesseract OCR engine
+  - Applies adaptive thresholding and image preprocessing
+  - Supports multiprocessing for batch operations and QR code detection
+
+- **`scripts/processing/vision.py`** - Cloud-based OCR using Google Vision API
+  - Alternative OCR method for enhanced accuracy on challenging text
+  - Provides bounding box information for detected text
+  - Handles complex layouts and varied text formats
+
+### Core Processing Library
+
+- **`label_processing/`** - Core image processing and AI model interfaces
+  - `label_detection.py` - Detecto (Faster R-CNN) model wrapper and image cropping utilities
+  - `tensorflow_classifier.py` - TensorFlow model loading and batch classification
+  - `text_recognition.py` - Tesseract OCR integration with preprocessing
+  - `label_rotation.py` - Rotation detection and correction algorithms
+  - `ocr_vision.py` - Google Vision API integration
+  - `utils.py` - Common utilities for file handling and validation
+
+### Post-Processing and Evaluation
+
+- **`label_postprocessing/`** - OCR output cleaning and data structuring
+  - `ocr_postprocessing.py` - Text cleaning, format standardization, and quality validation
+
+- **`scripts/evaluation/`** - Performance analysis and quality metrics
+  - `cluster_eval.py` - Word2Vec clustering analysis for transcript similarity
+  - `detection_eval.py` - Object detection accuracy evaluation with IoU metrics
+  - `classifiers_eval.py` - Classification model performance assessment
+  - `ocr_eval.py` - OCR accuracy evaluation against ground truth
+
+- **`scripts/postprocessing/`** - Final output generation
+  - `consolidate_results.py` - Merges all processing stages into unified result files
+  - `process.py` - Orchestrates the complete post-processing workflow
+
+### Support Infrastructure
+
+- **`pipelines/`** - Docker containerization and pipeline orchestration
+- **`models/`** - Pre-trained AI models (Faster R-CNN detection, TensorFlow classifiers, rotation)
+- **`training_notebooks/`** - Jupyter notebooks for model retraining and development
+- **`unit_tests/`** - Comprehensive test suite ensuring pipeline reliability
+
 ## Prerequisites
 
 **Before you start, you need:**
@@ -119,7 +191,7 @@ flowchart TD
 - 8GB+ RAM, 2GB+ disk space
 - Works on Linux, macOS, Windows
 
-## Try It Right Now (2 minutes)
+## Try It Right Now
 
 **Make sure you have [Docker Desktop running first](#prerequisites)!**
 
@@ -131,7 +203,7 @@ cd entomological-label-information-extraction
 ```
 
 **Step 2:** Choose your pipeline when prompted:
-- **Multi-Label Pipeline** - for full specimen photos
+- **Multi-Label Pipeline** - for images containing multiple labels
 - **Single-Label Pipeline** - for pre-cropped label images
 
 **Step 3:** Check your results
@@ -171,17 +243,38 @@ ls data/SLI/output/                    # Single-Label results
 
 ## Understanding the Results
 
+**Directory Layout:**
+```
+data/
+├── MLI/
+│   ├── input/          # Multiple label images
+│   └── output/         # Detection results + consolidated_results.json
+│       ├── input_cropped/
+│       ├── printed/, handwritten/, identifier/, empty/
+│       └── *.json, *.csv files
+└── SLI/
+    ├── input/          # Pre-cropped label images
+    └── output/         # Classification results + OCR outputs
+        ├── printed/, handwritten/, identifier/, empty/
+        └── *.json, *.csv files
+```
+
 **After processing, you'll find these key files:**
 
 - **`consolidated_results.json`** - Main result file linking all processing stages for each image
 - **`input_cropped/`** - Individual label images found and extracted
-- **`identifier.csv`** - Catalog numbers and specimen IDs
+- **`identifier.csv`** - Catalog numbers and specimen IDs  
 - **`printed/`, `handwritten/`** - Labels sorted by text type for further processing
+- **`ocr_preprocessed.json`** - Tesseract OCR results with preprocessed text
+- **`ocr_google_vision.json`** - Google Vision API OCR results
+- **`corrected_transcripts.json`** - Post-processed and cleaned OCR transcripts
+- **`plausible_transcripts.json`** - High-confidence transcripts for scientific use
+- **`empty_transcripts.csv`** - Images classified as empty or containing no useful text
 
 **The processing automatically:**
 1. Detects and crops labels from specimen photos  
-2. Classifies them as empty/useful, identifier/descriptive, handwritten/printed
-3. Applies rotation correction (Single-Label pipeline only)
+2. Classifies them as empty/not_empty, identifier/not_identifier, handwritten/printed
+3. Applies rotation correction
 4. Extracts text using OCR
 5. Cleans and structures the data
 
@@ -207,8 +300,8 @@ ls data/SLI/output/                    # Single-Label results
 - Automatic fallbacks for CPU/GPU processing
 
 **Pipeline Differences:**
-- **Multi-Label:** Full specimen photos → label detection → classification → OCR
-- **Single-Label:** Pre-cropped labels → classification → rotation correction → OCR
+- **Multi-Label (MLI):** Multiple specimen labels in photo → label detection → classification → rotation correction (for printed labels) → OCR
+- **Single-Label (SLI):** Pre-cropped labels → classification → rotation correction (for printed labels) → OCR
 
 ## Sample Data and Training
 
@@ -218,10 +311,21 @@ ls data/SLI/output/                    # Single-Label results
 
 **Training datasets:** Available on Zenodo at [https://doi.org/10.7479/khac-x956](https://doi.org/10.7479/khac-x956)
 
-**Model retraining:** See `training_notebooks/` for Jupyter notebooks
+**Model retraining:** See [`training_notebooks/`](training_notebooks/) for Jupyter notebooks
+
+## Cite This Work
+
+```bibtex
+@software{belot2025entomological,
+  title={Entomological Label Information Extraction},
+  author={Belot, Margot and contributors},
+  year={2025},
+  url={https://github.com/MargotBelot/entomological-label-information-extraction},
+  note={Training datasets available at https://doi.org/10.7479/khac-x956}
+}
+```
 
 ---
 
 **License:** MIT - see [LICENSE](LICENSE) file  
-**Issues:** Report bugs on GitHub  
-**Contributing:** See TECHNICAL_GUIDE.md for development setup
+**Issues:** Report bugs on GitHub
