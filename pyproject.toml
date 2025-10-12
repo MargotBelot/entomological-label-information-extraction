@@ -23,7 +23,6 @@ dependencies = [
         "cer==1.2.0",
         "deskew==1.5.1",
         "detecto==1.2.2",
-        "editdistance==0.6.2",
         "Flask==3.1.0",
         "Flask-Cors==4.0.0",
         "gensim==4.3.2",

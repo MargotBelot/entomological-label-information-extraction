@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
 import warnings
-from editdistance import eval
+import difflib
 
 # Suppress warning messages during execution
 warnings.filterwarnings("ignore")
@@ -35,7 +35,11 @@ def calculate_cer(reference: list, hypothesis: list) -> float:
     """
     if not reference or len(reference[0]) == 0:
         return 0.0
-    edit_distance = eval(reference[0], hypothesis[0])
+    # Calculate edit distance using difflib
+    ref_chars = list(reference[0])
+    hyp_chars = list(hypothesis[0])
+    matcher = difflib.SequenceMatcher(None, ref_chars, hyp_chars)
+    edit_distance = len(ref_chars) + len(hyp_chars) - 2 * sum(triple.size for triple in matcher.get_matching_blocks())
     reference_length = len(reference[0])
     return edit_distance / reference_length
 
