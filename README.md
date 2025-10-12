@@ -54,8 +54,8 @@ pip install -e .
 # Launch GUI (easiest method)
 python launch_gui.py
 
-# OR use Docker
-./run-pipeline.sh
+# OR use Docker directly
+docker-compose -f pipelines/multi-label-docker-compose.yaml up
 
 # OR run individual scripts
 python scripts/processing/detection.py -j data/MLI/input -o data/MLI/output
@@ -247,7 +247,9 @@ pip install -e .
 ```bash
 # Install Docker Desktop: https://docker.com
 # Then run:
-./run-pipeline.sh
+docker-compose -f pipelines/multi-label-docker-compose.yaml up
+# OR for single-label processing:
+docker-compose -f pipelines/single-label-docker-compose.yaml up
 ```
 
 ## GUI Usage (Recommended)
@@ -370,13 +372,25 @@ pytest unit_tests/
 ## File Structure
 
 ```
-data/
-├── MLI/input/          # Put specimen photos here
-├── MLI/output/         # Results appear here
-├── SLI/input/          # Put individual labels here
-└── SLI/output/         # Results appear here
+Project Structure:
+├── data/
+│   ├── MLI/input/          # Put specimen photos here
+│   ├── MLI/output/         # Results appear here
+│   └── SLI/input/          # Put individual labels here
+├── scripts/
+│   ├── processing/         # Main processing scripts
+│   ├── evaluation/         # Evaluation and analysis tools
+│   └── postprocessing/     # Result consolidation
+├── label_processing/       # Core processing modules
+├── label_evaluation/       # Evaluation modules
+├── label_postprocessing/   # Postprocessing modules
+├── pipelines/              # Docker compose files
+├── training_notebooks/     # Jupyter training notebooks
+├── models/                 # Trained model files
+├── tools/                  # Utility tools
+└── unit_tests/             # Test suite
 
-Key output files:
+Key output files (in data/*/output/):
 - consolidated_results.json  # Main results file
 - identifier.csv            # Specimen IDs  
 - corrected_transcripts.json # Cleaned text
@@ -411,11 +425,6 @@ The system uses:
   note={Training datasets available at https://doi.org/10.7479/khac-x956}
 }
 ```
-
----
-
-**License:** MIT - see [LICENSE](LICENSE) file  
-**Issues:** Report bugs on GitHub
 
 ## License
 
