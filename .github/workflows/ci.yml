@@ -49,9 +49,12 @@ jobs:
         pip install matplotlib seaborn
         pip install "tensorflow-cpu>=2.16.0" "keras>=2.16.0"
         pip install opencv-python-headless pillow
-        pip install nltk jiwer
+        pip install nltk jiwer pytesseract
+        pip install plotly detecto
         # Install the package in development mode without heavy dependencies
         pip install -e . --no-deps
+        # Download required NLTK data
+        python -c "import nltk; nltk.download('punkt_tab'); nltk.download('stopwords'); nltk.download('punkt')"
       env:
         TF_CPP_MIN_LOG_LEVEL: 2
         CUDA_VISIBLE_DEVICES: ""
