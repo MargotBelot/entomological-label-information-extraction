@@ -47,7 +47,7 @@ jobs:
         # Install core scientific packages with flexible versions
         pip install "numpy>=1.26.0" "pandas>=2.2.0" "scipy>=1.11.0" "scikit-learn>=1.4.0"
         pip install matplotlib seaborn
-        pip install tensorflow-cpu==2.15.0 keras==2.15.0
+        pip install "tensorflow-cpu>=2.16.0" "keras>=2.16.0"
         pip install opencv-python-headless pillow
         pip install nltk jiwer
         # Install the package in development mode without heavy dependencies
