@@ -97,8 +97,7 @@ def check_project_structure():
         "launch_gui.py",
         "pyproject.toml",
         "environment.yml", 
-        "README.md",
-        "INSTALL.md"
+        "README.md"
     ]
     
     required_dirs = [
@@ -248,14 +247,12 @@ def main():
         print("Or run command line: ./tools/run_mli_pipeline.sh or ./tools/run_sli_pipeline.sh")
     else:
         print("[ERROR] Several checks failed. Please resolve the issues above before running.")
-        print("See INSTALL.md and docs/DOCKER_SETUP.md for detailed setup instructions.")
+        print("See README.md for detailed setup instructions.")
     
     print()
-    print("For detailed help, see:")
-    print("   INSTALL.md - Installation instructions")
-    print("   docs/DOCKER_SETUP.md - Docker setup and troubleshooting")
-    print("   docs/USER_GUIDE.md - Complete usage guide")
-    print("   docs/TECHNICAL_GUIDE.md - Development setup")
+    print("For help:")
+    print("   README.md - Complete installation and usage guide")
+    print("   python launch_gui.py - Start the graphical interface")
 
 if __name__ == "__main__":
     main()
