@@ -9,15 +9,18 @@ import warnings
 from editdistance import eval
 
 # Suppress warning messages during execution
-warnings.filterwarnings('ignore')
+warnings.filterwarnings("ignore")
+
 
 class EmptyReferenceError(Exception):
     """
     Custom exception for handling cases where the reference string is empty.
     """
+
     def __init__(self, message=None):
         self.message = message or "The reference string is empty."
         super().__init__(self.message)
+
 
 def calculate_cer(reference: list, hypothesis: list) -> float:
     """
@@ -36,7 +39,8 @@ def calculate_cer(reference: list, hypothesis: list) -> float:
     reference_length = len(reference[0])
     return edit_distance / reference_length
 
-def get_gold_transcriptions(filename: str, sep: str = ',') -> dict:
+
+def get_gold_transcriptions(filename: str, sep: str = ",") -> dict:
     """
     Load ground truth transcriptions from a CSV file into a dictionary.
 
@@ -49,7 +53,7 @@ def get_gold_transcriptions(filename: str, sep: str = ',') -> dict:
     """
     gold_transcriptions = {}
     try:
-        with open(filename, encoding='utf-8-sig') as file_in:
+        with open(filename, encoding="utf-8-sig") as file_in:
             csv_reader = csv.reader(file_in, delimiter=sep)
             next(csv_reader)  # Skip header
             for line_number, line in enumerate(csv_reader, start=2):
@@ -63,6 +67,7 @@ def get_gold_transcriptions(filename: str, sep: str = ',') -> dict:
         print(f"Error loading ground truth CSV: {e}")
         return {}
 
+
 def load_json_predictions(filename: str) -> list:
     """
     Load predictions from a JSON file.
@@ -74,11 +79,12 @@ def load_json_predictions(filename: str) -> list:
         list: List of predictions from the JSON file.
     """
     try:
-        with open(filename, 'r', encoding='utf-8-sig') as f:
+        with open(filename, "r", encoding="utf-8-sig") as f:
             return json.load(f)
     except Exception as e:
         print(f"Error loading JSON predictions: {e}")
         return []
+
 
 def calculate_scores(gold_text: str, predicted_text: str) -> tuple:
     """
@@ -100,6 +106,7 @@ def calculate_scores(gold_text: str, predicted_text: str) -> tuple:
     cer = round(calculate_cer([gold_text], [predicted_text]), 2)
     return wer, cer
 
+
 def create_plot(data: list, score_name: str, file_name: str) -> None:
     """
     Create and save a violin plot for the given error scores.
@@ -112,8 +119,18 @@ def create_plot(data: list, score_name: str, file_name: str) -> None:
     plt.figure(figsize=(10, 6))
     df = pd.DataFrame(data, columns=[score_name])
     sns.violinplot(data=df, inner="box", cut=1, palette="Set2")
-    plt.axhline(df[score_name].mean(), color='r', linestyle='--', label=f'Mean: {df[score_name].mean():.2f}')
-    plt.axhline(df[score_name].median(), color='g', linestyle='-', label=f'Median: {df[score_name].median():.2f}')
+    plt.axhline(
+        df[score_name].mean(),
+        color="r",
+        linestyle="--",
+        label=f"Mean: {df[score_name].mean():.2f}",
+    )
+    plt.axhline(
+        df[score_name].median(),
+        color="g",
+        linestyle="-",
+        label=f"Median: {df[score_name].median():.2f}",
+    )
     plt.title(f"Distribution of {score_name}", fontsize=16)
     plt.xlabel(score_name, fontsize=14)
     plt.ylabel("Density", fontsize=14)
@@ -122,7 +139,10 @@ def create_plot(data: list, score_name: str, file_name: str) -> None:
     plt.close()
     print(f"Plot saved as {file_name}")
 
-def evaluate_text_predictions(ground_truth_file: str, predictions_file: str, out_dir: str) -> tuple:
+
+def evaluate_text_predictions(
+    ground_truth_file: str, predictions_file: str, out_dir: str
+) -> tuple:
     """
     Evaluate OCR predictions against a ground truth dataset.
 
@@ -139,11 +159,11 @@ def evaluate_text_predictions(ground_truth_file: str, predictions_file: str, out
         generated_transcriptions = load_json_predictions(predictions_file)
         wers, cers = [], []
         output_csv = f"{out_dir}/ocr_evaluation.csv"
-        
-        with open(output_csv, 'w', newline='') as f:
+
+        with open(output_csv, "w", newline="") as f:
             writer = csv.writer(f)
             writer.writerow(["ID", "Gold", "Predicted", "WER", "CER"])
-            
+
             for entry in generated_transcriptions:
                 transcript_id = entry["ID"].strip().lower()
                 if transcript_id in ground_truth:
@@ -154,8 +174,10 @@ def evaluate_text_predictions(ground_truth_file: str, predictions_file: str, out
                         cers.append(cer)
                         writer.writerow([entry["ID"], gold, predicted, wer, cer])
                     except EmptyReferenceError as e:
-                        print(f"Skipping ID '{entry['ID']}' due to empty reference: {e}")
-        
+                        print(
+                            f"Skipping ID '{entry['ID']}' due to empty reference: {e}"
+                        )
+
         create_plot(cers, "CERs", f"{out_dir}/cers.png")
         create_plot(wers, "WERs", f"{out_dir}/wers.png")
         return wers, cers

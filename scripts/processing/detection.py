@@ -88,7 +88,7 @@ class OptimizedPredictLabel:
             cached_model = self._try_load_from_cache()
             if cached_model is not None:
                 load_time = time.perf_counter() - start_time
-                print(f"✓ Model loaded from cache in {load_time:.2f}s")
+                print(f" Model loaded from cache in {load_time:.2f}s")
                 return cached_model
         
         # If cache miss, load model efficiently
@@ -99,7 +99,7 @@ class OptimizedPredictLabel:
             self._cache_model(model)
         
         load_time = time.perf_counter() - start_time
-        print(f"✓ Model loaded in {load_time:.2f}s")
+        print(f" Model loaded in {load_time:.2f}s")
         return model
     
     def _try_load_from_cache(self) -> Model:
@@ -211,7 +211,7 @@ class OptimizedPredictLabel:
             with open(cache_path, 'wb') as f:
                 pickle.dump(cached_data, f)
             
-            print(f"✓ Model cached for future use")
+            print(f" Model cached for future use")
             
         except Exception as e:
             print(f"Warning: Could not cache model: {e}")
@@ -354,16 +354,16 @@ def setup_device(device_arg: str) -> str:
     if device_arg == 'auto':
         if torch.cuda.is_available():
             device = 'cuda'
-            print(f"✓ Using CUDA GPU: {torch.cuda.get_device_name()}")
+            print(f" Using CUDA GPU: {torch.cuda.get_device_name()}")
         elif hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
             device = 'mps'
-            print("✓ Using Apple Metal Performance Shaders (MPS)")
+            print(" Using Apple Metal Performance Shaders (MPS)")
         else:
             device = 'cpu'
-            print(f"✓ Using CPU with {torch.get_num_threads()} threads")
+            print(f" Using CPU with {torch.get_num_threads()} threads")
     else:
         device = device_arg
-        print(f"✓ Using specified device: {device}")
+        print(f" Using specified device: {device}")
     
     return device
 
@@ -440,12 +440,12 @@ def main():
                 else:
                     # Try to move the predictor model directly
                     predictor.model = predictor.model.to(device)
-                print(f"✓ Model moved to {device}")
+                print(f" Model moved to {device}")
             except Exception as e:
                 print(f"Warning: Could not move model to {device}, using CPU: {e}")
         
         model_load_time = time.perf_counter() - start_time
-        print(f"✓ Total model setup time: {model_load_time:.2f}s")
+        print(f" Total model setup time: {model_load_time:.2f}s")
         
         # Prediction phase
         prediction_start = time.perf_counter()
@@ -462,7 +462,7 @@ def main():
             df = scrop.prediction_parallel(jpg_dir, predictor, processes)
         
         prediction_time = time.perf_counter() - prediction_start
-        print(f"✓ Prediction completed in {prediction_time:.2f}s")
+        print(f" Prediction completed in {prediction_time:.2f}s")
         
     except Exception as e:
         print(f"Error during prediction: {e}")
@@ -485,19 +485,19 @@ def main():
         crop_start = time.perf_counter()
         create_crops(jpg_dir, df, out_dir=out_dir)
         crop_time = time.perf_counter() - crop_start
-        print(f"✓ Cropping completed in {crop_time:.2f}s")
+        print(f" Cropping completed in {crop_time:.2f}s")
     except Exception as e:
         print(f"Error during cropping: {e}")
         return
     
     total_time = time.perf_counter() - start_time
     print(f"\n" + "="*50)
-    print(f"✓ PROCESSING COMPLETED")
-    print(f"✓ Total time: {total_time:.2f}s")
+    print(f" PROCESSING COMPLETED")
+    print(f" Total time: {total_time:.2f}s")
     print(f"  - Model loading: {model_load_time:.2f}s ({model_load_time/total_time*100:.1f}%)")
     print(f"  - Prediction: {prediction_time:.2f}s ({prediction_time/total_time*100:.1f}%)")
     print(f"  - Cropping: {crop_time:.2f}s ({crop_time/total_time*100:.1f}%)")
-    print(f"✓ Results saved to: {out_dir}")
+    print(f" Results saved to: {out_dir}")
     print(f"  - CSV file: {out_dir}/input_predictions.csv")
     print(f"  - Cropped images: {out_dir}/input_cropped/")
     print("="*50)

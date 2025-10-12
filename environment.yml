@@ -3,8 +3,8 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  # Core Python
-  - python=3.9
+  # Core Python - SECURITY: Standardized to 3.10 across all deployment methods
+  - python=3.10
 
   # Core scientific stack
   - numpy=1.26.4

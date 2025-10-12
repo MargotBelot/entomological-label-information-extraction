@@ -1,4 +1,4 @@
-FROM python:3.9-bullseye
+FROM python:3.10.14-bullseye
 WORKDIR /app
 # Copy the entire label_processing package
 COPY ./label_processing /app/label_processing

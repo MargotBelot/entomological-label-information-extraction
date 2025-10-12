@@ -11,7 +11,9 @@ import logging
 from PIL import Image
 
 warnings.filterwarnings("ignore", category=UserWarning, module="absl")
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
 
 # Define constants
 IMAGE_SIZE = (224, 224)
@@ -19,6 +21,7 @@ NUM_CLASSES = 4
 ANGLE_MAP = {0: 0, 1: 90, 2: 180, 3: 270}
 
 # ------------------ Image Loading & Processing ------------------ #
+
 
 def load_image(image_path: str) -> np.ndarray:
     """
@@ -37,6 +40,7 @@ def load_image(image_path: str) -> np.ndarray:
         raise ValueError(f"Error: Unable to read image '{image_path}'")
     return image
 
+
 def rotate_image(image: np.ndarray, angle: int) -> np.ndarray:
     """
     Rotate an image based on a given angle.
@@ -50,18 +54,21 @@ def rotate_image(image: np.ndarray, angle: int) -> np.ndarray:
     """
     height, width = image.shape[:2]
     target_angle = (4 - angle) % NUM_CLASSES
-    rotation_matrix = cv2.getRotationMatrix2D((width / 2, height / 2), target_angle * 90, 1)
-    
+    rotation_matrix = cv2.getRotationMatrix2D(
+        (width / 2, height / 2), target_angle * 90, 1
+    )
+
     cos_theta = np.abs(rotation_matrix[0, 0])
     sin_theta = np.abs(rotation_matrix[0, 1])
-    
+
     new_width = int(height * sin_theta + width * cos_theta)
     new_height = int(height * cos_theta + width * sin_theta)
-    
+
     rotation_matrix[0, 2] += (new_width - width) / 2
     rotation_matrix[1, 2] += (new_height - height) / 2
-    
+
     return cv2.warpAffine(image, rotation_matrix, (new_width, new_height))
+
 
 def save_image(image: np.ndarray, output_path: str) -> bool:
     """
@@ -76,7 +83,9 @@ def save_image(image: np.ndarray, output_path: str) -> bool:
     """
     return cv2.imwrite(output_path, image)
 
+
 # ------------------ Image Rotation ------------------ #
+
 
 def rotate_single_image(image_path: str, angle: int, output_dir: str) -> bool:
     """
@@ -94,23 +103,31 @@ def rotate_single_image(image_path: str, angle: int, output_dir: str) -> bool:
         image = load_image(image_path)
         if angle == 0:
             print(f"Skipping image '{image_path}' as it does not need rotation.")
-            return save_image(image, os.path.join(output_dir, os.path.basename(image_path)))
+            return save_image(
+                image, os.path.join(output_dir, os.path.basename(image_path))
+            )
 
         rotated_image = rotate_image(image, angle)
         output_path = os.path.join(output_dir, os.path.basename(image_path))
-        
+
         if save_image(rotated_image, output_path):
-            print(f"Successfully rotated image '{image_path}' by {angle * 90} degrees to reach 0 degree.")
+            print(
+                f"Successfully rotated image '{image_path}' by {angle * 90} degrees to reach 0 degree."
+            )
             return True
         else:
             print(f"Error: Failed to write rotated image '{image_path}' to file.")
             return False
     except Exception as e:
-        print(f"Error: An exception occurred while processing image '{image_path}': {e}")
+        print(
+            f"Error: An exception occurred while processing image '{image_path}': {e}"
+        )
         return False
 
+
 # ------------------ Model Prediction & Processing ------------------ #
-    
+
+
 def get_image_paths(input_image_dir: str) -> List[str]:
     """
     Get a list of image paths in the input directory.
@@ -124,8 +141,9 @@ def get_image_paths(input_image_dir: str) -> List[str]:
     return [
         os.path.join(input_image_dir, filename)
         for filename in os.listdir(input_image_dir)
-        if filename.lower().endswith(('.jpg', '.jpeg', '.tiff', '.tif'))
+        if filename.lower().endswith((".jpg", ".jpeg", ".tiff", ".tif"))
     ]
+
 
 def load_images(image_paths: List[str]) -> np.ndarray:
     """
@@ -144,6 +162,7 @@ def load_images(image_paths: List[str]) -> np.ndarray:
         images.append(image)
     return np.array(images, dtype=np.float32) / 255.0
 
+
 def get_predicted_angles(model: tf.keras.Model, images: np.ndarray) -> List[int]:
     """
     Predict angles for a list of images using a trained model.
@@ -158,7 +177,10 @@ def get_predicted_angles(model: tf.keras.Model, images: np.ndarray) -> List[int]
     predictions = model.predict(images)
     return np.argmax(predictions, axis=1)
 
-def rotate_images(image_paths: List[str], predicted_angles: List[int], output_image_dir: str) -> None:
+
+def rotate_images(
+    image_paths: List[str], predicted_angles: List[int], output_image_dir: str
+) -> None:
     """
     Rotate images based on their predicted angles and save them to the output directory.
 
@@ -180,33 +202,42 @@ def rotate_images(image_paths: List[str], predicted_angles: List[int], output_im
     print(f"Total images rotated: {num_rotated}")
     print(f"Total images skipped: {num_skipped}")
 
+
 # ------------------ Debugging Function ------------------ #
 
+
 def debug_save_by_angle(image_paths, predicted_angles, output_base_dir):
-    angle_names = {0: '0', 1: '90', 2: '180', 3: '270'}
+    angle_names = {0: "0", 1: "90", 2: "180", 3: "270"}
     for img_path, angle in zip(image_paths, predicted_angles):
-        angle_folder = os.path.join(output_base_dir, angle_names.get(angle, 'unknown'))
+        angle_folder = os.path.join(output_base_dir, angle_names.get(angle, "unknown"))
         os.makedirs(angle_folder, exist_ok=True)
         output_path = os.path.join(angle_folder, os.path.basename(img_path))
         shutil.copy2(img_path, output_path)
 
+
 # ------------------ Main Function to Predict & Rotate ------------------ #
-    
-def predict_angles(input_image_dir: str, output_image_dir: str, model_path: str, debug: bool = False) -> None:
+
+
+def predict_angles(
+    input_image_dir: str, output_image_dir: str, model_path: str, debug: bool = False
+) -> None:
     """
     Load a trained model, predict angles for input images, and rotate images accordingly.
 
     Args:
-        input_image_dir (str): Directory containing input images.                   
+        input_image_dir (str): Directory containing input images.
         output_image_dir (str): Directory to save rotated images.
         model_path (str): Path to the trained model.
         debug (bool): If True, saves images by predicted angles for debugging.
-        
+
     Returns:
         None
     """
     import logging
-    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+    logging.basicConfig(
+        level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+    )
     ANGLE_MAP = {0: 0, 1: 90, 2: 180, 3: 270}
 
     os.makedirs(output_image_dir, exist_ok=True)
@@ -222,8 +253,11 @@ def predict_angles(input_image_dir: str, output_image_dir: str, model_path: str,
     print(f"Loading model from {model_path}...")
     model = load_model(model_path)
     print("Compiling model...")
-    model.compile(optimizer=tf.keras.optimizers.legacy.Adam(learning_rate=0.0001), 
-                  loss='categorical_crossentropy', metrics=['accuracy'])
+    model.compile(
+        optimizer=tf.keras.optimizers.legacy.Adam(learning_rate=0.0001),
+        loss="categorical_crossentropy",
+        metrics=["accuracy"],
+    )
 
     image_paths = get_image_paths(input_image_dir)
     if not image_paths:
@@ -242,27 +276,33 @@ def predict_angles(input_image_dir: str, output_image_dir: str, model_path: str,
     logging.info(f"Angle prediction counts: {angle_counts}")
 
     if debug:
-        debug_save_by_angle(image_paths, predicted_angles, output_base_dir="debug_angles")
+        debug_save_by_angle(
+            image_paths, predicted_angles, output_base_dir="debug_angles"
+        )
 
     print("Rotating images based on predictions...")
-    
+
     # Write rotation metadata for consolidation
     import csv
+
     meta_path = os.path.join(output_image_dir, "rotation_metadata.csv")
     with open(meta_path, "w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
         writer.writerow(["filename", "angle", "corrected"])
-        
+
         for image_path, predicted_angle in zip(image_paths, predicted_angles):
             angle_deg = ANGLE_MAP.get(predicted_angle, 0)
             filename = os.path.basename(image_path)
             corrected = bool(angle_deg != 0)
-            
+
             # Write metadata
             writer.writerow([filename, angle_deg, corrected])
-            
+
             # Rotate the image
-            rotate_single_image(image_path, angle_deg // 90, output_image_dir)  # if your function expects multiples of 90
+            rotate_single_image(
+                image_path, angle_deg // 90, output_image_dir
+            )  # if your function expects multiples of 90
+
 
 def rotate_image_pil(image_path, angle_deg, output_path):
     with Image.open(image_path) as img:

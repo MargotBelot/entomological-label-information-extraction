@@ -17,15 +17,15 @@ import platform
 import sys
 
 # Suppress torchvision deprecation warnings from detecto library
-warnings.filterwarnings('ignore', message='The parameter \'pretrained\' is deprecated.*')
-warnings.filterwarnings('ignore', message='Arguments other than a weight enum.*')
-warnings.filterwarnings('ignore', category=UserWarning, module='torchvision')
+warnings.filterwarnings("ignore", message="The parameter 'pretrained' is deprecated.*")
+warnings.filterwarnings("ignore", message="Arguments other than a weight enum.*")
+warnings.filterwarnings("ignore", category=UserWarning, module="torchvision")
 
 
-#---------------------Image Segmentation---------------------#
+# ---------------------Image Segmentation---------------------#
 
 
-class PredictLabel():
+class PredictLabel:
     """
     Class for predicting labels using a trained object detection model.
 
@@ -37,9 +37,13 @@ class PredictLabel():
         model (detecto.core.Model): Trained object detection model.
     """
 
-    def __init__(self, path_to_model: str, classes: list,
-                 jpg_path: Union[str, Path, None] = None,
-                 threshold: float = 0.8) -> None:
+    def __init__(
+        self,
+        path_to_model: str,
+        classes: list,
+        jpg_path: Union[str, Path, None] = None,
+        threshold: float = 0.8,
+    ) -> None:
         """
         Init Method for the PredictLabel Class.
 
@@ -55,7 +59,6 @@ class PredictLabel():
         self.threshold = threshold
         self.model = self.retrieve_model()
 
-        
     @property
     def jpg_path(self):
         """str|Path|None: Property for JPG path."""
@@ -70,36 +73,46 @@ class PredictLabel():
             self._jpg_path = Path(jpg_path)
         elif isinstance(jpg_path, Path):
             self._jpg_path = jpg_path
-            
+
     def retrieve_model(self) -> detecto.core.Model:
         """
         Retrieve the trained object detection model using Detecto's Model.load.
-        Includes cross-platform compatibility fixes.
+        Includes cross-platform compatibility fixes and integrity verification.
         """
         if not os.path.exists(self.path_to_model):
             raise FileNotFoundError(f"Model file '{self.path_to_model}' not found.")
         if os.path.getsize(self.path_to_model) == 0:
             raise IOError(f"Model file '{self.path_to_model}' is empty.")
-        
+
+        # Verify model integrity if checksums file exists
+        model_dir = os.path.dirname(self.path_to_model)
+        checksums_file = os.path.join(model_dir, "checksums.sha256")
+        if os.path.exists(checksums_file):
+            try:
+                from label_processing.utils import verify_model_integrity
+
+                if not verify_model_integrity(self.path_to_model, checksums_file):
+                    print(
+                        f"WARNING: Model integrity check failed for {self.path_to_model}"
+                    )
+                else:
+                    print(f"Model integrity verified for {self.path_to_model}")
+            except Exception as e:
+                print(f"Could not verify model integrity: {e}")
+
         print("Loading model from:", self.path_to_model)
-        
+
         # Set environment for cross-platform compatibility
         self._setup_cross_platform_environment()
-        
-        # Try multiple loading strategies for cross-platform compatibility
+
+        # SECURITY: Only use safe loading strategies with weights_only=True
         loading_strategies = [
-            # Strategy 1: PyTorch 2.6+ compatible loading with weights_only=False
-            lambda: self._load_pytorch_2_6_compatible(),
-            # Strategy 2: Direct detecto loading (legacy)
-            lambda: Model.load(self.path_to_model, self.classes),
-            # Strategy 3: Force CPU loading (for CUDA/CPU mismatch issues)
-            lambda: self._load_with_cpu_fallback(),
-            # Strategy 4: Force weights_only=False (for corrupted pickle issues)
-            lambda: self._load_with_weights_only_false(),
-            # Strategy 5: Pickle protocol fallback
-            lambda: self._load_with_pickle_protocol(),
+            # Strategy 1: SAFE PyTorch loading with mandatory weights_only=True
+            lambda: self._load_pytorch_safe(),
+            # Strategy 2: SAFE detecto loading with verification
+            lambda: self._load_detecto_safe(),
         ]
-        
+
         last_error = None
         for i, strategy in enumerate(loading_strategies, 1):
             try:
@@ -111,195 +124,111 @@ class PredictLabel():
                 print(f"Strategy {i} failed: {e}")
                 last_error = e
                 continue
-        
+
         # If all strategies fail, raise the last error
         print(f"All loading strategies failed. Last error: {last_error}")
         raise last_error
-    
+
     def _setup_cross_platform_environment(self):
         """Setup environment variables for cross-platform compatibility."""
         import platform
-        
+
         # Force CPU-only execution to avoid CUDA issues on Linux servers
-        os.environ['CUDA_VISIBLE_DEVICES'] = ''
-        
+        os.environ["CUDA_VISIBLE_DEVICES"] = ""
+
         # Set multiprocessing start method for Linux compatibility
-        if platform.system() == 'Linux':
+        if platform.system() == "Linux":
             try:
-                mp.set_start_method('spawn', force=True)
+                mp.set_start_method("spawn", force=True)
             except RuntimeError:
                 # Method already set, ignore
                 pass
-        
+
         # Set PyTorch thread limits for stable performance
         torch.set_num_threads(1)
-        
+
         # Disable MKL optimizations that can cause issues on some Linux distributions
-        if platform.system() == 'Linux':
-            os.environ['OMP_NUM_THREADS'] = '1'
-            os.environ['MKL_NUM_THREADS'] = '1'
-            os.environ['NUMEXPR_NUM_THREADS'] = '1'
-    
-    def _load_pytorch_2_6_compatible(self):
-        """PyTorch 2.6+ compatible loading with explicit weights_only=False."""
+        if platform.system() == "Linux":
+            os.environ["OMP_NUM_THREADS"] = "1"
+            os.environ["MKL_NUM_THREADS"] = "1"
+            os.environ["NUMEXPR_NUM_THREADS"] = "1"
+
+    def _load_pytorch_safe(self):
+        """SECURITY: Safe PyTorch loading with mandatory weights_only=True."""
         try:
-            # PyTorch 2.6+ requires explicit weights_only=False for models with custom objects
-            # This is the most direct fix for the "Unsupported operand 118" error
-            print("Attempting PyTorch 2.6+ compatible loading with weights_only=False")
-            
-            # Monkey-patch torch.load to always use weights_only=False
+            print("SECURITY: Attempting SAFE PyTorch loading with weights_only=True")
+
+            # SECURITY: Always use weights_only=True to prevent code injection
+            state_dict = torch.load(
+                self.path_to_model, map_location="cpu", weights_only=True
+            )
+
+            # Create a new model instance and load state dict safely
+            model = Model(self.classes)
+            if hasattr(model, "model"):
+                model.model.load_state_dict(state_dict, strict=False)
+            else:
+                model.load_state_dict(state_dict, strict=False)
+
+            return model
+
+        except Exception as e:
+            print(f"SECURITY: Safe PyTorch loading failed: {e}")
+            raise Exception(
+                f"SECURITY ERROR: Could not load model safely. "
+                f"Model may be corrupted or use unsafe pickle objects. "
+                f"Error: {e}"
+            )
+
+    def _load_detecto_safe(self):
+        """SECURITY: Safe detecto loading with integrity verification."""
+        try:
+            print("SECURITY: Attempting SAFE detecto loading with verification")
+
+            # SECURITY: Verify model integrity before loading
+            model_dir = os.path.dirname(self.path_to_model)
+            checksums_file = os.path.join(model_dir, "checksums.sha256")
+
+            if not os.path.exists(checksums_file):
+                raise Exception(
+                    f"SECURITY ERROR: No checksums file found at {checksums_file}. "
+                    f"Model integrity cannot be verified."
+                )
+
+            from label_processing.utils import verify_model_integrity
+
+            if not verify_model_integrity(self.path_to_model, checksums_file):
+                raise Exception(
+                    f"SECURITY ERROR: Model integrity verification failed for {self.path_to_model}. "
+                    f"Model may be corrupted or tampered with."
+                )
+
+            # Only load if integrity is verified
+            print("SECURITY: Model integrity verified, proceeding with safe loading")
+
+            # Monkey-patch torch.load to enforce weights_only=True
             original_torch_load = torch.load
-            
-            def patched_load(*args, **kwargs):
-                kwargs['weights_only'] = False
+
+            def safe_patched_load(*args, **kwargs):
+                kwargs["weights_only"] = True  # SECURITY: Force safe loading
                 return original_torch_load(*args, **kwargs)
-            
-            # Temporarily replace torch.load
-            torch.load = patched_load
-            
+
+            torch.load = safe_patched_load
+
             try:
-                # Use detecto's built-in loading with patched torch.load
                 model = Model.load(self.path_to_model, self.classes)
                 return model
             finally:
-                # Restore original torch.load
                 torch.load = original_torch_load
-                
+
         except Exception as e:
-            print(f"PyTorch 2.6 compatible loading failed: {e}")
-            # Fallback to manual loading with weights_only=False
-            return self._load_with_manual_weights_only_false()
-    
-    def _load_with_manual_weights_only_false(self):
-        """Manual loading with weights_only=False and proper error handling."""
-        try:
-            print("Attempting manual loading with weights_only=False")
-            # Force weights_only=False with explicit error handling for corrupted files
-            state_dict = torch.load(self.path_to_model, map_location='cpu', weights_only=False)
-            
-            # Create a new model instance
-            model = Model(self.classes)
-            
-            # Handle different possible state dict formats
-            if isinstance(state_dict, dict):
-                # If it's a plain state dict
-                try:
-                    model.model.load_state_dict(state_dict, strict=False)
-                except Exception:
-                    # Try alternative model attribute
-                    model._model.load_state_dict(state_dict, strict=False)
-            else:
-                # If it's a model object, extract state dict
-                if hasattr(state_dict, 'state_dict'):
-                    actual_state_dict = state_dict.state_dict()
-                    try:
-                        model.model.load_state_dict(actual_state_dict, strict=False)
-                    except Exception:
-                        model._model.load_state_dict(actual_state_dict, strict=False)
-                else:
-                    raise Exception(f"Unknown model format: {type(state_dict)}")
-            
-            print("Manual loading successful")
-            return model
-            
-        except Exception as e:
-            print(f"Manual weights_only=False loading failed: {e}")
-            raise e
-    
-    def _load_with_cpu_fallback(self):
-        """Load model with CPU map_location to handle CUDA/CPU mismatches."""
-        try:
-            # First try with weights_only=False to handle PyTorch 2.6+ compatibility
-            state_dict = torch.load(self.path_to_model, map_location='cpu', weights_only=False)
-            # Create a new model instance and load the state dict
-            model = Model(self.classes)
-            # Handle potential state dict key mismatches
-            if hasattr(model.model, 'load_state_dict'):
-                model.model.load_state_dict(state_dict, strict=False)
-            else:
-                # Alternative loading for different detecto versions
-                model._model.load_state_dict(state_dict, strict=False)
-            return model
-        except Exception as e:
-            print(f"CPU fallback failed: {e}")
-            # Try even more basic loading
-            return self._load_with_basic_torch()
-    
-    def _load_with_weights_only(self):
-        """Load model using weights_only=True for newer PyTorch versions."""
-        try:
-            # Try with weights_only=True (PyTorch 1.13+)
-            state_dict = torch.load(self.path_to_model, map_location='cpu', weights_only=True)
-            model = Model(self.classes)
-            model.model.load_state_dict(state_dict)
-            return model
-        except TypeError:
-            # Fallback for older PyTorch versions that don't support weights_only
-            return self._load_with_cpu_fallback()
-    
-    def _load_with_weights_only_false(self):
-        """Load model with weights_only=False to handle pickle issues."""
-        try:
-            # Force weights_only=False for corrupted pickle files
-            state_dict = torch.load(self.path_to_model, map_location='cpu', weights_only=False)
-            model = Model(self.classes)
-            model.model.load_state_dict(state_dict, strict=False)
-            return model
-        except Exception as e:
-            print(f"weights_only=False loading failed: {e}")
-            return self._load_with_basic_torch()
-    
-    def _load_with_pickle_protocol(self):
-        """Load model with different pickle protocols to handle version mismatches."""
-        try:
-            # Try loading with pickle protocol compatibility
-            with open(self.path_to_model, 'rb') as f:
-                # Load raw pickle data
-                state_dict = pickle.load(f)
-                
-            model = Model(self.classes)
-            if isinstance(state_dict, dict):
-                model.model.load_state_dict(state_dict, strict=False)
-            else:
-                # If it's a full model object, extract the state dict
-                if hasattr(state_dict, 'state_dict'):
-                    model.model.load_state_dict(state_dict.state_dict(), strict=False)
-                else:
-                    raise Exception("Unknown state dict format")
-            return model
-        except Exception as e:
-            print(f"Pickle protocol loading failed: {e}")
-            return self._load_with_basic_torch()
-    
-    def _load_with_basic_torch(self):
-        """Most basic torch loading as last resort."""
-        # Just load the state dict and create a minimal wrapper
-        # Use weights_only=False for PyTorch 2.6+ compatibility
-        state_dict = torch.load(self.path_to_model, map_location=torch.device('cpu'), weights_only=False)
-        
-        # Try to create a detecto model the most basic way possible
-        try:
-            from torchvision.models.detection import fasterrcnn_resnet50_fpn
-            from detecto.core import Model
-            
-            # Create base model
-            model = Model(self.classes)
-            
-            # Force load state dict with any necessary key adjustments
-            try:
-                model.model.load_state_dict(state_dict, strict=False)
-            except:
-                # If that fails, try alternative attribute names
-                if hasattr(model, '_model'):
-                    model._model.load_state_dict(state_dict, strict=False)
-                else:
-                    raise Exception("Could not find model attribute to load state dict")
-            
-            return model
-            
-        except Exception as e:
-            raise Exception(f"All loading methods failed. Last attempt error: {e}")
-    
+            print(f"SECURITY: Safe detecto loading failed: {e}")
+            raise Exception(
+                f"SECURITY ERROR: Could not load model safely via detecto. "
+                f"Model integrity verification failed or model uses unsafe objects. "
+                f"Error: {e}"
+            )
+
     def class_prediction(self, jpg_path: Path = None) -> pd.DataFrame:
         """
         Predict labels for a given JPG file.
@@ -315,23 +244,24 @@ class PredictLabel():
         image = detecto.utils.read_image(str(jpg_path))
         predictions = self.model.predict(image)
         labels, boxes, scores = predictions
-        
+
         entries = []
         for i, labelname in enumerate(labels):
             entry = {}
-            entry['filename'] = jpg_path.name
-            entry['class'] = labelname
-            entry['score'] = scores[i].item()
-            entry['xmin'] = boxes[i][0]
-            entry['ymin'] = boxes[i][1]
-            entry['xmax'] = boxes[i][2]
-            entry['ymax'] = boxes[i][3]
+            entry["filename"] = jpg_path.name
+            entry["class"] = labelname
+            entry["score"] = scores[i].item()
+            entry["xmin"] = boxes[i][0]
+            entry["ymin"] = boxes[i][1]
+            entry["xmax"] = boxes[i][2]
+            entry["ymax"] = boxes[i][3]
             entries.append(entry)
         return pd.DataFrame(entries)
 
 
-def prediction_parallel(jpg_dir: Union[str, Path], predictor: PredictLabel,
-                        n_processes: int) -> pd.DataFrame:
+def prediction_parallel(
+    jpg_dir: Union[str, Path], predictor: PredictLabel, n_processes: int
+) -> pd.DataFrame:
     """
     Perform predictions for all JPG files in a directory with parallel processing.
 
@@ -357,7 +287,7 @@ def prediction_parallel(jpg_dir: Union[str, Path], predictor: PredictLabel,
         else:
             valid_files.append(file)
 
-    mp.set_start_method('spawn', force=True)
+    mp.set_start_method("spawn", force=True)
     with mp.Pool(n_processes) as executor:
         results = executor.map(predictor.class_prediction, valid_files)
 
@@ -365,8 +295,10 @@ def prediction_parallel(jpg_dir: Union[str, Path], predictor: PredictLabel,
     map(final_results.extend, results)
     return pd.concat(results, ignore_index=True)
 
-def clean_predictions(jpg_dir: Path, dataframe: pd.DataFrame,
-                      threshold: float, out_dir=None) -> pd.DataFrame:
+
+def clean_predictions(
+    jpg_dir: Path, dataframe: pd.DataFrame, threshold: float, out_dir=None
+) -> pd.DataFrame:
     """
     Filter predictions based on a threshold and save the results to a CSV file.
 
@@ -381,16 +313,24 @@ def clean_predictions(jpg_dir: Path, dataframe: pd.DataFrame,
     """
     # Ensure jpg_dir is a Path object
     jpg_dir = Path(jpg_dir)
-    
+
     print("\nFilter coordinates")
-    colnames = ['score', 'xmin', 'ymin', 'xmax', 'ymax']
+    colnames = ["score", "xmin", "ymin", "xmax", "ymax"]
     for header in colnames:
-        dataframe[header] = dataframe[header].astype('str').str.\
-            extractall('(\d+.\d+)').unstack().fillna('').sum(axis=1).astype(float)
-    dataframe = dataframe.loc[dataframe['score'] >= threshold]
-    dataframe[['xmin', 'ymin','xmax','ymax']] = \
-        dataframe[['xmin', 'ymin','xmax','ymax']].fillna('0')
-    
+        dataframe[header] = (
+            dataframe[header]
+            .astype("str")
+            .str.extractall(r"(\d+\.\d+)")
+            .unstack()
+            .fillna("")
+            .sum(axis=1)
+            .astype(float)
+        )
+    dataframe = dataframe.loc[dataframe["score"] >= threshold]
+    dataframe[["xmin", "ymin", "xmax", "ymax"]] = dataframe[
+        ["xmin", "ymin", "xmax", "ymax"]
+    ].fillna("0")
+
     if out_dir is None:
         parent_dir = jpg_dir.resolve().parent
     else:
@@ -402,11 +342,10 @@ def clean_predictions(jpg_dir: Path, dataframe: pd.DataFrame,
     return dataframe
 
 
-#---------------------Image Cropping---------------------#    
+# ---------------------Image Cropping---------------------#
 
 
-def crop_picture(img_raw: np.ndarray, path: str,
-                 filename: str, **coordinates) -> None:
+def crop_picture(img_raw: np.ndarray, path: str, filename: str, **coordinates) -> None:
     """
     Crop the picture using the given coordinates.
 
@@ -416,17 +355,18 @@ def crop_picture(img_raw: np.ndarray, path: str,
         filename (str): Name of the picture.
         coordinates: Coordinates for cropping.
     """
-    xmin = coordinates['xmin']
-    ymin = coordinates['ymin']
-    xmax = coordinates['xmax']
-    ymax = coordinates['ymax']
+    xmin = coordinates["xmin"]
+    ymin = coordinates["ymin"]
+    xmax = coordinates["xmax"]
+    ymax = coordinates["ymax"]
     filepath = f"{path}/{filename}"
     crop = img_raw[ymin:ymax, xmin:xmax]
     cv2.imwrite(filepath, crop)
 
 
-def create_crops(jpg_dir: Path, dataframe: pd.DataFrame,
-                 out_dir: Path = Path(os.getcwd())) -> None:
+def create_crops(
+    jpg_dir: Path, dataframe: pd.DataFrame, out_dir: Path = Path(os.getcwd())
+) -> None:
     """
     Creates crops by using the csv from applying the model and the original
     pictures inside a directory.
@@ -441,9 +381,9 @@ def create_crops(jpg_dir: Path, dataframe: pd.DataFrame,
     new_dir_name = Path(dir_path).name + "_cropped"
     path = out_dir.joinpath(new_dir_name)
     path.mkdir(parents=True, exist_ok=True)
-    
+
     total_crops = 0
-    for filepath in glob.glob(os.path.join(dir_path, '*.jpg')):
+    for filepath in glob.glob(os.path.join(dir_path, "*.jpg")):
         if not os.path.exists(filepath):
             print(f"File cannot be found: {filepath}")
             continue
@@ -465,14 +405,18 @@ def create_crops(jpg_dir: Path, dataframe: pd.DataFrame,
         for _, row in match.iterrows():
             occ = label_occ.count(label_id) + 1
             new_filename = f"{label_id}_{occ}.jpg"
-            coordinates = {'xmin': int(row.xmin), 'ymin': int(row.ymin),
-                           'xmax': int(row.xmax), 'ymax': int(row.ymax)}
+            coordinates = {
+                "xmin": int(row.xmin),
+                "ymin": int(row.ymin),
+                "xmax": int(row.xmax),
+                "ymax": int(row.ymax),
+            }
             crop_picture(image_raw, path, new_filename, **coordinates)
             label_occ.append(label_id)
 
         crops_for_this_image = len(glob.glob(os.path.join(path, f"{label_id}_*.jpg")))
         total_crops += crops_for_this_image
         print(f"{filename} generated {crops_for_this_image} crops")
-    
+
     print(f"\nTotal crops generated: {total_crops}")
     print(f"\nThe images have been successfully saved in {path}")

@@ -72,7 +72,7 @@ class TestTFClassifier(unittest.TestCase):
             
             # Try to load the model with error handling
             self.model = get_model(str(self.model_path))
-            print("✓ TensorFlow model initialized successfully in setUp")
+            print(" TensorFlow model initialized successfully in setUp")
             
         except ImportError as e:
             self.skipTest(f"Missing TensorFlow dependencies: {e}")
