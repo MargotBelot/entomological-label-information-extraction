@@ -2,7 +2,8 @@
 import warnings
 
 # Suppress warning messages during execution
-warnings.filterwarnings('ignore')
+warnings.filterwarnings("ignore")
+
 
 def clean_data(data: list[dict]) -> list[dict]:
     """
@@ -18,17 +19,20 @@ def clean_data(data: list[dict]) -> list[dict]:
     try:
         cleaned_data = []
         for item in data:
-            if 'text' not in item:
+            if "text" not in item:
                 continue
-            text = item['text'].lower()
-            cleaned_text = ''.join(e for e in text if e.isalnum() or e.isspace()).replace(' ', '')
-            if 'http' not in cleaned_text:
-                item['text'] = cleaned_text
+            text = item["text"].lower()
+            cleaned_text = "".join(
+                e for e in text if e.isalnum() or e.isspace()
+            ).replace(" ", "")
+            if "http" not in cleaned_text:
+                item["text"] = cleaned_text
                 cleaned_data.append(item)
         return cleaned_data
     except Exception as e:
         print(f"Error cleaning data: {e}")
         return []
+
 
 def redundancy(data: list[dict]) -> list[dict]:
     """
@@ -45,7 +49,7 @@ def redundancy(data: list[dict]) -> list[dict]:
         text_set = set()
         duplicates = []
         for item in data:
-            text = item['text']
+            text = item["text"]
             if text in text_set:
                 duplicates.append(item)
             text_set.add(text)
@@ -53,6 +57,7 @@ def redundancy(data: list[dict]) -> list[dict]:
     except Exception as e:
         print(f"Error identifying redundant entries: {e}")
         return []
+
 
 def per_redundancy(data: list[dict]) -> int:
     """

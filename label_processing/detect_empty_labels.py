@@ -4,6 +4,7 @@ import os
 from PIL import Image
 import shutil
 
+
 def detect_dark_pixels(image: Image, crop_box: tuple, threshold: int = 100) -> float:
     """
     Detect the proportion of dark pixels in an image.
@@ -48,7 +49,12 @@ def is_empty(image: Image, crop_margin: float, threshold: float) -> bool:
     return detect_dark_pixels(image, crop_box) < threshold
 
 
-def find_empty_labels(input_folder: str, output_folder: str, threshold: float = 0.01, crop_margin: float = 0.1) -> None:
+def find_empty_labels(
+    input_folder: str,
+    output_folder: str,
+    threshold: float = 0.01,
+    crop_margin: float = 0.1,
+) -> None:
     """
     Find and move empty and non-empty labels to respective folders.
 
@@ -71,8 +77,14 @@ def find_empty_labels(input_folder: str, output_folder: str, threshold: float = 
             try:
                 with Image.open(filename) as img:
                     if is_empty(img, crop_margin, threshold):
-                        shutil.move(filename, os.path.join(empty_folder, os.path.basename(filename)))
+                        shutil.move(
+                            filename,
+                            os.path.join(empty_folder, os.path.basename(filename)),
+                        )
                     else:
-                        shutil.move(filename, os.path.join(not_empty_folder, os.path.basename(filename)))
+                        shutil.move(
+                            filename,
+                            os.path.join(not_empty_folder, os.path.basename(filename)),
+                        )
             except Exception as e:
                 print(f"Error processing {filename}: {e}")

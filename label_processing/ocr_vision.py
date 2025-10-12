@@ -9,14 +9,17 @@ from google.cloud import vision
 import label_processing.utils
 
 # Suppress warning messages during execution
-warnings.filterwarnings('ignore')
+warnings.filterwarnings("ignore")
+
 
 class VisionApi:
     """
     Class for interacting with the Google Cloud Vision API for OCR tasks on images.
     """
 
-    def __init__(self, path: str, image: bytes, credentials: str, encoding: str) -> None:
+    def __init__(
+        self, path: str, image: bytes, credentials: str, encoding: str
+    ) -> None:
         """
         Initialize the VisionApi instance.
 
@@ -35,19 +38,55 @@ class VisionApi:
     @staticmethod
     def _initialize_client(credentials: str) -> vision.ImageAnnotatorClient:
         """
-        Initialize the Google Vision API client.
+        SECURITY: Initialize the Google Vision API client with secure credential handling.
 
         Args:
             credentials (str): Path to the credentials JSON file.
 
         Returns:
             vision.ImageAnnotatorClient: Initialized Google Vision API client.
+
+        Raises:
+            Exception: If credentials file is not secure or accessible.
         """
-        os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = credentials
-        return vision.ImageAnnotatorClient()
+        # SECURITY: Validate credentials file exists and has proper permissions
+        if not os.path.exists(credentials):
+            raise Exception(
+                f"SECURITY ERROR: Credentials file not found: {credentials}"
+            )
+
+        # SECURITY: Check file permissions (should not be world-readable)
+        file_stat = os.stat(credentials)
+        if file_stat.st_mode & 0o044:  # Check if group or other readable
+            print(
+                f"SECURITY WARNING: Credentials file {credentials} has overly permissive permissions"
+            )
+
+        # SECURITY: Temporarily set environment variable, then clear it
+        original_creds = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")
+        try:
+            os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = credentials
+            client = vision.ImageAnnotatorClient()
+
+            # SECURITY: Clear credentials from environment immediately after client creation
+            if original_creds is None:
+                os.environ.pop("GOOGLE_APPLICATION_CREDENTIALS", None)
+            else:
+                os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = original_creds
+
+            return client
+        except Exception as e:
+            # SECURITY: Ensure credentials are cleared even if client creation fails
+            if original_creds is None:
+                os.environ.pop("GOOGLE_APPLICATION_CREDENTIALS", None)
+            else:
+                os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = original_creds
+            raise Exception(
+                f"SECURITY ERROR: Failed to initialize Google Vision client: {e}"
+            )
 
     @staticmethod
-    def read_image(path: str, credentials: str, encoding: str = 'utf8') -> VisionApi:
+    def read_image(path: str, credentials: str, encoding: str = "utf8") -> VisionApi:
         """
         Read an image file and return an instance of the VisionApi class.
 
@@ -59,7 +98,7 @@ class VisionApi:
         Returns:
             VisionApi: Instance of the VisionApi class.
         """
-        with io.open(path, 'rb') as image_file:
+        with io.open(path, "rb") as image_file:
             image = image_file.read()
         return VisionApi(path, image, credentials, encoding)
 
@@ -73,7 +112,7 @@ class VisionApi:
         Returns:
             str: Processed string.
         """
-        processed = result_raw.replace('\n', ' ')
+        processed = result_raw.replace("\n", " ")
         if self.encoding == "ascii":
             processed = processed.encode("ascii", "ignore").decode()
         return processed
@@ -91,27 +130,30 @@ class VisionApi:
         vision_image = vision.Image(content=self.image)
         response = self.client.text_detection(image=vision_image)
         single_transcripts = response.text_annotations
-        
+
         transcripts = [str(transcript.description) for transcript in single_transcripts]
         bounding_boxes = []
 
-        for transcript in single_transcripts: 
-            vertices = [{"word": f"({vertex.x},{vertex.y})"} for vertex in transcript.bounding_poly.vertices]
+        for transcript in single_transcripts:
+            vertices = [
+                {"word": f"({vertex.x},{vertex.y})"}
+                for vertex in transcript.bounding_poly.vertices
+            ]
             bounding_boxes.append({transcript.description: vertices})
 
         if transcripts:
             transcript = self.process_string(transcripts[0])
         else:
             transcript = " "
-        
+
         filename = os.path.basename(self.path)
         if response.error.message:
             raise Exception(
-                f'{response.error.message}\nFor more info on error messages, '
-                'check:  https://cloud.google.com/apis/design/errors'
+                f"{response.error.message}\nFor more info on error messages, "
+                "check:  https://cloud.google.com/apis/design/errors"
             )
-        
-        entry = {'ID': filename, 'text': transcript, 'bounding_boxes': bounding_boxes}
-        if label_processing.utils.check_text(entry["text"]): 
+
+        entry = {"ID": filename, "text": transcript, "bounding_boxes": bounding_boxes}
+        if label_processing.utils.check_text(entry["text"]):
             entry = label_processing.utils.replace_nuri(entry)
         return entry

@@ -7,7 +7,7 @@ import shutil
 import math
 import pytesseract as py
 import numpy as np
-from typing import  Union, Tuple, Optional
+from typing import Union, Tuple, Optional
 from deskew import determine_skew
 from enum import Enum
 from pathlib import Path
@@ -17,13 +17,14 @@ import warnings
 from label_processing import utils
 
 # Suppress warning messages during execution
-warnings.filterwarnings('ignore')
+warnings.filterwarnings("ignore")
 
 # Constants
-CONFIG = r'--psm 6 --oem 3' # Configuration for OCR
-LANGUAGES = 'eng+deu+fra+ita+spa+por' # Specifying languages used for OCR
+CONFIG = r"--psm 6 --oem 3"  # Configuration for OCR
+LANGUAGES = "eng+deu+fra+ita+spa+por"  # Specifying languages used for OCR
 MIN_SKEW_ANGLE = -10
 MAX_SKEW_ANGLE = 10
+
 
 def find_tesseract() -> None:
     """
@@ -31,20 +32,27 @@ def find_tesseract() -> None:
     """
     tesseract_path = shutil.which("tesseract")
     if not tesseract_path:
-        raise FileNotFoundError(("Could not find tesseract on your machine!"
-                                 "Please read the README for instructions!"))
+        raise FileNotFoundError(
+            (
+                "Could not find tesseract on your machine!"
+                "Please read the README for instructions!"
+            )
+        )
     else:
         py.pytesseract.tesseract_cmd = tesseract_path
 
 
-#---------------------Image Preprocessing---------------------#
+# ---------------------Image Preprocessing---------------------#
 
 
-class ImageProcessor():
+class ImageProcessor:
     """
     A class for image preprocessing and other image actions.
     """
-    def __init__(self, image: np.ndarray, path: str, blocksize: int = None, c_value: int = None):
+
+    def __init__(
+        self, image: np.ndarray, path: str, blocksize: int = None, c_value: int = None
+    ):
         """
         Initialize an instance of Image class.
 
@@ -59,39 +67,41 @@ class ImageProcessor():
         self.filename = self.path.name
         self.blocksize: Optional[int] = blocksize
         self.c_value: Optional[int] = c_value
-    
-    @property 
+
+    @property
     def blocksize(self) -> int:
         return self._blocksize
-        
+
     @blocksize.setter
-    def blocksize(self, value: int|None) -> None:
+    def blocksize(self, value: int | None) -> None:
         if value is not None:
-            if (value <= 1 or value % 2 == 0):
-                raise ValueError("Value for blocksize has to be at least 3 and needs\
-                    to be odd")
+            if value <= 1 or value % 2 == 0:
+                raise ValueError(
+                    "Value for blocksize has to be at least 3 and needs\
+                    to be odd"
+                )
         self._blocksize = value
-    
+
     @property
     def c_value(self) -> int:
         return self._c_value
-    
+
     @c_value.setter
     def c_value(self, value: int) -> None:
         self._c_value = value
-    
+
     @property
     def image(self) -> np.ndarray:
         return self._image
-    
+
     @image.setter
     def image(self, image: np.ndarray) -> None:
         self._image = image
-    
+
     @property
     def path(self) -> str:
         return self._path
-    
+
     @path.setter
     def path(self, path: str) -> None:
         self._path = path
@@ -104,9 +114,9 @@ class ImageProcessor():
             ImageProcessor: A copy of the current Image instance.
         """
         return copy.copy(self)
-    
+
     @staticmethod
-    def read_image(path: str|Path) -> ImageProcessor:
+    def read_image(path: str | Path) -> ImageProcessor:
         """
         Read an image from the specified path and return an instance of the Image class.
 
@@ -115,9 +125,9 @@ class ImageProcessor():
 
         Returns:
             Image: An instance of the Image class.
-        """ 
+        """
         return ImageProcessor(cv2.imread(str(path)), path)
-        
+
     def get_grayscale(self) -> ImageProcessor:
         """
         Convert the image to grayscale.
@@ -129,8 +139,8 @@ class ImageProcessor():
         image_instance = self.copy_this()
         image_instance.image = image
         return image_instance
-    
-    def blur(self, ksize: tuple[int, int] = (5,5)) -> ImageProcessor:
+
+    def blur(self, ksize: tuple[int, int] = (5, 5)) -> ImageProcessor:
         """
         Apply Gaussian blur to the image.
 
@@ -152,11 +162,11 @@ class ImageProcessor():
         Returns:
             Image: An instance of the Image class representing the noise-reduced image.
         """
-        image = cv2.medianBlur(self.image,5)
+        image = cv2.medianBlur(self.image, 5)
         image_instance = self.copy_this()
         image_instance.image = image
         return image_instance
-    
+
     def thresholding(self, thresh_mode: Enum) -> ImageProcessor:
         """
         Perform thresholding on the image.
@@ -166,26 +176,37 @@ class ImageProcessor():
 
         Returns:
             Image: An instance of the Image class representing the thresholded image.
-        """ 
+        """
         if thresh_mode == Threshmode.OTSU:
-            image = cv2.threshold(self.image, 0, 255,
-                                cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
+            image = cv2.threshold(
+                self.image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU
+            )[1]
         elif thresh_mode == Threshmode.ADAPTIVE_GAUSSIAN:
-            #set blocksize and c_value
-            gaussian_blocksize = self.blocksize if self.blocksize  else 73
+            # set blocksize and c_value
+            gaussian_blocksize = self.blocksize if self.blocksize else 73
             gaussian_c = self.c_value if self.c_value else 16
-            
-            image = cv2.adaptiveThreshold(self.image ,255,
-                cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY,
-                gaussian_blocksize, gaussian_c)
+
+            image = cv2.adaptiveThreshold(
+                self.image,
+                255,
+                cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+                cv2.THRESH_BINARY,
+                gaussian_blocksize,
+                gaussian_c,
+            )
         elif thresh_mode == Threshmode.ADAPTIVE_MEAN:
-            #set blocksize and c_value
-            mean_blocksize = self.blocksize if self.blocksize  else 35
+            # set blocksize and c_value
+            mean_blocksize = self.blocksize if self.blocksize else 35
             mean_c = self.c_value if self.c_value else 17
-            
-            image = cv2.adaptiveThreshold(self.image ,255,
-                cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY,
-                mean_blocksize,mean_c)             
+
+            image = cv2.adaptiveThreshold(
+                self.image,
+                255,
+                cv2.ADAPTIVE_THRESH_MEAN_C,
+                cv2.THRESH_BINARY,
+                mean_blocksize,
+                mean_c,
+            )
         image_instance = self.copy_this()
         image_instance.image = image
         return image_instance
@@ -197,8 +218,8 @@ class ImageProcessor():
         Returns:
             Image: An instance of the Image class representing the dilated image.
         """
-        kernel = np.ones((5,5),np.uint8)
-        image =  cv2.dilate(self.image, kernel, iterations = 1)
+        kernel = np.ones((5, 5), np.uint8)
+        image = cv2.dilate(self.image, kernel, iterations=1)
         image_instance = self.copy_this()
         image_instance.image = image
         return image_instance
@@ -210,15 +231,17 @@ class ImageProcessor():
         Returns:
             Image: An instance of the Image class representing the eroded image.
         """
-        kernel = np.ones((5,5),np.uint8)
-        image = cv2.erode(self.image, kernel, iterations = 1)
+        kernel = np.ones((5, 5), np.uint8)
+        image = cv2.erode(self.image, kernel, iterations=1)
         image_instance = self.copy_this()
         image_instance.image = image
         return image_instance
-    
+
     @staticmethod
     def _rotate(
-        image: np.ndarray, angle: float | np.float, background: Union[int, Tuple[int, int, int]]
+        image: np.ndarray,
+        angle: float | np.float,
+        background: Union[int, Tuple[int, int, int]],
     ) -> np.ndarray:
         """
         Performs a rotation of an image given an angle.
@@ -233,18 +256,23 @@ class ImageProcessor():
         """
         old_width, old_height = image.shape[:2]
         angle_radian = math.radians(angle)
-        width = (abs(np.sin(angle_radian) * old_height) 
-            + abs(np.cos(angle_radian) * old_width))
-        height = (abs(np.sin(angle_radian) * old_width) 
-            + abs(np.cos(angle_radian) * old_height))
+        width = abs(np.sin(angle_radian) * old_height) + abs(
+            np.cos(angle_radian) * old_width
+        )
+        height = abs(np.sin(angle_radian) * old_width) + abs(
+            np.cos(angle_radian) * old_height
+        )
 
         image_center = tuple(np.array(image.shape[1::-1]) / 2)
         rot_mat = cv2.getRotationMatrix2D(image_center, angle, 1.0)
         rot_mat[1, 2] += (width - old_width) / 2
         rot_mat[0, 2] += (height - old_height) / 2
-        return cv2.warpAffine(image, rot_mat, (int(round(height)),
-                                               int(round(width))),
-                              borderValue=background)
+        return cv2.warpAffine(
+            image,
+            rot_mat,
+            (int(round(height)), int(round(width))),
+            borderValue=background,
+        )
 
     def get_skew_angle(self) -> Optional[np.float64]:
         """
@@ -252,10 +280,11 @@ class ImageProcessor():
 
         Returns:
             Optional[np.float64]: The skew angle in degrees or None if it couldn't be determined.
-        """ 
+        """
         grayscale = cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY)
-        angle = determine_skew(grayscale, max_angle = MAX_SKEW_ANGLE,
-                               min_angle=MIN_SKEW_ANGLE)
+        angle = determine_skew(
+            grayscale, max_angle=MAX_SKEW_ANGLE, min_angle=MIN_SKEW_ANGLE
+        )
         return angle
 
     def deskew(self, angle: Optional[np.float64]) -> ImageProcessor:
@@ -269,10 +298,12 @@ class ImageProcessor():
             Image: An instance of the Image class representing the deskewed image.
         """
         if angle is None:
-        # Handle the case where angle is None, e.g., log a message or skip deskewing
-            print(f"Warning: Skew angle for file {self.filename} could not be determined. Skipping deskewing.")
+            # Handle the case where angle is None, e.g., log a message or skip deskewing
+            print(
+                f"Warning: Skew angle for file {self.filename} could not be determined. Skipping deskewing."
+            )
             return self
-    
+
         # If angle is not None, proceed with deskewing
         image = self._rotate(self.image, angle, (255, 255, 255))
         image_instance = self.copy_this()
@@ -293,7 +324,9 @@ class ImageProcessor():
         angle = self.get_skew_angle()
 
         if angle is None:
-            print("Warning: Skew angle could not be determined. Skipping preprocessing.")
+            print(
+                "Warning: Skew angle could not be determined. Skipping preprocessing."
+            )
             return self
 
         # Perform preprocessing
@@ -301,14 +334,12 @@ class ImageProcessor():
         image = image.blur()
         image = image.thresholding(thresh_mode=thresh_mode)
         image = image.deskew(angle)
-            # Check if angle is None before deskewing
+        # Check if angle is None before deskewing
         if angle is not None:
             image = image.deskew(angle)
         return image
 
-
-#---------------------Read QR-Code---------------------#
-    
+    # ---------------------Read QR-Code---------------------#
 
     def read_qr_code(self) -> Optional[str]:
         """
@@ -324,7 +355,7 @@ class ImageProcessor():
         except Exception as e:
             print(f"An error occurred while detecting and decoding QR code: {e}")
             return None
-    
+
     def save_image(self, dir_path: str | Path, appendix: Optional[str] = None) -> None:
         """
         Save the image to a specified directory with an optional appendix.
@@ -335,25 +366,29 @@ class ImageProcessor():
         """
         try:
             if appendix:
-                filename = utils.generate_filename(self.filename, appendix, extension="jpg")
+                filename = utils.generate_filename(
+                    self.filename, appendix, extension="jpg"
+                )
             else:
                 filename = self.filename
             filename_processed = os.path.join(dir_path, filename)
             cv2.imwrite(filename_processed, self.image)
         except Exception as e:
             print(f"An error occurred while saving the image: {e}")
-    
+
+
 class Threshmode(Enum):
     """
     Different possibilities for thresholding.
 
     Args:
-        Enum (int):  
+        Enum (int):
     """
+
     OTSU = 1
     ADAPTIVE_MEAN = 2
     ADAPTIVE_GAUSSIAN = 3
-    
+
     @classmethod
     def eval(cls, threshmode: int) -> Enum:
         if threshmode == 1:
@@ -362,13 +397,15 @@ class Threshmode(Enum):
             return cls.ADAPTIVE_MEAN
         if threshmode == 3:
             return cls.ADAPTIVE_GAUSSIAN
-    
-    
-#---------------------OCR Tesseract---------------------#
-        
+
+
+# ---------------------OCR Tesseract---------------------#
+
 
 class Tesseract:
-    def __init__(self, languages=LANGUAGES, config=CONFIG, image: Optional[ImageProcessor] = None) -> None:
+    def __init__(
+        self, languages=LANGUAGES, config=CONFIG, image: Optional[ImageProcessor] = None
+    ) -> None:
         """
         Initialize the Tesseract OCR processor.
 
@@ -379,7 +416,7 @@ class Tesseract:
         """
         self.config = config
         self.languages = languages
-        self.image = image 
+        self.image = image
 
     @property
     def image(self) -> ImageProcessor:
@@ -400,7 +437,7 @@ class Tesseract:
         Returns:
             str: Processed string.
         """
-        processed = result_raw.replace('\n', ' ')
+        processed = result_raw.replace("\n", " ")
         return processed
 
     def image_to_string(self) -> dict[str, str | float]:
@@ -411,26 +448,33 @@ class Tesseract:
             dict[str, str | float]: A dictionary containing the image ID (filename), OCR-processed text, and confidence score.
         """
         # Get OCR text with confidence data
-        data = py.image_to_data(self.image.image, lang=self.languages, config=self.config, output_type=py.Output.DICT)
-        
+        data = py.image_to_data(
+            self.image.image,
+            lang=self.languages,
+            config=self.config,
+            output_type=py.Output.DICT,
+        )
+
         # Extract text and calculate mean confidence
         text_parts = []
         confidences = []
-        
-        for i in range(len(data['text'])):
-            if int(data['conf'][i]) > 0:  # Only include words with positive confidence
-                text_parts.append(data['text'][i])
-                confidences.append(int(data['conf'][i]))
-        
+
+        for i in range(len(data["text"])):
+            if int(data["conf"][i]) > 0:  # Only include words with positive confidence
+                text_parts.append(data["text"][i])
+                confidences.append(int(data["conf"][i]))
+
         # Combine text and calculate average confidence
-        transcript = ' '.join(text_parts)
+        transcript = " ".join(text_parts)
         transcript = self._process_string(transcript)
-        
+
         # Calculate mean confidence (0-100 scale, convert to 0-1)
-        mean_confidence = (sum(confidences) / len(confidences) / 100.0) if confidences else 0.0
-        
+        mean_confidence = (
+            (sum(confidences) / len(confidences) / 100.0) if confidences else 0.0
+        )
+
         return {
-            "ID": self.image.filename, 
+            "ID": self.image.filename,
             "text": transcript,
-            "confidence": round(mean_confidence, 3)
+            "confidence": round(mean_confidence, 3),
         }

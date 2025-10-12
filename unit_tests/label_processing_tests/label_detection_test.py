@@ -69,7 +69,7 @@ class TestSegmentationCropping(unittest.TestCase):
             print(f"Python version: {platform.python_version()}")
             
             self.label_predictor = PredictLabel(self.path_to_model, ["label"], self.jpg_path)
-            print("✓ PredictLabel initialized successfully in setUp")
+            print(" PredictLabel initialized successfully in setUp")
             
         except FileNotFoundError as e:
             self.skipTest(f"Model file not found during initialization: {e}")
@@ -244,7 +244,7 @@ class TestSegmentationCropping(unittest.TestCase):
             try:
                 # Use shutil.rmtree for more reliable cleanup across platforms
                 shutil.rmtree(check_crops_path)
-                print(f"✓ Cleaned up {check_crops_path}")
+                print(f" Cleaned up {check_crops_path}")
             except PermissionError as e:
                 print(f"Permission denied while deleting {check_crops_path}: {e}")
             except OSError as e:

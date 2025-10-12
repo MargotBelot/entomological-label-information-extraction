@@ -378,7 +378,7 @@ def main():
         with open(output_file, 'w', encoding='utf-8') as f:
             json.dump(consolidated_results, f, indent=2, ensure_ascii=False)
         
-        print(f"✓ Consolidated results saved to: {output_file}")
+        print(f" Consolidated results saved to: {output_file}")
         
         # Print summary
         print("\n=== Processing Summary ===")
