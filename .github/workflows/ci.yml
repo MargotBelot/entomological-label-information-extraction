@@ -30,9 +30,9 @@ jobs:
       uses: actions/cache@v3
       with:
         path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('pyproject.toml') }}
+        key: ${{ runner.os }}-pip-v2-${{ hashFiles('pyproject.toml') }}
         restore-keys: |
-          ${{ runner.os }}-pip-
+          ${{ runner.os }}-pip-v2-
     
     - name: Install dependencies
       run: |
@@ -42,8 +42,16 @@ jobs:
         export CUDA_VISIBLE_DEVICES=""
         # Create necessary test directories
         mkdir -p unit_tests/testdata/output
-        pip install -e .
+        # Install only essential dependencies for testing
         pip install pytest pytest-cov flake8 black
+        # Install core scientific packages with flexible versions
+        pip install "numpy>=1.26.0" "pandas>=2.2.0" "scipy>=1.11.0" "scikit-learn>=1.4.0"
+        pip install matplotlib seaborn
+        pip install tensorflow-cpu==2.15.0 keras==2.15.0
+        pip install opencv-python-headless pillow
+        pip install nltk jiwer
+        # Install the package in development mode without heavy dependencies
+        pip install -e . --no-deps
       env:
         TF_CPP_MIN_LOG_LEVEL: 2
         CUDA_VISIBLE_DEVICES: ""
