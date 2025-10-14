@@ -1,0 +1,17 @@
+# Sphinx build outputs
+_build/
+_autosummary/
+
+# Sphinx cache
+.doctrees/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
