@@ -1,0 +1,442 @@
+User Guide
+==========
+
+This comprehensive guide covers all aspects of using the Entomological Label Information Extraction system.
+
+System Overview
+---------------
+
+The system is designed to extract and digitize text from museum specimen labels using AI and OCR technologies. It supports two main processing pipelines:
+
+- **Multi-Label Images (MLI)**: Full specimen photos with multiple labels
+- **Single-Label Images (SLI)**: Pre-cropped individual label images
+
+Architecture
+~~~~~~~~~~~~
+
+.. code-block:: text
+
+   Input Images → Detection → Classification → OCR → Post-processing → Structured Output
+
+Core Components:
+- Label detection using Faster R-CNN
+- Classification models for label types
+- OCR using Tesseract and Google Vision API
+- Post-processing for text cleaning and structuring
+
+Preparing Your Data
+-------------------
+
+Image Requirements
+~~~~~~~~~~~~~~~~~~
+
+**Quality Guidelines:**
+- Resolution: 300 DPI or higher recommended
+- Format: JPEG, PNG
+- Lighting: Even, sufficient contrast
+- Focus: Sharp, minimal blur
+- Orientation: Any (system handles rotation)
+
+**Multi-Label Images:**
+- Full specimen photos showing multiple labels
+- Include collection labels, determination labels, locality labels
+- Ensure all labels are visible and readable
+
+**Single-Label Images:**
+- Individual label images, pre-cropped
+- One label per image
+- Include some margin around the label text
+
+Directory Structure
+~~~~~~~~~~~~~~~~~~~
+
+Organize your data as follows:
+
+.. code-block:: text
+
+   project/
+   ├── data/
+   │   ├── MLI/
+   │   │   ├── input/          # Multi-label input images
+   │   │   └── output/         # Processing results
+   │   └── SLI/
+   │       ├── input/          # Single-label input images
+   │       └── output/         # Processing results
+
+Using the GUI
+-------------
+
+Starting the Interface
+~~~~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: bash
+
+   python launch_gui.py
+
+The GUI provides an intuitive interface for:
+
+- **File Management**: Browse and select input directories
+- **Pipeline Selection**: Choose MLI or SLI processing
+- **Progress Monitoring**: Real-time updates during processing
+- **Result Viewing**: Preview outputs and statistics
+
+GUI Workflow
+~~~~~~~~~~~~
+
+1. **Select Input Directory**: Choose folder containing your images
+2. **Choose Pipeline**: MLI for specimen photos, SLI for cropped labels
+3. **Configure Options**: Set OCR method, output preferences
+4. **Start Processing**: Monitor progress in real-time
+5. **Review Results**: Examine outputs and quality metrics
+
+Command Line Usage
+------------------
+
+Basic Commands
+~~~~~~~~~~~~~~
+
+**Multi-Label Processing:**
+
+.. code-block:: bash
+
+   # Basic detection
+   python scripts/processing/detection.py -j data/MLI/input -o data/MLI/output
+
+   # With custom confidence threshold
+   python scripts/processing/detection.py -j data/MLI/input -o data/MLI/output --confidence 0.7
+
+**Single-Label Processing:**
+
+.. code-block:: bash
+
+   # Full pipeline
+   python scripts/processing/analysis.py -j data/SLI/input -o data/SLI/output
+
+   # Individual steps
+   python scripts/processing/classifiers.py -j data/SLI/input -o data/SLI/output
+
+Advanced Options
+~~~~~~~~~~~~~~~~
+
+**Detection Parameters:**
+
+.. code-block:: bash
+
+   python scripts/processing/detection.py \\
+     -j data/MLI/input \\
+     -o data/MLI/output \\
+     --confidence 0.8 \\
+     --iou-threshold 0.5 \\
+     --max-detections 10
+
+**OCR Configuration:**
+
+.. code-block:: bash
+
+   python scripts/processing/analysis.py \\
+     -j data/SLI/input \\
+     -o data/SLI/output \\
+     --ocr-method google \\
+     --language eng \\
+     --psm 6
+
+Docker Processing
+-----------------
+
+Container-Based Workflows
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Docker ensures consistent processing across different systems:
+
+.. code-block:: bash
+
+   # Multi-label pipeline
+   docker-compose -f pipelines/multi-label-docker-compose.yaml up
+
+   # Single-label pipeline
+   docker-compose -f pipelines/single-label-docker-compose.yaml up
+
+   # Custom configuration
+   docker-compose -f pipelines/custom-config.yaml up
+
+Benefits of Docker:
+- Consistent environments
+- Reproducible results
+- Easy deployment
+- Dependency management
+
+Understanding Results
+---------------------
+
+Output Structure
+~~~~~~~~~~~~~~~~
+
+**Multi-Label Results:**
+
+.. code-block:: text
+
+   data/MLI/output/
+   ├── input_predictions.csv          # Detection coordinates and confidence
+   ├── input_cropped/                 # Individual label images
+   ├── detection_stats.json           # Processing statistics
+   └── consolidated_results.json      # Complete detection report
+
+**Single-Label Results:**
+
+.. code-block:: text
+
+   data/SLI/output/
+   ├── classification/
+   │   ├── empty/                     # Empty labels
+   │   ├── handwritten/               # Handwritten labels
+   │   ├── printed/                   # Printed labels
+   │   └── identifier/                # QR codes, barcodes
+   ├── ocr_results/
+   │   ├── tesseract/                 # Tesseract OCR output
+   │   └── google_vision/             # Google Vision API output
+   ├── processed/
+   │   ├── corrected_transcripts.json # Cleaned and corrected text
+   │   ├── plausible_transcripts.json # High-confidence results
+   │   └── metadata.json              # Processing metadata
+   └── consolidated_results.json      # Final structured output
+
+Key Output Files
+~~~~~~~~~~~~~~~~
+
+**consolidated_results.json**
+   Complete processing results including:
+   - Original image metadata
+   - Detection/classification results
+   - OCR transcriptions
+   - Confidence scores
+   - Processing timestamps
+
+**corrected_transcripts.json**
+   Post-processed text with:
+   - Spelling corrections
+   - Format standardization
+   - Entity extraction
+   - Confidence ratings
+
+**plausible_transcripts.json**
+   High-quality extractions suitable for:
+   - Automated database entry
+   - Research analysis
+   - Publication-ready data
+
+Quality Assessment
+~~~~~~~~~~~~~~~~~~
+
+**Confidence Scores:**
+- Detection confidence: Probability of correct label detection
+- Classification confidence: Accuracy of label type identification
+- OCR confidence: Text extraction reliability
+
+**Quality Indicators:**
+- Image resolution and clarity
+- Text contrast and legibility
+- Processing success rates
+- Manual review recommendations
+
+Processing Workflows
+--------------------
+
+Complete Museum Digitization
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+1. **Image Capture**
+
+   .. code-block:: bash
+
+      # Photograph specimens with multiple labels
+      # Save as high-resolution JPEG files
+
+2. **Multi-Label Detection**
+
+   .. code-block:: bash
+
+      python scripts/processing/detection.py -j photos/ -o detections/
+
+3. **Label Extraction**
+
+   .. code-block:: bash
+
+      # Move cropped labels to SLI pipeline
+      cp detections/input_cropped/* data/SLI/input/
+
+4. **Single-Label Processing**
+
+   .. code-block:: bash
+
+      python scripts/processing/analysis.py -j data/SLI/input -o data/SLI/output
+
+5. **Quality Control**
+
+   .. code-block:: bash
+
+      python scripts/evaluation/analysis_eval.py -i data/SLI/output/
+
+Research Data Extraction
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+1. **Direct Processing**
+
+   .. code-block:: bash
+
+      # Process pre-cropped research labels
+      python scripts/processing/analysis.py -j research_labels/ -o results/
+
+2. **High-Confidence Filtering**
+
+   .. code-block:: bash
+
+      # Extract reliable data
+      jq '.[] | select(.confidence > 0.8)' results/plausible_transcripts.json
+
+3. **Data Export**
+
+   .. code-block:: bash
+
+      # Convert to CSV for analysis
+      python scripts/postprocessing/consolidate_results.py -i results/ -f csv
+
+Batch Processing
+~~~~~~~~~~~~~~~~
+
+For large datasets:
+
+.. code-block:: bash
+
+   # Process in batches of 50 images
+   find data/MLI/input -name "*.jpg" | split -l 50 - batch_
+
+   # Process each batch
+   for batch in batch_*; do
+       mkdir batch_input batch_output
+       while read img; do cp "$img" batch_input/; done < "$batch"
+       python scripts/processing/detection.py -j batch_input -o batch_output
+       # Consolidate results
+   done
+
+Troubleshooting
+---------------
+
+Common Issues
+~~~~~~~~~~~~~
+
+**Low Detection Accuracy**
+- Check image quality and resolution
+- Adjust confidence thresholds
+- Verify lighting and contrast
+- Consider manual cropping for difficult cases
+
+**OCR Errors**
+- Try different OCR methods (Tesseract vs Google Vision)
+- Adjust language settings
+- Check for proper rotation correction
+- Review image preprocessing steps
+
+**Memory Issues**
+- Reduce batch sizes
+- Process images sequentially
+- Close other applications
+- Consider using Docker for memory management
+
+**Performance Problems**
+- Use GPU acceleration when available
+- Optimize image sizes
+- Process in smaller batches
+- Monitor system resources
+
+Getting Help
+~~~~~~~~~~~~
+
+When encountering issues:
+
+1. Check log files for error messages
+2. Verify input data format and quality
+3. Test with sample images first
+4. Consult the troubleshooting documentation
+5. Report issues with detailed error information
+
+Best Practices
+--------------
+
+Image Preparation
+~~~~~~~~~~~~~~~~~
+
+- Standardize lighting conditions
+- Maintain consistent resolution
+- Remove dust and debris from labels
+- Ensure labels are flat and unfolded
+
+Processing Strategy
+~~~~~~~~~~~~~~~~~~~
+
+- Start with small test batches
+- Validate results before large-scale processing
+- Keep original images as backups
+- Document processing parameters used
+
+Quality Control
+~~~~~~~~~~~~~~~
+
+- Review classification results manually
+- Validate high-confidence OCR outputs
+- Check for systematic errors
+- Maintain processing logs
+
+Data Management
+~~~~~~~~~~~~~~~
+
+- Organize results by processing date
+- Archive original images separately
+- Document metadata and provenance
+- Plan for long-term data storage
+
+Advanced Features
+-----------------
+
+Custom Configuration
+~~~~~~~~~~~~~~~~~~~~
+
+Create custom processing configurations:
+
+.. code-block:: python
+
+   # config/custom_settings.py
+   DETECTION_CONFIDENCE = 0.85
+   OCR_METHOD = 'google'
+   LANGUAGE = 'eng+fra'  # Multi-language support
+   OUTPUT_FORMAT = 'json'
+
+Programmatic Access
+~~~~~~~~~~~~~~~~~~~
+
+Use the system programmatically:
+
+.. code-block:: python
+
+   from label_processing import LabelProcessor
+
+   processor = LabelProcessor()
+   results = processor.process_directory('data/SLI/input')
+   processor.save_results(results, 'output.json')
+
+Integration
+~~~~~~~~~~~
+
+Integrate with existing systems:
+
+.. code-block:: python
+
+   # Database integration example
+   import json
+   from your_database import Database
+
+   with open('consolidated_results.json') as f:
+       data = json.load(f)
+
+   db = Database()
+   for record in data:
+       db.insert_specimen_data(record)
