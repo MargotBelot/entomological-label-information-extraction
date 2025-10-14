@@ -1,12 +1,15 @@
 # Entomological Label Information Extraction
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE) ![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue) ![Docker](https://img.shields.io/badge/docker-ready-2496ED) ![Status](https://img.shields.io/badge/status-stable-brightgreen)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE) ![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue) ![Docker](https://img.shields.io/badge/docker-ready-2496ED) ![Status](https://img.shields.io/badge/status-stable-brightgreen) [![Documentation](https://img.shields.io/badge/docs-read%20the%20docs-blue)](https://entomological-label-information-extraction.readthedocs.io/en/latest/)
 
-**AI-powered text extraction from insect specimen labels**
+**AI-powered text extraction from insect specimen labels** 🦋
 
-Extract and digitize text from museum specimen labels automatically using computer vision and OCR.
+Extract and digitize text from museum specimen labels automatically using computer vision and OCR. Perfect for museum digitization, research data preparation, and biodiversity informatics.
+
+> 📚 **Complete Documentation**: Visit our [comprehensive documentation](https://entomological-label-information-extraction.readthedocs.io/en/latest/) for detailed guides, API reference, and tutorials.
 
 ## Table of Contents
+- [📚 Documentation](https://entomological-label-information-extraction.readthedocs.io/en/latest/) - **Complete guides & API reference**
 - [Quick Start](#quick-start)
 - [What This Does](#what-this-does)
 - [Pipeline Workflow](#pipeline-workflow)
@@ -63,6 +66,12 @@ python scripts/processing/detection.py -j data/MLI/input -o data/MLI/output
 
 **Step 3: Results**
 Check `data/MLI/output/consolidated_results.json` for extracted text and metadata.
+
+> ✨ **Want more details?** Check our [complete documentation](https://entomological-label-information-extraction.readthedocs.io/en/latest/) for:
+> - 🚀 [5-minute setup guide](https://entomological-label-information-extraction.readthedocs.io/en/latest/quickstart.html)
+> - 📖 [Comprehensive user guide](https://entomological-label-information-extraction.readthedocs.io/en/latest/user_guide.html)  
+> - 🔧 [API reference](https://entomological-label-information-extraction.readthedocs.io/en/latest/api/modules.html)
+> - 🚑 [Troubleshooting guide](https://entomological-label-information-extraction.readthedocs.io/en/latest/troubleshooting.html)
 
 ## What This Does
 
