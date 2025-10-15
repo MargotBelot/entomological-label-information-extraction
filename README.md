@@ -67,11 +67,11 @@ python scripts/processing/detection.py -j data/MLI/input -o data/MLI/output
 **Step 3: Results**
 Check `data/MLI/output/consolidated_results.json` for extracted text and metadata.
 
-> ✨ **Want more details?** Check our [complete documentation](https://entomological-label-information-extraction.readthedocs.io/en/latest/) for:
-> - 🚀 [5-minute setup guide](https://entomological-label-information-extraction.readthedocs.io/en/latest/quickstart.html)
-> - 📖 [Comprehensive user guide](https://entomological-label-information-extraction.readthedocs.io/en/latest/user_guide.html)  
-> - 🔧 [API reference](https://entomological-label-information-extraction.readthedocs.io/en/latest/api/modules.html)
-> - 🚑 [Troubleshooting guide](https://entomological-label-information-extraction.readthedocs.io/en/latest/troubleshooting.html)
+> **Want more details?** Check our [complete documentation](https://entomological-label-information-extraction.readthedocs.io/en/latest/) for:
+> - [5-minute setup guide](https://entomological-label-information-extraction.readthedocs.io/en/latest/quickstart.html)
+> - [Comprehensive user guide](https://entomological-label-information-extraction.readthedocs.io/en/latest/user_guide.html)  
+> - [API reference](https://entomological-label-information-extraction.readthedocs.io/en/latest/api/modules.html)
+> - [Troubleshooting guide](https://entomological-label-information-extraction.readthedocs.io/en/latest/troubleshooting.html)
 
 ## What This Does
 
