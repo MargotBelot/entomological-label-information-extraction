@@ -69,31 +69,40 @@ Organize your data as follows:
    │       ├── input/          # Single-label input images
    │       └── output/         # Processing results
 
-Using the GUI
--------------
+Using the Interface
+-------------------
 
 Starting the Interface
 ~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: bash
 
-   python launch_gui.py
+   # Recommended: Quick launch
+   python launch.py
+   
+   # Alternative: Streamlit directly
+   streamlit run interfaces/launch_streamlit.py
+   
+   # Alternative: Desktop GUI
+   python interfaces/launch_gui.py
 
-The GUI provides an intuitive interface for:
+The **Streamlit web interface** (recommended) provides:
 
-- **File Management**: Browse and select input directories
-- **Pipeline Selection**: Choose MLI or SLI processing
-- **Progress Monitoring**: Real-time updates during processing
-- **Result Viewing**: Preview outputs and statistics
+- **Interactive Web UI**: Modern browser-based interface
+- **Real-time Progress**: Live progress tracking with job duration display
+- **Processing Dashboard**: System metrics and performance monitoring
+- **Results Browser**: Interactive file preview and analysis
+- **Docker Management**: Automatic Docker status checking and startup
 
-GUI Workflow
-~~~~~~~~~~~~
+Interface Workflow
+~~~~~~~~~~~~~~~~~~
 
-1. **Select Input Directory**: Choose folder containing your images
-2. **Choose Pipeline**: MLI for specimen photos, SLI for cropped labels
-3. **Configure Options**: Set OCR method, output preferences
-4. **Start Processing**: Monitor progress in real-time
-5. **Review Results**: Examine outputs and quality metrics
+1. **Select Input Directory**: Browse and choose folder containing your images
+2. **Choose Pipeline Type**: MLI for specimen photos, SLI for cropped labels
+3. **Configure Settings**: Set batch size and processing options
+4. **Start Processing**: Click "Start Processing" and monitor real-time progress
+5. **View Results**: Browse generated files, charts, and structured data
+6. **Track Performance**: See total job duration and processing metrics
 
 Command Line Usage
 ------------------
@@ -167,30 +176,30 @@ Advanced Options
      -d data/SLI/output/printed/rotated \
      -o data/SLI/output
 
-Docker Processing
------------------
+Manual Pipeline Scripts
+------------------------
 
-Container-Based Workflows
-~~~~~~~~~~~~~~~~~~~~~~~~~
+Direct Script Execution
+~~~~~~~~~~~~~~~~~~~~~~~~
 
-Docker ensures consistent processing across different systems:
+For advanced users or batch processing, run pipeline scripts directly:
 
 .. code-block:: bash
 
-   # Multi-label pipeline
-   docker-compose -f pipelines/multi-label-docker-compose.yaml up
+   # Multi-label pipeline (conda-based)
+   ./tools/pipelines/run_mli_pipeline_conda.sh
 
-   # Single-label pipeline
-   docker-compose -f pipelines/single-label-docker-compose.yaml up
+   # Single-label pipeline (conda-based)
+   ./tools/pipelines/run_sli_pipeline_conda.sh
 
-   # Custom configuration
-   docker-compose -f pipelines/custom-config.yaml up
+   # Set custom input/output paths
+   INPUT_DIR=/path/to/input OUTPUT_DIR=/path/to/output ./tools/pipelines/run_mli_pipeline_conda.sh
 
-Benefits of Docker:
-- Consistent environments
-- Reproducible results
-- Easy deployment
-- Dependency management
+Benefits of Direct Scripts:
+- Full control over environment
+- Custom path configuration
+- Batch processing integration
+- Debugging and development
 
 Understanding Results
 ---------------------

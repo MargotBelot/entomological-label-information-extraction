@@ -54,14 +54,11 @@ pip install -e .
 
 **Step 2: Run**
 ```bash
-# Launch GUI (easiest method)
-python launch_gui.py
+# Quick launch (recommended)
+python launch.py
 
-# OR use Docker directly
-docker-compose -f pipelines/multi-label-docker-compose.yaml up
-
-# OR run individual scripts
-python scripts/processing/detection.py -j data/MLI/input -o data/MLI/output
+# OR launch Streamlit directly
+streamlit run interfaces/launch_streamlit.py
 ```
 
 **Step 3: Results**
@@ -252,34 +249,47 @@ conda activate entomological-label
 pip install -e .
 ```
 
-### Option 2: Docker (Alternative)
+### Option 2: Manual Pipeline Scripts
 ```bash
 # Install Docker Desktop: https://docker.com
-# Then run:
-docker-compose -f pipelines/multi-label-docker-compose.yaml up
-# OR for single-label processing:
-docker-compose -f pipelines/single-label-docker-compose.yaml up
+# Then run individual pipeline scripts:
+./tools/pipelines/run_mli_pipeline_conda.sh  # Multi-label processing
+./tools/pipelines/run_sli_pipeline_conda.sh  # Single-label processing
 ```
 
-## GUI Usage (Recommended)
+## Interface Usage (Recommended)
 
-After installation, launch the graphical interface:
+### Multiple Launch Options
+
+**Quick Launch (Recommended):**
 ```bash
-python launch_gui.py
+python launch.py
+```
+This launches the modern Streamlit web interface with:
+- Real-time progress tracking and job duration display
+- Live processing dashboard with system metrics
+- Interactive results browser
+- Automatic Docker management
+
+**Alternative Interface:**
+```bash
+# Launch Streamlit directly
+streamlit run interfaces/launch_streamlit.py
 ```
 
-**The GUI automatically handles Docker for you:**
+**The Streamlit interface automatically handles Docker for you:**
 - Checks if Docker is running
-- Can automatically start Docker Desktop  
 - Shows Docker status in the interface
+- Real-time progress tracking with job duration display
+- Interactive results browser
 - No manual Docker commands needed
 
-The GUI provides:
-- Point-and-click pipeline selection
-- Automatic Docker management
-- Progress monitoring
-- Results browser
-- Individual script execution with parameter customization
+The interface provides:
+- Point-and-click pipeline selection (MLI/SLI)
+- Live processing dashboard with system metrics
+- Progress monitoring with rotation correction integrated
+- Results browser with consolidated outputs
+- Individual script execution options
 
 ## Command Reference
 
@@ -320,7 +330,7 @@ python scripts/processing/analysis.py -i data/MLI/output/input_cropped -o data/M
 
 **"Command not found: python"**
 ```bash
-python3 launch_gui.py
+python3 launch.py
 # OR activate environment: conda activate entomological-label
 ```
 

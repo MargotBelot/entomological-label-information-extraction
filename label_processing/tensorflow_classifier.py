@@ -137,7 +137,8 @@ def class_prediction(
                 img_array = tf.expand_dims(img_array, 0)
 
                 # SECURITY: Clear GPU memory after each prediction to prevent accumulation
-                predictions = model.predict(img_array, verbose=0)
+                # Note: verbose parameter removed for SavedModel compatibility
+                predictions = model.predict(img_array)
                 score = tf.nn.softmax(predictions[0])
 
                 entry = {}
@@ -225,17 +226,52 @@ def filter_pictures(
         dataframe (pd.DataFrame): Pandas DataFrame with class predictions.
         out_dir (Path): Path to the target directory to save the cropped jpgs.
     """
-    create_dirs(dataframe, out_dir)  # Create directories for every class
+    # Check if dataframe has required columns
+    if dataframe.empty:
+        print("Warning: No predictions available for image filtering")
+        return
+        
+    if 'class' not in dataframe.columns:
+        print(f"Error: DataFrame missing 'class' column. Available columns: {list(dataframe.columns)}")
+        return
+        
+    if 'filename' not in dataframe.columns:
+        print(f"Error: DataFrame missing 'filename' column. Available columns: {list(dataframe.columns)}")
+        return
+    
+    try:
+        create_dirs(dataframe, out_dir)  # Create directories for every class
+    except Exception as e:
+        print(f"Error creating directories: {e}")
+        return
 
     for filepath in glob.glob(os.path.join(jpg_dir, "*.jpg")):
         filename = os.path.basename(filepath)
         match = dataframe[dataframe.filename == filename]
-        image_raw = cv2.imread(filepath)
-        label_id = Path(filename).stem
-        for _, row in match.iterrows():
-            pic_class = row["class"]
-            filename = make_file_name(label_id, pic_class)
-            rename_picture(image_raw, out_dir, filename, pic_class)
+        
+        if match.empty:
+            print(f"Warning: No prediction found for image {filename}")
+            continue
+            
+        try:
+            image_raw = cv2.imread(filepath)
+            if image_raw is None:
+                print(f"Warning: Could not load image {filepath}")
+                continue
+                
+            label_id = Path(filename).stem
+            for _, row in match.iterrows():
+                if 'class' not in row or pd.isna(row['class']):
+                    print(f"Warning: No valid class prediction for {filename}")
+                    continue
+                    
+                pic_class = row["class"]
+                filename = make_file_name(label_id, pic_class)
+                rename_picture(image_raw, out_dir, filename, pic_class)
+        except Exception as e:
+            print(f"Error processing image {filepath}: {e}")
+            continue
+            
     print(f"\nThe images have been successfully saved in {out_dir}")
 
 
