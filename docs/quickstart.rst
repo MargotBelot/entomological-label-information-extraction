@@ -22,15 +22,19 @@ Quick Start Guide
    conda activate entomological-label
    pip install -e .
 
-   # 3. Launch the GUI
-   python launch_gui.py
+   # 3. Launch the interface
+   python launch.py
 
-**That's it!** 🎉 The GUI will open and guide you through the rest.
+**That's it!** 🎉 The modern Streamlit web interface will open with:
+- Real-time progress tracking and job duration display
+- Live processing dashboard with system metrics
+- Interactive results browser
+- Automatic Docker management
 
-🐳 Option 2: Super Easy Docker
-----------------------------------------
+🔧 Option 2: Alternative Interfaces
+----------------------------------
 
-**Even simpler if you prefer Docker:**
+**Alternative ways to launch the interface:**
 
 .. code-block:: bash
 
@@ -38,16 +42,21 @@ Quick Start Guide
    git clone https://github.com/your-repo/entomological-label-information-extraction.git
    cd entomological-label-information-extraction
 
-   # 2. Put your images in the right folder:
-   # - Full specimen photos → data/MLI/input/
-   # - Individual label photos → data/SLI/input/
+   # 2. Setup environment
+   conda env create -f environment.yml
+   conda activate ELIE
+   pip install -e .
 
-   # 3. Run processing
-   docker-compose -f pipelines/multi-label-docker-compose.yaml up  # for full specimens
-   # OR
-   docker-compose -f pipelines/single-label-docker-compose.yaml up  # for individual labels
-
-**Done!** Results appear in the output folders.
+   # 3. Choose your interface:
+   # Streamlit directly
+   streamlit run interfaces/launch_streamlit.py
+   
+   # OR Desktop GUI (Tkinter-based)
+   python interfaces/launch_gui.py
+   
+   # OR Manual pipeline scripts
+   ./tools/pipelines/run_mli_pipeline_conda.sh  # Multi-label
+   ./tools/pipelines/run_sli_pipeline_conda.sh  # Single-label
 
 🎯 What Happens Next?
 ----------------------
@@ -128,19 +137,23 @@ Single-Label Images (SLI)
 Basic Usage Examples
 --------------------
 
-GUI Method (Recommended)
-~~~~~~~~~~~~~~~~~~~~~~~~~
+Streamlit Interface (Recommended)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: bash
 
-   # Start the graphical interface
-   python launch_gui.py
+   # Quick launch
+   python launch.py
+   
+   # OR launch Streamlit directly
+   streamlit run interfaces/launch_streamlit.py
 
-The GUI provides:
-- Easy file selection
-- Pipeline choice (MLI/SLI)
-- Real-time progress monitoring
-- Result visualization
+The Streamlit interface provides:
+- Interactive web-based UI
+- Real-time progress tracking with job duration display
+- Live processing dashboard with system metrics
+- Results browser with file preview
+- Automatic Docker management
 
 Command Line Method
 ~~~~~~~~~~~~~~~~~~~
@@ -172,16 +185,16 @@ python scripts/processing/vision.py -c credentials.json -d data/SLI/output/print
    # Just classification
    python scripts/processing/classifiers.py -j data/SLI/input -o data/SLI/output
 
-Docker Method
-~~~~~~~~~~~~~
+Manual Pipeline Scripts
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: bash
 
-   # Multi-label pipeline
-   docker-compose -f pipelines/multi-label-docker-compose.yaml up
+   # Multi-label pipeline (conda-based)
+   ./tools/pipelines/run_mli_pipeline_conda.sh
 
-   # Single-label pipeline
-   docker-compose -f pipelines/single-label-docker-compose.yaml up
+   # Single-label pipeline (conda-based)
+   ./tools/pipelines/run_sli_pipeline_conda.sh
 
 Understanding Results
 ---------------------
