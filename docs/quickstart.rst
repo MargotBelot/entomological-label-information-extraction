@@ -28,7 +28,7 @@ Quick Start Guide
 **That's it!** 🎉 The GUI will open and guide you through the rest.
 
 🐳 Option 2: Super Easy Docker
------------------------------
+----------------------------------------
 
 **Even simpler if you prefer Docker:**
 
@@ -156,8 +156,14 @@ Command Line Method
 
 .. code-block:: bash
 
-   # Run full SLI pipeline
-   python scripts/processing/analysis.py -j data/SLI/input -o data/SLI/output
+# Run SLI components sequentially
+python scripts/processing/analysis.py -i data/SLI/input -o data/SLI/output            # empty label filtering
+python scripts/processing/classifiers.py -m 1 -j data/SLI/input -o data/SLI/output    # identifier/not_identifier
+python scripts/processing/classifiers.py -m 2 -j data/SLI/input -o data/SLI/output    # handwritten/printed
+python scripts/processing/rotation.py -i data/SLI/output/printed -o data/SLI/output/printed/rotated
+# OCR (choose one)
+python scripts/processing/tesseract.py -d data/SLI/output/printed/rotated -o data/SLI/output
+python scripts/processing/vision.py -c credentials.json -d data/SLI/output/printed/rotated -o data/SLI/output
 
 **Individual Components:**
 
@@ -277,11 +283,10 @@ Next Steps
 
 Now that you have the basics working:
 
-1. **Explore Configuration**: Check :doc:`configuration` for customization options
-2. **Pipeline Details**: Read :doc:`pipeline_details` for in-depth understanding
-3. **API Documentation**: Browse :doc:`api/modules` for programmatic usage
-4. **Evaluation**: Learn about :doc:`evaluation` metrics and analysis
-5. **Troubleshooting**: Consult :doc:`troubleshooting` for common issues
+1. **User Guide**: Read the :doc:`user_guide` for end‑to‑end instructions
+2. **API Documentation**: Browse :doc:`api/modules` for programmatic usage
+3. **Troubleshooting**: Consult :doc:`troubleshooting` for common issues
+4. **Contributing**: See :doc:`contributing` to get involved
 
 Tips for Success
 ----------------

@@ -2,40 +2,13 @@
 """
 Consolidate Pipeline Results Script
 
-This script creates a comprehensive JSON output file that links all processing results
-for each file that went through the complete pipeline. It provides entity linking
-between detection, classification, rotation, OCR, and post-processing results.
+Creates a single JSON file that links all per-image results across the pipeline
+(detection → classification → rotation → OCR → post‑processing).
 
-Output format per file:
-{
-    "filename": "specimen1_label_1.jpg",
-    "detection": {
-        "coordinates": [100, 150, 300, 250],
-        "confidence": 0.95
-    },
-    "classification": {
-        "empty": false,
-        "identifier": false,
-        "handwritten": false,
-        "printed": true
-    },
-    "rotation": {
-        "angle": 90,
-        "corrected": true
-    },
-    "ocr": {
-        "method": "tesseract",
-        "raw_text": "Lepidoptera\nTexas, USA\nJune 15, 1995",
-        "confidence": 0.87
-    },
-    "postprocessing": {
-        "original_text": "Lepidoptera\nTexas, USA\nJune 15, 1995",
-        "cleaned_text": "Lepidoptera Texas USA June 15 1995",
-        "corrected": true,
-        "plausible": true,
-        "category": "descriptive"
-    }
-}
+Each entry includes (when available): ``filename``, detection ``coordinates`` and
+``confidence``, boolean classification flags (``empty``, ``identifier``, ``handwritten``,
+``printed``), rotation metadata (``angle``, ``corrected``), OCR summary (``method``,
+``raw_text``, ``confidence``), and post‑processing fields (``cleaned_text``, ``plausible``).
 """
 
 import json

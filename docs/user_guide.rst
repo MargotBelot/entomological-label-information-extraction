@@ -24,6 +24,12 @@ Core Components:
 - OCR using Tesseract and Google Vision API
 - Post-processing for text cleaning and structuring
 
+Preprocessing and Thresholds
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+- Stage 1 (Image Processing) is restricted to geometric normalization and routing only: label detection and cropping, classification (identifier vs. not, handwritten vs. printed, multi- vs single‑label), and rotation normalization to 0°/90°/180°/270°. No intensity-based enhancements (e.g., CLAHE, histogram equalization, global normalization) are applied in Stage 1 to preserve cues learned by the detectors/classifiers.
+- Stage 2 (OCR preprocessing, printed labels) applies grayscale conversion, Gaussian/median denoising, binarization via Otsu or adaptive mean/Gaussian (block size and C tunable), skew estimation within ±10° and deskew, and optional morphological clean-up (dilation/erosion) before Tesseract OCR. Google Vision is called on the rotated ROI without thresholding.
+- Empty‑label detection thresholds: we crop a 10% border on all sides, count “dark” pixels as mean RGB < 100, and classify a label as empty if the dark‑pixel proportion p_dark < 0.01 (1%).
+
 Preparing Your Data
 -------------------
 
@@ -105,12 +111,25 @@ Basic Commands
    # With custom confidence threshold
    python scripts/processing/detection.py -j data/MLI/input -o data/MLI/output --confidence 0.7
 
-**Single-Label Processing:**
+**Single-Label Processing (sequential):**
 
 .. code-block:: bash
 
-   # Full pipeline
-   python scripts/processing/analysis.py -j data/SLI/input -o data/SLI/output
+   # 1) Empty label filtering
+   python scripts/processing/analysis.py -i data/SLI/input -o data/SLI/output
+
+   # 2) Classify identifiers and text type
+   python scripts/processing/classifiers.py -m 1 -j data/SLI/input -o data/SLI/output   # identifier/not_identifier
+   python scripts/processing/classifiers.py -m 2 -j data/SLI/input -o data/SLI/output   # handwritten/printed
+
+   # 3) Rotation correction for printed labels
+   python scripts/processing/rotation.py -i data/SLI/output/printed -o data/SLI/output/printed/rotated
+
+   # 4) OCR (choose one)
+   # Tesseract
+   python scripts/processing/tesseract.py -d data/SLI/output/printed/rotated -o data/SLI/output
+   # Google Vision
+   python scripts/processing/vision.py -c credentials.json -d data/SLI/output/printed/rotated -o data/SLI/output
 
    # Individual steps
    python scripts/processing/classifiers.py -j data/SLI/input -o data/SLI/output
@@ -122,23 +141,31 @@ Advanced Options
 
 .. code-block:: bash
 
-   python scripts/processing/detection.py \\
-     -j data/MLI/input \\
-     -o data/MLI/output \\
-     --confidence 0.8 \\
-     --iou-threshold 0.5 \\
-     --max-detections 10
+   python scripts/processing/detection.py \
+     -j data/MLI/input \
+     -o data/MLI/output \
+     --confidence 0.5 \
+     --batch-size 16 \
+     --device auto \
+     --no-cache        # optional
+   # Cache maintenance
+   python scripts/processing/detection.py --clear-cache
 
 **OCR Configuration:**
 
 .. code-block:: bash
 
-   python scripts/processing/analysis.py \\
-     -j data/SLI/input \\
-     -o data/SLI/output \\
-     --ocr-method google \\
-     --language eng \\
-     --psm 6
+   # Tesseract (printed labels after rotation)
+   python scripts/processing/tesseract.py \
+     -d data/SLI/output/printed/rotated \
+     -o data/SLI/output \
+     -t 1            # 1=Otsu, 2=Adaptive-Mean, 3=Adaptive-Gaussian
+   
+   # Google Vision (printed labels after rotation)
+   python scripts/processing/vision.py \
+     -c credentials.json \
+     -d data/SLI/output/printed/rotated \
+     -o data/SLI/output
 
 Docker Processing
 -----------------

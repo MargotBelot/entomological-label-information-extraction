@@ -312,8 +312,8 @@ python scripts/processing/tesseract.py -d data/MLI/output/input_cropped -o data/
 # Google Vision OCR (cloud-based text extraction, requires API key)
 python scripts/processing/vision.py -c credentials.json -d data/MLI/output/input_cropped -o data/MLI/output
 
-# Label analysis (filters and evaluates empty labels)
-python scripts/processing/analysis.py -d data/MLI/output/input_cropped -o data/MLI/output
+# Empty label analysis (filters empty vs not-empty)
+python scripts/processing/analysis.py -i data/MLI/output/input_cropped -o data/MLI/output
 ```
 
 ## Troubleshooting
@@ -412,6 +412,11 @@ The system uses:
 - **TensorFlow** models for classification (empty/printed/handwritten/identifier)
 - **Tesseract OCR** and **Google Vision API** for text extraction
 - **Post-processing** for data cleaning and structuring
+
+Preprocessing policy and thresholds
+- Stage 1 (detection/classification/rotation) performs geometric normalization only; no intensity enhancements (CLAHE, histogram equalization, normalization) are applied to preserve model training domain.
+- Stage 2 (before OCR) applies grayscale, Gaussian/median denoising, Otsu or adaptive thresholding (tunable blocksize/C), ±10° skew estimation and deskew, and optional dilation/erosion for Tesseract; Google Vision runs on the rotated ROI.
+- Empty‑label detection: 10% border crop; “dark” pixel = mean RGB < 100; classify as empty if p_dark < 0.01.
 
 ## Sample Data and Training
 
