@@ -45,7 +45,7 @@ Quick Module Guide
       Containerized processing pipelines and configurations.
 
 Detailed Documentation
----------------------
+----------------------
 
 .. toctree::
    :maxdepth: 1
@@ -55,6 +55,7 @@ Detailed Documentation
    label_postprocessing
    label_evaluation
    pipelines
+   scripts
 
 Programmatic Usage
 ------------------

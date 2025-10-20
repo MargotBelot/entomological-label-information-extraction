@@ -77,6 +77,7 @@ The ``postprocessing`` subpackage provides tools for result consolidation and pr
    :members:
    :undoc-members:
    :show-inheritance:
+   :no-index:
 
 .. automodule:: scripts.postprocessing.process
    :members:

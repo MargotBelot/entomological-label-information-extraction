@@ -9,7 +9,7 @@ Troubleshooting
 🔧 Installation Issues
 -----------------------
 
-.. collapse:: 🐳 "Docker not found" or "command not found"
+.. dropdown:: 🐳 "Docker not found" or "command not found"
 
    **Problem**: Docker isn't installed or running
    
@@ -19,7 +19,7 @@ Troubleshooting
    - 🐧 **Linux**: ``sudo apt install docker.io && sudo systemctl start docker``
    - 🔒 **Linux permissions**: ``sudo usermod -aG docker $USER`` then log out/in
 
-.. collapse:: 🐍 "Conda environment creation failed"
+.. dropdown:: 🐍 "Conda environment creation failed"
 
    **Problem**: Can't create the Python environment
    
@@ -34,7 +34,7 @@ Troubleshooting
       conda update conda
       conda env create -f environment.yml --force
 
-.. collapse:: 💻 "Python/pip command not found"
+.. dropdown:: 💻 "Python/pip command not found"
 
    **Problem**: Python isn't in your PATH
    
@@ -47,7 +47,7 @@ Troubleshooting
 🖼️ Processing Issues
 ------------------------
 
-.. collapse:: 🔍 "No labels detected" or "Empty results"
+.. dropdown:: 🔍 "No labels detected" or "Empty results"
 
    **Problem**: The system isn't finding any labels in your images
    
@@ -58,7 +58,7 @@ Troubleshooting
    - 🖼️ Use single-label pipeline for pre-cropped labels
    - 📊 Check image format (JPEG/PNG work best)
 
-.. collapse:: 🤖 "OCR results are gibberish"
+.. dropdown:: 🤖 "OCR results are gibberish"
 
    **Problem**: Extracted text looks wrong or unreadable
    
@@ -69,7 +69,7 @@ Troubleshooting
    - 🏷️ Make sure you're using SLI pipeline for individual labels
    - 🗺 Verify language settings match your labels
 
-.. collapse:: 💻 "Out of memory" or "CUDA errors"
+.. dropdown:: 💻 "Out of memory" or "CUDA errors"
 
    **Problem**: System runs out of memory during processing
    
@@ -89,7 +89,7 @@ Troubleshooting
    python scripts/health_check.py
    
    # Test with a single image
-   python scripts/processing/analysis.py -j path/to/single/image.jpg -o test_output/
+python scripts/processing/analysis.py -i path/to/images_dir -o test_output/
    
    # Get help for any script
    python scripts/processing/detection.py --help
@@ -101,7 +101,6 @@ Troubleshooting
 2. 📖 **Documentation**: Check the full :doc:`user_guide` for detailed instructions
 3. 🤝 **Contributing**: See :doc:`contributing` if you want to help improve the project
 4. 🔧 **API Reference**: Check :doc:`api/modules` for technical details
-~~~~~~~~~~~~~~~~~
 
 **Low Detection Accuracy**
 

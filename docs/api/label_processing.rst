@@ -80,6 +80,17 @@ Text Recognition
    :undoc-members:
    :show-inheritance:
 
+OCR preprocessing summary
+~~~~~~~~~~~~~~~~~~~~~~~~~
+The ``text_recognition.ImageProcessor`` applies, prior to Tesseract OCR:
+- grayscale conversion
+- Gaussian/median denoising
+- binarization via Otsu or adaptive mean/Gaussian (block size/C configurable)
+- skew estimation within ±10° and deskewing
+- optional morphological cleaning (dilation/erosion)
+
+Google Vision OCR is invoked on the rotated ROI without thresholding; word-level bounding boxes are captured via ``ocr_vision``.
+
 Utilities
 ~~~~~~~~~
 
