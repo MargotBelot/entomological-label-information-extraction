@@ -36,19 +36,25 @@ Preparing Your Data
 Image Requirements
 ~~~~~~~~~~~~~~~~~~
 
-**Quality Guidelines:**
+Quality Guidelines
+~~~~~~~~~~~~~~~~~~
+
 - Resolution: 300 DPI or higher recommended
 - Format: JPEG, PNG
 - Lighting: Even, sufficient contrast
 - Focus: Sharp, minimal blur
 - Orientation: Any (system handles rotation)
 
-**Multi-Label Images:**
+Multi-Label Images
+~~~~~~~~~~~~~~~~~~
+
 - Full specimen photos showing multiple labels
 - Include collection labels, determination labels, locality labels
 - Ensure all labels are visible and readable
 
-**Single-Label Images:**
+Single-Label Images
+~~~~~~~~~~~~~~~~~~~
+
 - Individual label images, pre-cropped
 - One label per image
 - Include some margin around the label text
@@ -128,20 +134,18 @@ Basic Commands
    python scripts/processing/analysis.py -i data/SLI/input -o data/SLI/output
 
    # 2) Classify identifiers and text type
-   python scripts/processing/classifiers.py -m 1 -j data/SLI/input -o data/SLI/output   # identifier/not_identifier
-   python scripts/processing/classifiers.py -m 2 -j data/SLI/input -o data/SLI/output   # handwritten/printed
+   python scripts/processing/classifiers.py -m 1 -j data/SLI/input -o data/SLI/output  # identifier/not_identifier
+   python scripts/processing/classifiers.py -m 2 -j data/SLI/input -o data/SLI/output  # handwritten/printed
 
    # 3) Rotation correction for printed labels
    python scripts/processing/rotation.py -i data/SLI/output/printed -o data/SLI/output/printed/rotated
 
    # 4) OCR (choose one)
-   # Tesseract
+   # Option A: Tesseract OCR
    python scripts/processing/tesseract.py -d data/SLI/output/printed/rotated -o data/SLI/output
-   # Google Vision
+   
+   # Option B: Google Vision API
    python scripts/processing/vision.py -c credentials.json -d data/SLI/output/printed/rotated -o data/SLI/output
-
-   # Individual steps
-   python scripts/processing/classifiers.py -j data/SLI/input -o data/SLI/output
 
 Advanced Options
 ~~~~~~~~~~~~~~~~
