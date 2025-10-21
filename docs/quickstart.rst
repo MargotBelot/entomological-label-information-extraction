@@ -169,14 +169,15 @@ Command Line Method
 
 .. code-block:: bash
 
-# Run SLI components sequentially
-python scripts/processing/analysis.py -i data/SLI/input -o data/SLI/output            # empty label filtering
-python scripts/processing/classifiers.py -m 1 -j data/SLI/input -o data/SLI/output    # identifier/not_identifier
-python scripts/processing/classifiers.py -m 2 -j data/SLI/input -o data/SLI/output    # handwritten/printed
-python scripts/processing/rotation.py -i data/SLI/output/printed -o data/SLI/output/printed/rotated
-# OCR (choose one)
-python scripts/processing/tesseract.py -d data/SLI/output/printed/rotated -o data/SLI/output
-python scripts/processing/vision.py -c credentials.json -d data/SLI/output/printed/rotated -o data/SLI/output
+   # Run SLI components sequentially
+   python scripts/processing/analysis.py -i data/SLI/input -o data/SLI/output  # empty label filtering
+   python scripts/processing/classifiers.py -m 1 -j data/SLI/input -o data/SLI/output  # identifier/not_identifier
+   python scripts/processing/classifiers.py -m 2 -j data/SLI/input -o data/SLI/output  # handwritten/printed
+   python scripts/processing/rotation.py -i data/SLI/output/printed -o data/SLI/output/printed/rotated
+   
+   # OCR (choose one)
+   python scripts/processing/tesseract.py -d data/SLI/output/printed/rotated -o data/SLI/output
+   python scripts/processing/vision.py -c credentials.json -d data/SLI/output/printed/rotated -o data/SLI/output
 
 **Individual Components:**
 
@@ -304,22 +305,30 @@ Now that you have the basics working:
 Tips for Success
 ----------------
 
-**Image Quality**
+Image Quality
+~~~~~~~~~~~~~
+
 - Use high-resolution images (300+ DPI)
 - Ensure good lighting and contrast
 - Minimize blur and skew
 
-**Batch Processing**
+Batch Processing
+~~~~~~~~~~~~~~~~
+
 - Process images in batches of 10-50 for optimal performance
 - Monitor memory usage with large datasets
 - Use Docker for consistent results across systems
 
-**Result Validation**
+Result Validation
+~~~~~~~~~~~~~~~~~
+
 - Always review high-confidence results manually
 - Check empty label classifications
 - Verify handwritten label identification
 
-**Performance Optimization**
+Performance Optimization
+~~~~~~~~~~~~~~~~~~~~~~~~
+
 - Use GPU acceleration when available
 - Adjust batch sizes based on available memory
 - Consider using Google Vision API for better OCR accuracy
