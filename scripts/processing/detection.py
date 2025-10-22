@@ -296,7 +296,7 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument(
         '--confidence',
         type=float,
-        default=0.5,
+        default=0.8,
         help='Detection confidence threshold (default: 0.5)'
     )
     parser.add_argument(

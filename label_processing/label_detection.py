@@ -9,12 +9,12 @@ import pandas as pd
 import numpy as np
 from typing import Union
 from pathlib import Path
+import sys
 from detecto.core import Model
 import pickle
 
 import warnings
 import platform
-import sys
 
 # Suppress torchvision deprecation warnings from detecto library
 warnings.filterwarnings("ignore", message="The parameter 'pretrained' is deprecated.*")
@@ -23,6 +23,23 @@ warnings.filterwarnings("ignore", category=UserWarning, module="torchvision")
 
 
 # ---------------------Image Segmentation---------------------#
+
+# --- START: added image-file helpers and small robustness fixes ---
+# helper: only try real image files
+IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".tif", ".tiff", ".bmp", ".gif", ".webp"}
+
+
+def is_image_file(path) -> bool:
+    p = Path(path)
+    if not p.is_file():
+        return False
+    name = p.name
+    if name.startswith("._") or name.startswith("."):
+        return False
+    return p.suffix.lower() in IMAGE_EXTS
+
+
+# --- END: added helpers ---
 
 
 class PredictLabel:
@@ -241,8 +258,28 @@ class PredictLabel:
         """
         if jpg_path is None:
             jpg_path = self.jpg_path
-        image = detecto.utils.read_image(str(jpg_path))
-        predictions = self.model.predict(image)
+
+        # Validate the requested path
+        if jpg_path is None:
+            return pd.DataFrame()
+
+        jpg_path = Path(jpg_path)
+        if not is_image_file(jpg_path):
+            print(f"Skipping non-image or hidden file: {jpg_path}")
+            return pd.DataFrame()
+
+        try:
+            image = detecto.utils.read_image(str(jpg_path))
+        except Exception as e:
+            print(f"Skipping unreadable image {jpg_path}: {e}")
+            return pd.DataFrame()
+
+        try:
+            predictions = self.model.predict(image)
+        except Exception as e:
+            print(f"Prediction failed for {jpg_path}: {e}")
+            return pd.DataFrame()
+
         labels, boxes, scores = predictions
 
         entries = []
@@ -276,23 +313,26 @@ def prediction_parallel(
     if not isinstance(jpg_dir, Path):
         jpg_dir = Path(jpg_dir)
 
-    file_names: list[Path] = list(jpg_dir.glob("*.jpg"))
+    # Collect image files while skipping hidden and macOS '._*' files
+    file_names: list[Path] = [p for p in sorted(jpg_dir.iterdir()) if is_image_file(p)]
 
-    # Validate each image before processing
+    # Validate readability with cv2 (some files can exist but be corrupted)
     valid_files = []
     for file in file_names:
-        image = cv2.imread(str(file))
-        if image is None:
-            print(f"Skipping corrupted image: {file}")
+        img = cv2.imread(str(file))
+        if img is None:
+            print(f"Skipping corrupted or unreadable image: {file}")
         else:
             valid_files.append(file)
 
     mp.set_start_method("spawn", force=True)
     with mp.Pool(n_processes) as executor:
-        results = executor.map(predictor.class_prediction, valid_files)
+        results = list(executor.map(predictor.class_prediction, valid_files))
 
-    final_results = []
-    map(final_results.extend, results)
+    # filter empty DataFrames and concatenate if any results exist
+    results = [r for r in results if isinstance(r, pd.DataFrame) and not r.empty]
+    if not results:
+        return pd.DataFrame()
     return pd.concat(results, ignore_index=True)
 
 
@@ -383,9 +423,14 @@ def create_crops(
     path.mkdir(parents=True, exist_ok=True)
 
     total_crops = 0
-    for filepath in glob.glob(os.path.join(dir_path, "*.jpg")):
-        if not os.path.exists(filepath):
+    # iterate Path objects and skip hidden / '._*' files
+    for p in sorted(Path(dir_path).glob("*.jpg")):
+        filepath = str(p)
+        if not p.exists():
             print(f"File cannot be found: {filepath}")
+            continue
+        if not is_image_file(p):
+            print(f"Skipping hidden or non-image file: {filepath}")
             continue
 
         filename = os.path.basename(filepath)
