@@ -176,7 +176,7 @@ def main(crop_dir: str, credentials: str, output_dir: str, encoding: str = 'utf8
         print(f"Failed to initialize Google Vision API client: {e}")
         return
     utils.check_dir(crop_dir)
-    filenames = glob.glob(os.path.join(crop_dir, "*.jpg"))
+    filenames = glob.glob(os.path.join(crop_dir, "*.jpg")) + glob.glob(os.path.join(crop_dir, "*.jpeg"))
     if verbose:
         print(f"Total files found: {len(filenames)}")
     filenames = [file for file in filenames if not detect_qr_code(file, verbose)]

@@ -17,21 +17,21 @@ def check_python_version():
     print(f"Python: {version.major}.{version.minor}.{version.micro}")
     
     if version >= (3, 11):
-        print("   [OK] Excellent! Python 3.11+ detected")
+        print("[OK] Excellent! Python 3.11+ detected")
     elif version >= (3, 10):
-        print("   [OK] Good! Python 3.10+ detected")
+        print("[OK] Good! Python 3.10+ detected")
     elif version >= (3, 9):
-        print("   [WARNING] Python 3.9 detected. 3.10+ recommended for full compatibility")
+        print("[WARNING] Python 3.9 detected. 3.10+ recommended for full compatibility")
         if platform == "darwin":  # macOS
-            print("   [HINT] macOS: brew install python@3.11")
+            print("[HINT] macOS: brew install python@3.11")
         elif platform.startswith("linux"):
-            print("   [HINT] Linux: sudo apt install python3.11 (Ubuntu/Debian) or equivalent")
+            print("[HINT] Linux: sudo apt install python3.11 (Ubuntu/Debian) or equivalent")
         elif platform.startswith("win"):
-            print("   [HINT] Windows: Download from python.org or use Microsoft Store")
+            print("[HINT] Windows: Download from python.org or use Microsoft Store")
         else:
-            print("   [HINT] Visit python.org for installation instructions")
+            print("[HINT] Visit python.org for installation instructions")
     else:
-        print("   [ERROR] Python version too old. 3.10+ required")
+        print("[ERROR] Python version too old. 3.10+ required")
         return False
     return True
 
@@ -44,13 +44,13 @@ def check_docker():
             print("Docker: [ERROR] Not installed")
             platform = sys.platform
             if platform == "darwin":  # macOS
-                print("   [HINT] macOS: Install Docker Desktop from https://docker.com")
+                print("[HINT] macOS: Install Docker Desktop from https://docker.com")
             elif platform.startswith("linux"):
-                print("   [HINT] Linux: sudo apt install docker.io (Ubuntu/Debian) or visit https://docker.com")
+                print("[HINT] Linux: sudo apt install docker.io (Ubuntu/Debian) or visit https://docker.com")
             elif platform.startswith("win"):
-                print("   [HINT] Windows: Install Docker Desktop from https://docker.com")
+                print("[HINT] Windows: Install Docker Desktop from https://docker.com")
             else:
-                print("   [HINT] Visit https://docker.com for installation instructions")
+                print("[HINT] Visit https://docker.com for installation instructions")
             return False
         
         # Check Docker version
@@ -62,17 +62,17 @@ def check_docker():
         # Check if Docker daemon is running
         result = subprocess.run(["docker", "info"], capture_output=True, text=True)
         if result.returncode == 0:
-            print("   [OK] Docker daemon is running")
+            print("[OK] Docker daemon is running")
             return True
         else:
-            print("   [WARNING] Docker installed but daemon not running")
+            print("[WARNING] Docker installed but daemon not running")
             platform = sys.platform
-            if platform == "darwin" or platform.startswith("win"):  # macOS or Windows
-                print("   [HINT] Start Docker Desktop application")
+            if platform == "darwin"or platform.startswith("win"):  # macOS or Windows
+                print("[HINT] Start Docker Desktop application")
             elif platform.startswith("linux"):
-                print("   [HINT] Linux: sudo systemctl start docker")
+                print("[HINT] Linux: sudo systemctl start docker")
             else:
-                print("   [HINT] Start Docker service for your platform")
+                print("[HINT] Start Docker service for your platform")
             return False
             
     except Exception as e:
@@ -113,14 +113,14 @@ def check_project_structure():
     missing_dirs = [d for d in required_dirs if not (current_dir / d).exists()]
     
     if not missing_files and not missing_dirs:
-        print("   [OK] All required files and directories present")
+        print("[OK] All required files and directories present")
         return True
     else:
-        print("   [WARNING] Missing components:")
+        print("[WARNING] Missing components:")
         for f in missing_files:
-            print(f"      - {f}")
+            print(f"- {f}")
         for d in missing_dirs:
-            print(f"      - {d}/")
+            print(f"- {d}/")
         return False
 
 def check_system_resources():
@@ -148,9 +148,9 @@ def check_system_resources():
         print(f"Disk Space: {free_gb:.1f}GB available")
         
         if free_gb < 5:
-            print("   [WARNING] Low disk space. 5GB+ recommended")
+            print("[WARNING] Low disk space. 5GB+ recommended")
         else:
-            print("   [OK] Sufficient disk space")
+            print("[OK] Sufficient disk space")
             
         return True
     except Exception as e:
@@ -175,27 +175,27 @@ def check_dependencies():
                 result = subprocess.run([dep, "--version"], capture_output=True, text=True)
                 if result.returncode == 0:
                     version = result.stdout.split('\n')[0]
-                    print(f"   [OK] {dep}: {version}")
+                    print(f"[OK] {dep}: {version}")
                 else:
-                    print(f"   [OK] {dep}: Installed")
+                    print(f"[OK] {dep}: Installed")
             except:
-                print(f"   [OK] {dep}: Installed")
+                print(f"[OK] {dep}: Installed")
         else:
             if dep == "tesseract":
-                print(f"   [WARNING] {dep}: Not found ({description})")
+                print(f"[WARNING] {dep}: Not found ({description})")
                 platform = sys.platform
                 if platform == "darwin":  # macOS
-                    print("      [HINT] macOS: brew install tesseract")
+                    print("[HINT] macOS: brew install tesseract")
                 elif platform.startswith("linux"):
-                    print("      [HINT] Linux: sudo apt install tesseract-ocr (Ubuntu/Debian)")
+                    print("[HINT] Linux: sudo apt install tesseract-ocr (Ubuntu/Debian)")
                 elif platform.startswith("win"):
-                    print("      [HINT] Windows: Download from https://github.com/tesseract-ocr/tesseract")
+                    print("[HINT] Windows: Download from https://github.com/tesseract-ocr/tesseract")
                 else:
-                    print("      [HINT] Visit https://github.com/tesseract-ocr/tesseract")
+                    print("[HINT] Visit https://github.com/tesseract-ocr/tesseract")
             elif dep == "conda":
-                print(f"   [INFO] {dep}: Not found ({description})")
+                print(f"[INFO] {dep}: Not found ({description})")
             else:
-                print(f"   [WARNING] {dep}: Not found ({description})")
+                print(f"[WARNING] {dep}: Not found ({description})")
                 all_good = False
     
     return all_good
@@ -203,7 +203,7 @@ def check_dependencies():
 def main():
     """Run comprehensive health check."""
     print("Health Check - Entomological Label Information Extraction")
-    print("=" * 60)
+    print("="* 60)
     
     checks = [
         ("Python Version", check_python_version),
@@ -220,19 +220,19 @@ def main():
             result = check_func()
             results.append((name, result))
         except Exception as e:
-            print(f"   [ERROR] Error during {name} check: {e}")
+            print(f"[ERROR] Error during {name} check: {e}")
             results.append((name, False))
     
     print()
-    print("=" * 60)
+    print("="* 60)
     print("Health Check Summary:")
     
     passed = 0
     total = len(results)
     
     for name, result in results:
-        status = "[PASS]" if result else "[FAIL]"
-        print(f"   {name}: {status}")
+        status = "[PASS]"if result else "[FAIL]"
+        print(f"{name}: {status}")
         if result:
             passed += 1
     
@@ -251,8 +251,8 @@ def main():
     
     print()
     print("For help:")
-    print("   README.md - Complete installation and usage guide")
-    print("   python launch_gui.py - Start the graphical interface")
+    print("README.md - Complete installation and usage guide")
+    print("python launch_gui.py - Start the graphical interface")
 
 if __name__ == "__main__":
     main()

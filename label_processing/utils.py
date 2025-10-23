@@ -92,11 +92,11 @@ def check_dir(directory: str) -> None:
     if not os.path.isdir(directory):
         raise FileNotFoundError(f"The directory '{directory}' does not exist.")
 
-    jpg_files = [f for f in os.listdir(directory) if f.lower().endswith(".jpg")]
+    jpg_files = [f for f in os.listdir(directory) if f.lower().endswith((".jpg", ".jpeg"))]
 
     if not jpg_files:
         raise FileNotFoundError(
-            "The directory given does not contain any jpg files. You might have chosen the wrong directory?"
+            "The directory given does not contain any jpg or jpeg files. You might have chosen the wrong directory?"
         )
 
     # Validate image integrity
