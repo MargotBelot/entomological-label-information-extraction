@@ -1,0 +1,155 @@
+Bootstrap: docker
+From: python:3.10.14-bullseye
+
+%files
+    # Copy entire project into container
+    . /app
+
+%post
+    # Set working directory
+    cd /app
+    
+    # Install system dependencies
+    apt-get update && apt-get install -y \
+        libgl1-mesa-glx \
+        libglib2.0-0 \
+        libsm6 \
+        libxext6 \
+        libxrender1 \
+        libstdc++6 \
+        libjpeg-dev \
+        libpng-dev \
+        libopenblas-dev \
+        libomp5 \
+        tesseract-ocr \
+        libtesseract-dev \
+        python3-opencv \
+        && rm -rf /var/lib/apt/lists/*
+    
+    # Install Python dependencies based on the pipeline stage
+    # Install all requirements for full pipeline capability
+    pip install --no-cache-dir -r /app/pipelines/requirements/segmentation.txt
+    pip install --no-cache-dir -r /app/pipelines/requirements/rotation.txt
+    pip install --no-cache-dir -r /app/pipelines/requirements/classifier.txt
+    pip install --no-cache-dir -r /app/pipelines/requirements/tesseract.txt
+    pip install --no-cache-dir -r /app/pipelines/requirements/empty_labels.txt
+    pip install --no-cache-dir -r /app/pipelines/requirements/postprocess.txt
+    
+    # Download NLTK data for post-processing
+    python -c 'import nltk; nltk.download("punkt"); nltk.download("punkt_tab");'
+
+%environment
+    export PYTHONPATH=/app:$PYTHONPATH
+    export OMP_NUM_THREADS=1
+    export MKL_NUM_THREADS=1
+    export NUMEXPR_NUM_THREADS=1
+    export OPENBLAS_NUM_THREADS=1
+
+%runscript
+    # Default: show usage information
+    echo "ELIE - Entomological Label Information Extraction"
+    echo ""
+    echo "Available commands:"
+    echo "  apptainer run elie.sif detection <args>        # Label detection"
+    echo "  apptainer run elie.sif rotation <args>         # Rotation correction"
+    echo "  apptainer run elie.sif classification <args>   # Classification"
+    echo "  apptainer run elie.sif tesseract <args>        # OCR processing"
+    echo "  apptainer run elie.sif empty_labels <args>     # Empty label detection"
+    echo "  apptainer run elie.sif postprocessing <args>   # Post-processing"
+    echo "  apptainer run elie.sif mli                     # Full MLI pipeline"
+    echo "  apptainer run elie.sif sli                     # Full SLI pipeline"
+    echo ""
+    echo "Example:"
+    echo "  apptainer run --bind ./data:/app/data elie.sif mli"
+
+%apprun detection
+    python /app/scripts/processing/detection.py "$@"
+
+%apprun rotation
+    python /app/scripts/processing/rotation.py "$@"
+
+%apprun classification
+    python /app/scripts/processing/classifiers.py "$@"
+
+%apprun tesseract
+    python /app/scripts/processing/tesseract.py "$@"
+
+%apprun empty_labels
+    python /app/scripts/processing/analysis.py "$@"
+
+%apprun postprocessing
+    python /app/scripts/postprocessing/process.py "$@"
+
+%apprun mli
+    #!/bin/bash
+    # Multi-Label Image Pipeline
+    INPUT_DIR=${INPUT_DIR:-/app/data/MLI/input}
+    OUTPUT_DIR=${OUTPUT_DIR:-/app/data/MLI/output}
+    
+    echo "Running MLI Pipeline..."
+    echo "Input: $INPUT_DIR"
+    echo "Output: $OUTPUT_DIR"
+    
+    python /app/scripts/processing/detection.py -j "$INPUT_DIR" -o "$OUTPUT_DIR" --batch-size 1 --device cpu
+    python /app/scripts/processing/analysis.py -o "$OUTPUT_DIR" -i "$OUTPUT_DIR/input_cropped"
+    python /app/scripts/processing/classifiers.py -m 1 -j "$OUTPUT_DIR/not_empty" -o "$OUTPUT_DIR"
+    python /app/scripts/processing/classifiers.py -m 2 -j "$OUTPUT_DIR/not_identifier" -o "$OUTPUT_DIR"
+    python /app/scripts/processing/tesseract.py -d "$OUTPUT_DIR/printed" -o "$OUTPUT_DIR"
+    python /app/scripts/postprocessing/process.py -j "$OUTPUT_DIR/ocr_preprocessed.json" -o "$OUTPUT_DIR"
+    python /app/scripts/postprocessing/consolidate_results.py -o "$OUTPUT_DIR" -f consolidated_results.json
+    
+    echo "MLI Pipeline completed!"
+
+%apprun sli
+    #!/bin/bash
+    # Single-Label Image Pipeline
+    INPUT_DIR=${INPUT_DIR:-/app/data/SLI/input}
+    OUTPUT_DIR=${OUTPUT_DIR:-/app/data/SLI/output}
+    
+    echo "Running SLI Pipeline..."
+    echo "Input: $INPUT_DIR"
+    echo "Output: $OUTPUT_DIR"
+    
+    python /app/scripts/processing/analysis.py -o "$OUTPUT_DIR" -i "$INPUT_DIR"
+    python /app/scripts/processing/classifiers.py -m 1 -j "$OUTPUT_DIR/not_empty" -o "$OUTPUT_DIR"
+    python /app/scripts/processing/classifiers.py -m 2 -j "$OUTPUT_DIR/not_identifier" -o "$OUTPUT_DIR"
+    python /app/scripts/processing/rotation.py -o "$OUTPUT_DIR/rotated" -i "$OUTPUT_DIR/printed"
+    python /app/scripts/processing/tesseract.py -d "$OUTPUT_DIR/rotated" -o "$OUTPUT_DIR"
+    python /app/scripts/postprocessing/process.py -j "$OUTPUT_DIR/ocr_preprocessed.json" -o "$OUTPUT_DIR"
+    python /app/scripts/postprocessing/consolidate_results.py -o "$OUTPUT_DIR" -f consolidated_results.json
+    
+    echo "SLI Pipeline completed!"
+
+%labels
+    Author margot
+    Version 1.0
+    Description Entomological Label Information Extraction pipeline for HPC environments
+
+%help
+    ELIE - Entomological Label Information Extraction
+    
+    This container provides AI-powered text extraction from insect specimen labels.
+    
+    Building the container:
+        apptainer build elie.sif elie.def
+    
+    Running complete pipelines:
+        # MLI Pipeline (multi-label images)
+        apptainer run --bind $(pwd)/data:/app/data elie.sif mli
+        
+        # SLI Pipeline (single-label images)
+        apptainer run --bind $(pwd)/data:/app/data elie.sif sli
+    
+    Running individual commands:
+        apptainer exec --bind $(pwd)/data:/app/data elie.sif \
+            python /app/scripts/processing/detection.py -j /app/data/MLI/input -o /app/data/MLI/output
+    
+    Using apps:
+        apptainer run --app detection --bind $(pwd)/data:/app/data elie.sif \
+            -j /app/data/MLI/input -o /app/data/MLI/output
+    
+    Custom paths with environment variables:
+        INPUT_DIR=/scratch/input OUTPUT_DIR=/scratch/output \
+            apptainer run --bind /scratch:/app/data elie.sif mli
+    
+    For more information, visit the project repository.

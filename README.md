@@ -1,444 +1,417 @@
 # Entomological Label Information Extraction
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE) ![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue) ![Docker](https://img.shields.io/badge/docker-ready-2496ED) ![Status](https://img.shields.io/badge/status-stable-brightgreen) [![Documentation](https://img.shields.io/badge/docs-read%20the%20docs-blue)](https://entomological-label-information-extraction.readthedocs.io/en/latest/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE) ![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue) ![Status](https://img.shields.io/badge/status-stable-brightgreen) [![Documentation](https://img.shields.io/badge/docs-read%20the%20docs-blue)](https://entomological-label-information-extraction.readthedocs.io/en/latest/)
 
-**AI-powered text extraction from insect specimen labels**
+**AI-powered text extraction from insect specimen labels using computer vision and OCR**
 
-Extract and digitize text from museum specimen labels automatically using computer vision and OCR. Perfect for museum digitization, research data preparation, and biodiversity informatics.
+Extract and digitize text from museum specimen labels automatically. Perfect for museum digitization, research data preparation, and biodiversity informatics.
 
-> **Complete Documentation**: Visit our [comprehensive documentation](https://entomological-label-information-extraction.readthedocs.io/en/latest/) for detailed guides, API reference, and tutorials.
+---
 
-## Table of Contents
-- [Documentation](https://entomological-label-information-extraction.readthedocs.io/en/latest/) - **Complete guides & API reference**
-- [Quick Start](#quick-start)
-- [What This Does](#what-this-does)
-- [Pipeline Workflow](#pipeline-workflow)
-- [Prerequisites](#prerequisites)
-- [Installation Options](#installation-options)
-- [GUI Usage](#gui-usage-recommended)
-- [Command Reference](#command-reference)
-- [Troubleshooting](#troubleshooting)
-- [File Structure](#file-structure)
-- [Sample Data and Training](#sample-data-and-training)
-- [Citation](#cite-this-work)
-- [License](#license)
+## Complete Beginner? Start Here!
 
-## Quick Start
+**5-Minute Overview:**
 
-**Step 0: Install Docker (if not already installed)**
-```bash
-# macOS: Download from https://docker.com or use Homebrew
-brew install --cask docker
+1. **Install** → Install conda and Tesseract (one-time setup)
+2. **Get ELIE** → Download and install this software
+3. **Add Images** → Put your specimen/label photos in `data/` folder
+4. **Run** → Click `python launch.py` to start
+5. **Results** → Get extracted text in JSON/CSV files
 
-# Linux: Install via package manager
-sudo apt install docker.io  # Ubuntu/Debian
+**System will automatically:**
+- Find labels in your photos (or use pre-cropped labels)
+- Classify label types
+- Correct orientation
+- Extract text with OCR
+- Clean and organize results
 
-# Windows: Download from https://docker.com
-```
+👉 **Jump to [Quick Start](#quick-start)** for step-by-step instructions
 
-**Step 1: Install Project**
-```bash
-# Clone and setup
-git clone <repository-url>
-cd entomological-label-information-extraction
+---
 
-# Create conda environment (recommended)
-conda env create -f environment.yml
-conda activate entomological-label
+## What It Does
 
-# Install package
-pip install -e .
-
-# Directories are already created in data/
-```
-
-**Step 2: Run**
-```bash
-# Quick launch (recommended)
-python launch.py
-
-# OR launch Streamlit directly
-streamlit run interfaces/launch_streamlit.py
-```
-
-**Step 3: Results**
-Check `data/MLI/output/consolidated_results.json` for extracted text and metadata.
-
-> **Want more details?** Check our [complete documentation](https://entomological-label-information-extraction.readthedocs.io/en/latest/) for:
-> - [5-minute setup guide](https://entomological-label-information-extraction.readthedocs.io/en/latest/quickstart.html)
-> - [Comprehensive user guide](https://entomological-label-information-extraction.readthedocs.io/en/latest/user_guide.html)  
-> - [API reference](https://entomological-label-information-extraction.readthedocs.io/en/latest/api/modules.html)
-> - [Troubleshooting guide](https://entomological-label-information-extraction.readthedocs.io/en/latest/troubleshooting.html)
-
-## What This Does
-
-- **Input**: Specimen photos (full images) or individual label images
-- **Process**: AI detects labels → crops them → classifies → extracts text with OCR
-- **Output**: Structured JSON/CSV files with all extracted text and metadata
+- **Input**: Specimen photos (full images) or pre-cropped label images
+- **Process**: Detects labels → classifies → corrects orientation → extracts text with OCR → cleans output
+- **Output**: Structured JSON/CSV files with extracted text and metadata
 
 ### Two Pipeline Types
 
-**Multi-Label (MLI)**: Full specimen photos with multiple labels
-- Put images in `data/MLI/input/`
-- System finds and crops individual labels automatically
+| Pipeline | Input | Use Case |
+|----------|-------|----------|
+| **MLI** (Multi-Label) | Full specimen photos | System automatically detects and crops individual labels |
+| **SLI** (Single-Label) | Pre-cropped labels | Processes each label image directly |
 
-**Single-Label (SLI)**: Pre-cropped individual label images  
-- Put images in `data/SLI/input/`
-- System processes each label directly
+Put images in `data/MLI/input/` or `data/SLI/input/`, run pipeline, results appear in corresponding `output/` directory.
 
-## Pipeline Workflow
+---
 
-```mermaid
-flowchart TD
-    %% Input and Pipeline Selection
-    A[Specimen Images<br/>JPG Format] --> B{Pipeline Type}
-    B -->|Multi-Label Images| C[Label Detection<br/>Faster R-CNN Detecto]
-    B -->|Single-Label Images| D[Pre-cropped Labels<br/>SLI Input]
-    
-    %% Multi-Label Detection Path
-    C --> E[Detection Results<br/>input_predictions.csv]
-    C --> F[Cropped Labels<br/>input_cropped/<br/>MLI to SLI Conversion]
-    
-    %% Merge paths for classification
-    F --> G{Empty Label<br/>Classification}
-    D --> G
-    
-    %% Common Classification Pipeline
-    G -->|Empty| H[Filtered Out<br/>empty/]
-    G -->|Not Empty| I{Identifier<br/>Classification}
-    
-    I -->|Identifier| J[QR Codes<br/>identifier/]
-    I -->|Not Identifier| K{Text Type<br/>Classification}
-    
-    K -->|Handwritten| L[Handwritten Labels<br/>handwritten/]
-    K -->|Printed| M[Printed Labels<br/>printed/]
-    
-    %% Manual transcription for handwritten
-    L --> L1[Manual Transcription<br/>Human Expert Review]
-    
-    %% Single-Label Pipeline Only (MLI stops after detection)
-    M --> N[Rotation Correction<br/>rotated/]
-    
-    N --> O{OCR Method}
-    O -->|Tesseract| P[Tesseract OCR<br/>Local Processing]
-    O -->|Google Vision| Q[Google Vision API<br/>Cloud Processing]
-    
-    P --> R[OCR Results<br/>ocr_preprocessed.json]
-    Q --> S[OCR Results<br/>ocr_google_vision.json]
-    
-    R --> T1[Post-processing<br/>Clean & Structure]
-    S --> T1
-    L1 --> T1
-    
-    %% Final Outputs
-    T1 --> U1[Final Outputs<br/>- identifier.csv<br/>- corrected_transcripts.json<br/>- plausible_transcripts.json<br/>- empty_transcripts.csv]
-    E --> U1
-    
-    %% Quality Metrics
-    U1 --> V1[Quality Metrics<br/>- Detection Confidence<br/>- Classification Probabilities<br/>- OCR Statistics]
-    
-    %% Optional Clustering Evaluation (separate tool)
-    U1 -.->|Optional| W1[Clustering Analysis<br/>Word2Vec + t-SNE<br/>cluster_eval.py]
-    
-    %% Styling
-    classDef input fill:#e1f5fe,stroke:#0277bd,stroke-width:2px
-    classDef pipeline fill:#fff8e1,stroke:#f57c00,stroke-width:3px
-    classDef process fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
-    classDef output fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px
-    classDef decision fill:#fff3e0,stroke:#ef6c00,stroke-width:2px
-    classDef filtered fill:#ffebee,stroke:#c62828,stroke-width:2px
-    classDef analysis fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
-    classDef final fill:#f1f8e9,stroke:#388e3c,stroke-width:3px
-    
-    class A input
-    class B,O pipeline
-    class C,N,P,Q,T1 process
-    class D,E,F,J,L,M,L1,R,S,U1,V1 output
-    class G,I,K decision
-    class H filtered
-    class W1 analysis
-```
+## Quick Start
 
-## Prerequisites
+### 1. Install Prerequisites
 
-### Docker Installation (Required)
+**Required:**
 
-Docker is required for running the processing pipelines. The GUI can automatically start Docker, but you need to install it first.
-
-#### macOS
+**a) Conda** - Python package manager ([Install Miniconda](https://conda.io/miniconda.html))
 ```bash
-# Download and install Docker Desktop
-# Visit: https://desktop.docker.com/mac/main/amd64/Docker.dmg (Intel)
-# Visit: https://desktop.docker.com/mac/main/arm64/Docker.dmg (Apple Silicon)
-
-# Or install via Homebrew
-brew install --cask docker
-
-# Start Docker Desktop from Applications folder
-open /Applications/Docker.app
+# Check if conda is installed:
+conda --version
+# If not found, install from: https://conda.io/miniconda.html
 ```
 
-#### Windows
-```powershell
-# Download and install Docker Desktop
-# Visit: https://desktop.docker.com/win/main/amd64/Docker%20Desktop%20Installer.exe
-
-# Or install via Chocolatey
-choco install docker-desktop
-
-# Or install via winget
-winget install Docker.DockerDesktop
-```
-
-#### Linux (Ubuntu/Debian)
+**b) Tesseract OCR** - Text recognition engine
 ```bash
-# Update package index
-sudo apt update
+# macOS:
+brew install tesseract
 
-# Install Docker
-sudo apt install docker.io docker-compose
+# Linux (Ubuntu/Debian):
+sudo apt install tesseract-ocr
 
-# Start and enable Docker
-sudo systemctl start docker
-sudo systemctl enable docker
+# Windows:
+# Download from: https://github.com/UB-Mannheim/tesseract/wiki
 
-# Add user to docker group (optional, avoids sudo)
-sudo usermod -aG docker $USER
-# Logout and login again for group changes to take effect
+# Verify installation:
+tesseract --version
 ```
 
-#### Linux (CentOS/RHEL/Fedora)
+### 2. Install ELIE
+
 ```bash
-# Install Docker
-sudo dnf install docker docker-compose  # Fedora
-# OR
-sudo yum install docker docker-compose  # CentOS/RHEL
+git clone <repository-url>
+cd entomological-label-information-extraction
 
-# Start and enable Docker
-sudo systemctl start docker
-sudo systemctl enable docker
-
-# Add user to docker group (optional)
-sudo usermod -aG docker $USER
-```
-
-#### Verify Docker Installation
-```bash
-# Check Docker is running
-docker --version
-docker info
-
-# Test with hello-world
-docker run hello-world
-```
-
-### System Requirements
-- **Docker Desktop** (see installation above)
-- **Python 3.10+** with conda
-- **8GB+ RAM**, 5GB+ disk space  
-- **Tesseract OCR**: `brew install tesseract` (macOS) or `sudo apt install tesseract-ocr` (Linux)
-
-## Installation Options
-
-### Option 1: Conda Environment (Recommended)
-```bash
-# Install Miniconda first: https://conda.io/miniconda.html
-# Then:
 conda env create -f environment.yml
 conda activate entomological-label
 pip install -e .
 ```
 
-### Option 2: Manual Pipeline Scripts
+### 3. Add Your Images
+
+**For full specimen photos** (system will detect and crop labels):
 ```bash
-# Install Docker Desktop: https://docker.com
-# Then run individual pipeline scripts:
-./tools/pipelines/run_mli_pipeline_conda.sh  # Multi-label processing
-./tools/pipelines/run_sli_pipeline_conda.sh  # Single-label processing
+# Copy your JPG images to:
+cp /path/to/your/photos/*.jpg data/MLI/input/
 ```
 
-## Interface Usage (Recommended)
+**For pre-cropped label images**:
+```bash
+# Copy your JPG images to:
+cp /path/to/your/labels/*.jpg data/SLI/input/
+```
 
-### Multiple Launch Options
+**Or use the included sample data** to test:
+- Sample images already in `data/MLI/input/` and `data/SLI/input/`
 
-**Quick Launch (Recommended):**
+### 4. Run Pipeline
+
+**Option A: GUI (Recommended)**
 ```bash
 python launch.py
 ```
-This launches the modern Streamlit web interface with:
-- Real-time progress tracking and job duration display
-- Live processing dashboard with system metrics
-- Interactive results browser
-- Automatic Docker management
+Opens web interface with point-and-click pipeline selection, real-time progress, and results browser.
 
-**Alternative Interface:**
+**Option B: Command Line**
 ```bash
-# Launch Streamlit directly
-streamlit run interfaces/launch_streamlit.py
+# MLI pipeline (for full specimen photos)
+./tools/pipelines/run_mli_pipeline_conda.sh
+
+# SLI pipeline (for pre-cropped labels)
+./tools/pipelines/run_sli_pipeline_conda.sh
 ```
 
-**The Streamlit interface automatically handles Docker for you:**
-- Checks if Docker is running
-- Shows Docker status in the interface
-- Real-time progress tracking with job duration display
-- Interactive results browser
-- No manual Docker commands needed
+### 5. View Results
 
-The interface provides:
-- Point-and-click pipeline selection (MLI/SLI)
-- Live processing dashboard with system metrics
-- Progress monitoring with rotation correction integrated
-- Results browser with consolidated outputs
-- Individual script execution options
+Results saved to:
+- `data/MLI/output/consolidated_results.json` - All extracted data
+- `data/MLI/output/corrected_transcripts.json` - Cleaned text
+- `data/MLI/output/identifier.csv` - Specimen IDs
 
-## Command Reference
+**What to expect:**
+- **First run**: Downloads models (~500MB), takes 5-10 minutes
+- **Processing time**: 2-5 minutes per image (varies by size and CPU)
+- **Progress**: GUI shows real-time progress and system metrics
+- **Output**: JSON files with structured data, CSV files for spreadsheets
 
-### Processing Scripts Overview
+---
 
-The pipeline consists of several specialized scripts that work together to extract information from entomological labels:
+## Advanced Usage
 
-- **detection.py**: Performs label detection on specimen photos using a Faster R-CNN model to identify and crop individual labels from multi-label specimens
-- **classifiers.py**: Classifies cropped labels into multiple categories (empty, identifier, handwritten, or printed) using specialized TensorFlow models
-- **rotation.py**: Detects and corrects the orientation of printed labels to optimize for OCR accuracy
-- **tesseract.py**: Runs local OCR text extraction on printed labels using the Tesseract engine with preprocessing techniques
-- **vision.py**: Uses the Google Vision API for cloud-based OCR, providing more accurate results on complex or challenging text
-- **analysis.py**: Performs additional label analysis, such as filtering and evaluation of empty labels
+### Individual Processing Steps
 
-### Command Examples
-
+Run specific stages independently:
 ```bash
-# Detection (finds labels in specimen photos)
+# Detection
 python scripts/processing/detection.py -j data/MLI/input -o data/MLI/output
 
-# Classification (sorts labels by type)
-python scripts/processing/classifiers.py -m 1 -j data/SLI/input -o data/SLI/output
+# Classification
+python scripts/processing/classifiers.py -m 1 -j data/input -o data/output
 
-# Rotation correction (optimizes label orientation for OCR)
-python scripts/processing/rotation.py -d data/MLI/output/input_cropped -o data/MLI/output
+# Rotation correction
+python scripts/processing/rotation.py -i data/input -o data/output
 
-# Local OCR with Tesseract (extracts text from labels)
-python scripts/processing/tesseract.py -d data/MLI/output/input_cropped -o data/MLI/output
+# OCR
+python scripts/processing/tesseract.py -d data/input -o data/output
 
-# Google Vision OCR (cloud-based text extraction, requires API key)
-python scripts/processing/vision.py -c credentials.json -d data/MLI/output/input_cropped -o data/MLI/output
-
-# Empty label analysis (filters empty vs not-empty)
-python scripts/processing/analysis.py -i data/MLI/output/input_cropped -o data/MLI/output
+# Post-processing
+python scripts/postprocessing/process.py -j data/ocr_preprocessed.json -o data/output
 ```
 
-## Troubleshooting
+### Docker (Optional)
 
-**"Command not found: python"**
+For containerized execution:
+
 ```bash
-python3 launch.py
-# OR activate environment: conda activate entomological-label
+cd pipelines
+
+# MLI pipeline
+docker-compose --profile mli up
+
+# SLI pipeline
+docker-compose --profile sli up
+
+# Individual services
+docker-compose up segmentation
+docker-compose up rotation
 ```
 
-**"Docker not found" or "Docker not running"**
+See `pipelines/README.md` for complete Docker documentation.
+
+### Apptainer/Singularity (HPC)
+
+For high-performance computing clusters:
+
 ```bash
-# Check if Docker is installed
-docker --version
+# Build container
+cd pipelines
+apptainer build elie.sif elie.def
 
-# Check if Docker is running
-docker info
+# Run pipeline
+apptainer run --bind /scratch/data:/app/data elie.sif mli
 
-# Start Docker Desktop (macOS/Windows)
-open /Applications/Docker.app  # macOS
-# Or search for "Docker Desktop" and start it
-
-# Start Docker service (Linux)
-sudo systemctl start docker
+# SLURM job submission
+sbatch tools/hpc/run_elie_slurm.sh
 ```
 
-**"No such file or directory"**
-```bash
-# Check that data directories exist:
-ls data/MLI/input data/SLI/input
-```
+See `pipelines/HPC_QUICKSTART.md` for complete HPC documentation.
 
-**"Permission denied" with Docker (Linux)**
-```bash
-# Add user to docker group
-sudo usermod -aG docker $USER
-# Logout and login again
+### Development Setup
 
-# Or run with sudo (not recommended)
-sudo docker info
-```
-
-**Model loading issues**
-```bash
-python scripts/processing/detection.py --clear-cache -j data/MLI/input -o data/MLI/output
-```
-
-## Advanced Installation
-
-**Docker (alternative):**
-```bash
-docker-compose -f pipelines/multi-label-docker-compose.yaml up
-```
-
-**Development setup:**
 ```bash
 pip install -e .[dev,test]
 pytest unit_tests/
 ```
 
-**GPU acceleration:**
-- Install CUDA for NVIDIA GPUs
-- Models automatically use GPU when available
+### GPU Acceleration
 
-## File Structure
+Install CUDA for NVIDIA GPUs. Models automatically use GPU when available.
+
+### Custom OCR
+
+Use Google Vision API instead of Tesseract:
+```bash
+python scripts/processing/vision.py -c credentials.json -d data/input -o data/output
+```
+
+---
+
+## Pipeline Workflow
+
+```mermaid
+flowchart TD
+    A[Input Images] --> B{Pipeline Type}
+    B -->|MLI| C[Detection<br/>Faster R-CNN]
+    B -->|SLI| D[Pre-cropped Labels]
+    C --> E[Cropped Labels]
+    E --> F[Classification]
+    D --> F
+    F --> G[Empty Filter]
+    G --> H[ID/Description<br/>Classification]
+    H --> I[Handwritten/Printed<br/>Classification]
+    I --> J[Rotation Correction]
+    J --> K[OCR<br/>Tesseract]
+    K --> L[Post-processing]
+    L --> M[Results JSON/CSV]
+    
+    classDef input fill:#e1f5fe
+    classDef process fill:#f3e5f5
+    classDef output fill:#e8f5e8
+    class A input
+    class C,D,F,G,H,I,J,K,L process
+    class E,M output
+```
+
+**Pipeline stages:**
+1. **Detection** (MLI only): Detect and crop labels from specimen photos
+2. **Classification**: Filter empty labels, identify QR codes, classify text type
+3. **Rotation**: Correct label orientation for better OCR
+4. **OCR**: Extract text using Tesseract (or Google Vision API)
+5. **Post-processing**: Clean and structure extracted text
+6. **Output**: Consolidated JSON with all results and metadata
+
+---
+
+## Project Structure
 
 ```
-Project Structure:
+entomological-label-information-extraction/
 ├── data/
-│   ├── MLI/input/          # Put specimen photos here
-│   ├── MLI/output/         # Results appear here
-│   └── SLI/input/          # Put individual labels here
+│   ├── MLI/input/                    # Full specimen photos
+│   ├── MLI/output/                   # MLI results
+│   ├── SLI/input/                    # Pre-cropped labels
+│   └── SLI/output/                   # SLI results
 ├── scripts/
-│   ├── processing/         # Main processing scripts
-│   ├── evaluation/         # Evaluation and analysis tools
-│   └── postprocessing/     # Result consolidation
-├── label_processing/       # Core processing modules
-├── label_evaluation/       # Evaluation modules
-├── label_postprocessing/   # Postprocessing modules
-├── pipelines/              # Docker compose files
-├── training_notebooks/     # Jupyter training notebooks
-├── models/                 # Trained model files
-├── tools/                  # Utility tools
-└── unit_tests/             # Test suite
-
-Key output files (in data/*/output/):
-- consolidated_results.json  # Main results file
-- identifier.csv            # Specimen IDs  
-- corrected_transcripts.json # Cleaned text
+│   ├── processing/                   # Main pipeline scripts
+│   ├── postprocessing/               # Output consolidation
+│   └── evaluation/                   # Analysis tools
+├── label_processing/                 # Core processing modules
+├── label_postprocessing/             # Post-processing modules
+├── models/                           # Trained model files
+├── pipelines/
+│   ├── Dockerfile                    # Docker multi-stage build
+│   ├── docker-compose.yml            # Docker orchestration
+│   ├── elie.def                      # Apptainer definition
+│   └── requirements/                 # Per-stage dependencies
+├── tools/
+│   ├── pipelines/                    # Conda shell scripts
+│   └── hpc/                          # SLURM job templates
+├── interfaces/
+│   └── launch_streamlit.py           # Web GUI
+├── launch.py                         # Quick launcher
+└── environment.yml                   # Conda environment
 ```
 
-## System Architecture
+**Key output files:**
+- `consolidated_results.json` - Main results with all metadata
+- `corrected_transcripts.json` - Cleaned OCR text
+- `identifier.csv` - Specimen IDs
+- `input_predictions.csv` - Detection results (MLI only)
 
-The system uses:
-- **Faster R-CNN** for label detection
-- **TensorFlow** models for classification (empty/printed/handwritten/identifier)
-- **Tesseract OCR** and **Google Vision API** for text extraction
-- **Post-processing** for data cleaning and structuring
+---
 
-Preprocessing policy and thresholds
-- Stage 1 (detection/classification/rotation) performs geometric normalization only; no intensity enhancements (CLAHE, histogram equalization, normalization) are applied to preserve model training domain.
-- Stage 2 (before OCR) applies grayscale, Gaussian/median denoising, Otsu or adaptive thresholding (tunable blocksize/C), ±10° skew estimation and deskew, and optional dilation/erosion for Tesseract; Google Vision runs on the rotated ROI.
-- Empty‑label detection: 10% border crop; “dark” pixel = mean RGB < 100; classify as empty if p_dark < 0.01.
+## Troubleshooting
 
-## Sample Data and Training
+### Common First-Time Issues
 
-**Included sample data:**
-- `data/MLI/` - Multi-label specimen images (ready to test)
-- `data/SLI/` - Single-label images (ready to test)
+**"Command not found: conda"**
+```bash
+# Conda not installed. Install Miniconda first:
+# Visit: https://conda.io/miniconda.html
+# Then restart your terminal
+```
 
-**Training datasets:** Available on Zenodo at [https://doi.org/10.7479/khac-x956](https://doi.org/10.7479/khac-x956)
+**"Command not found: python"**
+```bash
+# Make sure conda environment is activated:
+conda activate entomological-label
 
-**Model retraining:** See [`training_notebooks/`](training_notebooks/) for Jupyter notebooks
+# Or try python3 instead:
+python3 launch.py
+```
 
-## Cite This Work
+**"conda: command not found" after installation**
+```bash
+# Restart your terminal/shell, then try again
+# Or source conda:
+source ~/miniconda3/bin/activate  # Adjust path if needed
+```
+
+**"No images found" or empty results**
+```bash
+# Check images are in correct folder:
+ls data/MLI/input/  # Should show .jpg files
+ls data/SLI/input/  # Should show .jpg files
+
+# Make sure images are JPG format (not PNG, TIFF, etc.)
+```
+
+**"Tesseract not found"**
+```bash
+# Tesseract not installed. Install it:
+
+# macOS:
+brew install tesseract
+
+# Linux:
+sudo apt install tesseract-ocr
+
+# Windows:
+# Download installer from: https://github.com/UB-Mannheim/tesseract/wiki
+
+# Verify it worked:
+tesseract --version
+```
+
+**"No such file or directory"**
+```bash
+# Make sure you're in the project directory:
+cd entomological-label-information-extraction
+pwd  # Should end with entomological-label-information-extraction
+```
+
+**"ModuleNotFoundError" or "ImportError"**
+```bash
+# Environment not activated or package not installed:
+conda activate entomological-label
+pip install -e .
+```
+
+**"Model loading issues" or "Out of memory"**
+```bash
+# Clear model cache:
+python scripts/processing/detection.py --clear-cache -j data/MLI/input -o data/MLI/output
+
+# If still fails, reduce batch size or use smaller images
+```
+
+**Still stuck?**
+- Check full documentation: https://entomological-label-information-extraction.readthedocs.io/
+- Run diagnostic: `python scripts/health_check.py`
+- Check GitHub issues for similar problems
+
+
+---
+
+## Sample Data
+
+**Included in repository:**
+- `data/MLI/` - Sample multi-label specimen images
+- `data/SLI/` - Sample single-label images
+
+**Full training datasets:**
+Available on Zenodo: https://doi.org/10.7479/khac-x956
+
+**Model retraining:**
+See Jupyter notebooks in `training_notebooks/`
+
+---
+
+## Technical Details
+
+### Models
+- **Detection**: Faster R-CNN (Detectron2)
+- **Classification**: TensorFlow CNNs for empty/printed/handwritten/identifier
+- **OCR**: Tesseract + optional Google Vision API
+- **Post-processing**: NLTK for text cleaning
+
+### Preprocessing
+- Stage 1 (detection/classification/rotation): Geometric normalization only
+- Stage 2 (OCR): Grayscale, denoising, adaptive thresholding, deskewing
+- Empty label detection: 10% border crop, dark pixel threshold < 1%
+
+### Resource Requirements
+| Stage | Memory | CPUs | Time (est.) |
+|-------|--------|------|-------------|
+| Detection | 6 GB | 4 | 30-60 min |
+| Classification | 3 GB | 2 | 15-30 min |
+| Rotation | 3 GB | 2 | 10-20 min |
+| OCR | 4 GB | 3 | 30-60 min |
+| Post-processing | 2 GB | 2 | 5-10 min |
+
+*Times vary by number/size of images*
+
+---
+
+## Citation
 
 ```bibtex
 @software{anonymous2025entomological,
@@ -446,9 +419,11 @@ Preprocessing policy and thresholds
   author={Anonymous},
   year={2025},
   url={[Repository URL - anonymized for review]},
-  note={Training datasets available at https://doi.org/10.7479/khac-x956}
+  note={Training datasets: https://doi.org/10.7479/khac-x956}
 }
 ```
+
+---
 
 ## License
 
@@ -456,4 +431,11 @@ MIT License - see [LICENSE](LICENSE) file
 
 ---
 
-**Need help?** Check the GitHub issues or run `python scripts/health_check.py` for diagnostics.
+## Documentation
+
+**Full documentation:** https://entomological-label-information-extraction.readthedocs.io/
+
+- [Quick Start Guide](https://entomological-label-information-extraction.readthedocs.io/en/latest/quickstart.html)
+- [User Guide](https://entomological-label-information-extraction.readthedocs.io/en/latest/user_guide.html)
+- [API Reference](https://entomological-label-information-extraction.readthedocs.io/en/latest/api/modules.html)
+- [Troubleshooting](https://entomological-label-information-extraction.readthedocs.io/en/latest/troubleshooting.html)
