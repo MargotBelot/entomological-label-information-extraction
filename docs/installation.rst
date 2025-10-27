@@ -13,59 +13,88 @@ System Requirements
 - **Python**: 3.10 or higher
 - **Memory**: 8GB RAM minimum, 16GB recommended
 - **Storage**: 5GB free space minimum
-- **Docker**: Required for pipeline processing
+- **Conda**: Required for Python environment management
+- **Tesseract OCR**: Required for text extraction
+- **Docker**: Optional (for containerized execution or HPC)
 
 Software Dependencies
 ~~~~~~~~~~~~~~~~~~~~~
 
-Docker Installation
-^^^^^^^^^^^^^^^^^^^
+Conda Installation
+^^^^^^^^^^^^^^^^^^
 
-Docker is **required** for running the processing pipelines.
+Conda is **required** for managing the Python environment.
+
+**All Platforms**
+
+.. code-block:: bash
+
+   # Download and install Miniconda
+   # Visit: https://conda.io/miniconda.html
+   
+   # Verify installation
+   conda --version
+
+Tesseract OCR Installation
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Tesseract is **required** for optical character recognition.
 
 **macOS**
 
 .. code-block:: bash
 
-   # Download and install Docker Desktop
-   # Visit: https://desktop.docker.com/mac/main/amd64/Docker.dmg (Intel)
-   # Visit: https://desktop.docker.com/mac/main/arm64/Docker.dmg (Apple Silicon)
-
-   # Or install via Homebrew
-   brew install --cask docker
-
-   # Start Docker Desktop
-   open /Applications/Docker.app
+   brew install tesseract
+   
+   # Verify installation
+   tesseract --version
 
 **Windows**
 
-.. code-block:: powershell
+.. code-block:: bash
 
-   # Download and install Docker Desktop
-   # Visit: https://desktop.docker.com/win/main/amd64/Docker%20Desktop%20Installer.exe
-
-   # Or install via Chocolatey
-   choco install docker-desktop
-
-   # Or install via winget
-   winget install Docker.DockerDesktop
+   # Download installer from:
+   # https://github.com/UB-Mannheim/tesseract/wiki
+   
+   # After installation, verify:
+   tesseract --version
 
 **Linux (Ubuntu/Debian)**
 
 .. code-block:: bash
 
-   # Update package index
    sudo apt update
+   sudo apt install tesseract-ocr
+   
+   # Verify installation
+   tesseract --version
 
-   # Install Docker
+Docker Installation (Optional)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Docker is **optional** - only needed for containerized execution or HPC environments.
+
+**macOS**
+
+.. code-block:: bash
+
+   brew install --cask docker
+   open /Applications/Docker.app
+
+**Windows**
+
+.. code-block:: bash
+
+   # Download from: https://docker.com
+   # Or: winget install Docker.DockerDesktop
+
+**Linux**
+
+.. code-block:: bash
+
    sudo apt install docker.io docker-compose
-
-   # Start and enable Docker
    sudo systemctl start docker
-   sudo systemctl enable docker
-
-   # Add user to docker group (optional, avoids sudo)
-   sudo usermod -aG docker $USER
+   sudo usermod -aG docker $USER  # Optional
 
 Installation Methods
 --------------------
@@ -130,6 +159,25 @@ For developers who want to contribute:
    # Install pre-commit hooks
    pre-commit install
 
+Option 4: HPC/Cluster Installation (Apptainer)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+For high-performance computing environments:
+
+.. code-block:: bash
+
+   # Build Apptainer container
+   cd pipelines
+   apptainer build elie.sif elie.def
+   
+   # Transfer to HPC cluster
+   scp elie.sif username@hpc.cluster.edu:/path/on/hpc/
+   
+   # Run on HPC
+   apptainer run --bind /scratch/data:/app/data elie.sif mli
+
+See ``pipelines/HPC_QUICKSTART.md`` for complete HPC documentation including SLURM job scripts.
+
 Verification
 ------------
 
@@ -138,10 +186,16 @@ Test Installation
 
 .. code-block:: bash
 
+   # Verify conda environment
+   conda activate entomological-label
+   
    # Check that the package is installed
-   python -c "import label_processing; print('Installation successful!')"
-
-   # Check Docker is working
+   python -c "import label_processing; print('✅ Installation successful!')"
+   
+   # Verify Tesseract is installed
+   tesseract --version
+   
+   # Optional: Check Docker (if using containerized execution)
    docker --version
 
    # Run health check
@@ -177,10 +231,16 @@ Troubleshooting
 Common Issues
 ~~~~~~~~~~~~~
 
-**Docker not found**
-   Make sure Docker is installed and running. On Windows/macOS, start Docker Desktop.
+**Conda not found**
+   Install Miniconda from https://conda.io/miniconda.html and restart your terminal.
 
-**Permission denied (Linux)**
+**Tesseract not found**
+   Install Tesseract: ``brew install tesseract`` (macOS) or ``sudo apt install tesseract-ocr`` (Linux).
+
+**Docker not found** (optional)
+   Only needed for containerized execution. Install from https://docker.com if needed.
+
+**Permission denied with Docker (Linux)**
    Add your user to the docker group: ``sudo usermod -aG docker $USER`` and log out/in.
 
 **Conda environment creation fails**
