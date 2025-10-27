@@ -1,0 +1,365 @@
+# Unified Docker Compose for Entomological Label Information Extraction
+# 
+# Usage:
+#   Multi-Label Image Pipeline (MLI):
+#     docker-compose --profile mli up
+#   
+#   Single-Label Image Pipeline (SLI):
+#     docker-compose --profile sli up
+#   
+#   Individual services (one-at-a-time):
+#     docker-compose up segmentation
+#     docker-compose up rotation
+#     docker-compose up classification
+#     docker-compose up tesseract
+#     docker-compose up empty_labels
+#     docker-compose up postprocessing
+#
+# All services use the consolidated Dockerfile with multi-stage builds
+
+services:
+  # ============================================
+  # SEGMENTATION/DETECTION SERVICE
+  # ============================================
+  segmentation:
+    profiles: [mli, standalone]
+    stdin_open: true
+    tty: true
+    build:
+      context: ..
+      dockerfile: pipelines/Dockerfile
+      target: segmentation
+    shm_size: 2g
+    volumes:
+      - ${PWD}/data:/app/data
+    command: python3 scripts/processing/detection.py -j data/MLI/input -o data/MLI/output
+    environment:
+      - PYTHONPATH=/app
+    deploy:
+      resources:
+        limits:
+          memory: 6G
+          cpus: '4.0'
+        reservations:
+          memory: 3G
+          cpus: '2.0'
+    healthcheck:
+      test: ["CMD-SHELL", "ls data/MLI/output/input_predictions.csv || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # ============================================
+  # EMPTY LABELS CLASSIFIER
+  # ============================================
+  empty_labels:
+    profiles: [mli, sli, standalone]
+    stdin_open: true
+    tty: true
+    build:
+      context: ..
+      dockerfile: pipelines/Dockerfile
+      target: empty_labels
+    volumes:
+      - ${PWD}/data:/app/data
+    # Override command based on which profile is active via environment variable
+    command: ${EMPTY_LABELS_COMMAND:-python3 scripts/processing/analysis.py -o data/output -i data/input}
+    environment:
+      - PYTHONPATH=/app
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+          cpus: '2.0'
+        reservations:
+          memory: 2G
+          cpus: '1.0'
+    depends_on:
+      segmentation:
+        condition: service_completed_successfully
+        required: false
+
+  # MLI-specific empty labels classifier
+  empty_labels_mli:
+    extends: empty_labels
+    profiles: [mli]
+    command: python3 scripts/processing/analysis.py -o data/MLI/output -i data/MLI/output/input_cropped
+    depends_on:
+      segmentation:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD-SHELL", "ls data/MLI/output/not_empty || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # SLI-specific empty labels classifier
+  empty_labels_sli:
+    extends: empty_labels
+    profiles: [sli]
+    command: python3 scripts/processing/analysis.py -o data/SLI/output -i data/SLI/input
+    depends_on: {}
+    healthcheck:
+      test: ["CMD-SHELL", "ls data/SLI/output/not_empty || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # ============================================
+  # IDENTIFIER/NOT-IDENTIFIER CLASSIFIER
+  # ============================================
+  classification_nuri:
+    profiles: [mli, sli, standalone]
+    stdin_open: true
+    tty: true
+    build:
+      context: ..
+      dockerfile: pipelines/Dockerfile
+      target: classification
+    volumes:
+      - ${PWD}/data:/app/data
+    command: ${NURI_COMMAND:-python3 scripts/processing/classifiers.py -m 1 -j data/output/not_empty -o data/output}
+    environment:
+      - PYTHONPATH=/app
+    deploy:
+      resources:
+        limits:
+          memory: 3G
+          cpus: '2.0'
+        reservations:
+          memory: 1.5G
+          cpus: '1.0'
+
+  # MLI-specific NURI classifier
+  classification_nuri_mli:
+    extends: classification_nuri
+    profiles: [mli]
+    command: python3 scripts/processing/classifiers.py -m 1 -j data/MLI/output/not_empty -o data/MLI/output
+    depends_on:
+      empty_labels_mli:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD-SHELL", "ls data/MLI/output/not_identifier || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # SLI-specific NURI classifier
+  classification_nuri_sli:
+    extends: classification_nuri
+    profiles: [sli]
+    command: python3 scripts/processing/classifiers.py -m 1 -j data/SLI/output/not_empty -o data/SLI/output
+    depends_on:
+      empty_labels_sli:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD-SHELL", "ls data/SLI/output/not_identifier || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # ============================================
+  # HANDWRITTEN/PRINTED CLASSIFIER
+  # ============================================
+  classification_hp:
+    profiles: [mli, sli, standalone]
+    stdin_open: true
+    tty: true
+    build:
+      context: ..
+      dockerfile: pipelines/Dockerfile
+      target: classification
+    volumes:
+      - ${PWD}/data:/app/data
+    command: ${HP_COMMAND:-python3 scripts/processing/classifiers.py -m 2 -j data/output/not_identifier -o data/output}
+    environment:
+      - PYTHONPATH=/app
+    deploy:
+      resources:
+        limits:
+          memory: 3G
+          cpus: '2.0'
+        reservations:
+          memory: 1.5G
+          cpus: '1.0'
+
+  # MLI-specific HP classifier
+  classification_hp_mli:
+    extends: classification_hp
+    profiles: [mli]
+    command: python3 scripts/processing/classifiers.py -m 2 -j data/MLI/output/not_identifier -o data/MLI/output
+    depends_on:
+      classification_nuri_mli:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD-SHELL", "ls data/MLI/output/printed || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # SLI-specific HP classifier
+  classification_hp_sli:
+    extends: classification_hp
+    profiles: [sli]
+    command: python3 scripts/processing/classifiers.py -m 2 -j data/SLI/output/not_identifier -o data/SLI/output
+    depends_on:
+      classification_nuri_sli:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD-SHELL", "ls data/SLI/output/printed || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # ============================================
+  # ROTATION SERVICE (SLI ONLY)
+  # ============================================
+  rotation:
+    profiles: [sli, standalone]
+    stdin_open: true
+    tty: true
+    build:
+      context: ..
+      dockerfile: pipelines/Dockerfile
+      target: rotation
+    volumes:
+      - ${PWD}/data:/app/data
+    command: ${ROTATION_COMMAND:-python3 scripts/processing/rotation.py -o data/output/rotated -i data/input}
+    environment:
+      - PYTHONPATH=/app
+    deploy:
+      resources:
+        limits:
+          memory: 3G
+          cpus: '2.0'
+        reservations:
+          memory: 1.5G
+          cpus: '1.0'
+
+  # SLI-specific rotation
+  rotation_sli:
+    extends: rotation
+    profiles: [sli]
+    command: python3 scripts/processing/rotation.py -o data/SLI/output/rotated -i data/SLI/output/printed
+    depends_on:
+      classification_hp_sli:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD-SHELL", "ls data/SLI/output/rotated || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # ============================================
+  # TESSERACT OCR SERVICE
+  # ============================================
+  tesseract:
+    profiles: [mli, sli, standalone]
+    stdin_open: true
+    tty: true
+    build:
+      context: ..
+      dockerfile: pipelines/Dockerfile
+      target: tesseract
+    volumes:
+      - ${PWD}/data:/app/data
+    command: ${TESSERACT_COMMAND:-python3 scripts/processing/tesseract.py -d data/input -o data/output}
+    environment:
+      - PYTHONPATH=/app
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+          cpus: '3.0'
+        reservations:
+          memory: 2G
+          cpus: '1.5'
+
+  # MLI-specific tesseract
+  tesseract_mli:
+    extends: tesseract
+    profiles: [mli]
+    command: python3 scripts/processing/tesseract.py -d data/MLI/output/printed -o data/MLI/output
+    depends_on:
+      classification_hp_mli:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD-SHELL", "ls data/MLI/output/ocr_preprocessed.json || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # SLI-specific tesseract
+  tesseract_sli:
+    extends: tesseract
+    profiles: [sli]
+    command: python3 scripts/processing/tesseract.py -d data/SLI/output/rotated -o data/SLI/output
+    depends_on:
+      rotation_sli:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD-SHELL", "ls data/SLI/output/ocr_preprocessed.json || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # ============================================
+  # POSTPROCESSING SERVICE
+  # ============================================
+  postprocessing:
+    profiles: [mli, sli, standalone]
+    stdin_open: true
+    tty: true
+    build:
+      context: ..
+      dockerfile: pipelines/Dockerfile
+      target: postprocessing
+    volumes:
+      - ${PWD}/data:/app/data
+    command: ${POSTPROCESSING_COMMAND:-python3 scripts/postprocessing/process.py -j data/output/ocr_preprocessed.json -o data/output}
+    environment:
+      - PYTHONPATH=/app
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '2.0'
+        reservations:
+          memory: 1G
+          cpus: '1.0'
+
+  # MLI-specific postprocessing
+  postprocessing_mli:
+    extends: postprocessing
+    profiles: [mli]
+    command: >
+      bash -c "
+        echo 'Starting post-processing pipeline...' &&
+        python3 scripts/postprocessing/process.py -j data/MLI/output/ocr_preprocessed.json -o data/MLI/output &&
+        echo 'Consolidating all pipeline results...' &&
+        python3 scripts/postprocessing/consolidate_results.py -o data/MLI/output -f consolidated_results.json &&
+        echo 'SUCCESS: Multi-label pipeline completed successfully!' &&
+        echo 'Results available in: data/MLI/output/' &&
+        echo 'Consolidated results: data/MLI/output/consolidated_results.json'
+      "
+    depends_on:
+      tesseract_mli:
+        condition: service_completed_successfully
+
+  # SLI-specific postprocessing
+  postprocessing_sli:
+    extends: postprocessing
+    profiles: [sli]
+    command: >
+      bash -c "
+        echo 'Starting post-processing pipeline...' &&
+        python3 scripts/postprocessing/process.py -j data/SLI/output/ocr_preprocessed.json -o data/SLI/output &&
+        echo 'Consolidating all pipeline results...' &&
+        python3 scripts/postprocessing/consolidate_results.py -o data/SLI/output -f consolidated_results.json &&
+        echo 'SUCCESS: Single-label pipeline completed successfully!' &&
+        echo 'Results available in: data/SLI/output/' &&
+        echo 'Consolidated results: data/SLI/output/consolidated_results.json'
+      "
+    depends_on:
+      tesseract_sli:
+        condition: service_completed_successfully

@@ -8,10 +8,10 @@ The ``pipelines`` package provides Docker-based processing pipelines and workflo
 Package Contents
 ----------------
 
-This package contains Docker Compose configurations and requirements for different processing pipelines:
+This package contains a unified Docker configuration and requirements for different processing pipelines:
 
-* ``multi-label-docker-compose.yaml`` - Multi-label image processing pipeline
-* ``single-label-docker-compose.yaml`` - Single-label image processing pipeline
+* ``Dockerfile`` - Consolidated multi-stage Dockerfile for all pipeline components
+* ``docker-compose.yml`` - Unified Docker Compose with profiles for MLI, SLI, and standalone services
 * ``requirements/`` - Directory containing specific requirements for different pipeline components
 
 Pipeline Configurations
@@ -56,8 +56,18 @@ To run the pipelines:
 
 .. code-block:: bash
 
-   # Multi-label processing
-   docker-compose -f pipelines/multi-label-docker-compose.yaml up
+   # Multi-label processing (MLI)
+   cd pipelines
+   docker-compose --profile mli up
 
-   # Single-label processing  
-   docker-compose -f pipelines/single-label-docker-compose.yaml up
+   # Single-label processing (SLI)
+   cd pipelines
+   docker-compose --profile sli up
+   
+   # Run individual services
+   cd pipelines
+   docker-compose up segmentation  # Detection only
+   docker-compose up rotation      # Rotation correction only
+   docker-compose up tesseract     # OCR only
+   docker-compose up classification_nuri  # ID/Description classification
+   docker-compose up classification_hp    # Handwritten/Printed classification
