@@ -1,13 +1,15 @@
-# ELIE on HPC - Quick Start
+# ELIE on HPC
 
 For running ELIE pipelines on High-Performance Computing clusters using Apptainer/Singularity.
 
+> **macOS Users:** Apptainer requires a Linux kernel and does not work natively on macOS. You must build and run Apptainer containers on a Linux system or HPC cluster. For local development on macOS, use Docker instead.
+
 ## Why Apptainer?
 
-- ✅ **No root required** - Runs without privileges
-- ✅ **Secure** - Better security model than Docker for shared systems
-- ✅ **HPC-native** - Works with SLURM, PBS, LSF schedulers
-- ✅ **Compatible** - Works with Singularity installations
+- **No root required** - Runs without privileges
+- **Secure** - Better security model than Docker for shared systems
+- **HPC-native** - Works with SLURM, PBS, LSF schedulers
+- **Compatible** - Works with Singularity installations
 
 ## Quick Setup
 
@@ -124,20 +126,6 @@ apptainer run --app tesseract --bind ./data:/app/data elie.sif \
 apptainer exec --bind ./data:/app/data elie.sif \
   python /app/scripts/processing/classifiers.py -m 1 -j /app/data/input -o /app/data/output
 ```
-
-## Resource Recommendations
-
-| Pipeline Stage | Memory | CPUs | Time |
-|---------------|--------|------|------|
-| Detection (MLI) | 16 GB | 8 | 2-4 hours |
-| Classification | 8 GB | 4 | 30-60 min |
-| Rotation | 8 GB | 4 | 15-30 min |
-| OCR (Tesseract) | 12 GB | 6 | 1-2 hours |
-| Post-processing | 8 GB | 4 | 30 min |
-| **Full MLI** | 16 GB | 8 | 3-5 hours |
-| **Full SLI** | 12 GB | 6 | 2-3 hours |
-
-*Times vary based on number of images and image size*
 
 ## Data Management
 

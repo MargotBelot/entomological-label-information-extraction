@@ -20,6 +20,8 @@ docker-compose --profile sli up
 
 ### Apptainer/Singularity (HPC Environments)
 
+> **Note:** Apptainer requires Linux and does not work natively on macOS. Use Docker on macOS, or build/run the container on a Linux system or HPC cluster.
+
 **Build the container:**
 ```bash
 cd pipelines
@@ -275,5 +277,3 @@ docker-compose -f single-label-docker-compose.yaml up
 docker-compose --profile mli up
 docker-compose --profile sli up
 ```
-
-All functionality is preserved - just simpler!
