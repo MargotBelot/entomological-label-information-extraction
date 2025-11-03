@@ -25,7 +25,7 @@ Extract and digitize text from museum specimen labels automatically. Perfect for
 - Extract text with OCR
 - Clean and organize results
 
-👉 **Jump to [Quick Start](#quick-start)** for step-by-step instructions
+**Jump to [Quick Start](#quick-start)** for step-by-step instructions
 
 ---
 
