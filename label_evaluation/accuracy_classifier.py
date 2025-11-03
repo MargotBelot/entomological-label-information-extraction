@@ -57,6 +57,7 @@ def cm(
     pred: pd.DataFrame,
     gt: pd.DataFrame,
     out_dir: Path = Path(os.getcwd()),
+    title: str = "Classifier",
 ) -> None:
     """
     Compute confusion matrix to evaluate the performance of the classification.
@@ -66,6 +67,7 @@ def cm(
         pred (pd.DataFrame): Predicted classes.
         gt (pd.DataFrame): Ground truth classes.
         out_dir (Path): Path to the target directory to save the confusion matrix plot.
+        title (str): Title for the confusion matrix plot.
     """
     try:
         cm = confusion_matrix(gt, pred)
@@ -78,12 +80,14 @@ def cm(
             xticklabels=target,
             yticklabels=target,
             cmap="Greens",
-            annot_kws={"size": 14},
+            annot_kws={"size": 20, "weight": "bold"},
+            cbar_kws={"shrink": 0.8},
         )
-        plt.ylabel("Ground truth", fontsize=18)
-        plt.xlabel("Predictions", labelpad=30, fontsize=18)
-        plt.xticks(fontsize=16)
-        plt.yticks(fontsize=16)
+        plt.ylabel("Ground truth", fontsize=22, weight="bold")
+        plt.xlabel("Predictions", labelpad=30, fontsize=22, weight="bold")
+        plt.title(title, fontsize=24, pad=20, weight="bold")
+        plt.xticks(fontsize=20, weight="bold")
+        plt.yticks(fontsize=20, weight="bold")
 
         figure = matrix.get_figure()
         filename = f"{out_dir.stem}_cm.png"
