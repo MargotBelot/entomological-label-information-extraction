@@ -69,8 +69,14 @@ def validate_image_integrity(
 
         # Double-check OpenCV loaded image dimensions
         cv_height, cv_width = test_img.shape[:2]
-        if cv_width != width or cv_height != height:
+        # Allow exact match OR swapped dimensions (EXIF rotation)
+        dimensions_ok = (
+            (cv_width == width and cv_height == height) or
+            (cv_width == height and cv_height == width)
+        )
+        if not dimensions_ok:
             print(f"SECURITY WARNING: PIL and OpenCV dimension mismatch for {filepath}")
+            print(f"  PIL: {width}x{height}, OpenCV: {cv_width}x{cv_height}")
             return False
 
         return True
