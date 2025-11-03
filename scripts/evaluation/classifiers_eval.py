@@ -7,6 +7,7 @@ import os
 import warnings
 import pandas as pd
 import time
+from pathlib import Path
 
 # Suppress warning messages during execution
 warnings.filterwarnings('ignore')
@@ -43,6 +44,12 @@ def parse_arguments() -> argparse.Namespace:
                         required=True,
                         help=('Path to the input ground truth CSV file.'))
 
+    parser.add_argument('-t', '--title',
+                        metavar='',
+                        type=str,
+                        default='Classifier',
+                        help=('Title for the confusion matrix plot.'))
+
     return parser.parse_args()
 
 def main():
@@ -51,7 +58,7 @@ def main():
     """
     start_time = time.time()
     args = parse_arguments()
-    out_dir = args.out_dir
+    out_dir = Path(args.out_dir)
     
     try:
         df = pd.read_csv(args.df, sep=';')
@@ -69,11 +76,21 @@ def main():
     
     pred = df["pred"]
     gt = df["gt"]
-    target = gt.unique().tolist()
+    
+    # Clean up labels for better readability
+    def clean_label(x):
+        x = str(x).replace('MfN_', '')
+        x = x.replace('not_nuri', 'Not Specimen Identifier')
+        x = x.replace('nuri', 'Specimen Identifier')
+        return x
+    
+    pred_clean = pred.apply(clean_label)
+    gt_clean = gt.apply(clean_label)
+    target = [clean_label(t) for t in gt.unique().tolist()]
     
     try:
-        label_evaluation.accuracy_classifier.metrics(target, pred, gt, out_dir=out_dir)
-        label_evaluation.accuracy_classifier.cm(target, pred, gt, out_dir=out_dir)
+        label_evaluation.accuracy_classifier.metrics(target, pred_clean, gt_clean, out_dir=out_dir)
+        label_evaluation.accuracy_classifier.cm(target, pred_clean, gt_clean, out_dir=out_dir, title=args.title)
     except Exception as e:
         print(f"Error during classification evaluation: {e}")
         return
