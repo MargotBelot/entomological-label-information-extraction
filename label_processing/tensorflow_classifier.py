@@ -94,7 +94,7 @@ def class_prediction(
     print("\nPredicting classes with memory-safe batch processing")
 
     # Get all image files
-    image_files = glob_image_files(jpg_dir, verbose=True)
+    image_files = glob_image_files(jpg_dir, check_integrity=True, raise_when_no_entries=False)
 
     # SECURITY: Limit total number of images to prevent resource exhaustion
     if len(image_files) > max_images:
