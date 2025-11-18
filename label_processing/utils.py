@@ -7,7 +7,12 @@ from typing import Optional
 import numpy as np
 import cv2
 import hashlib
+from glob import glob
 from PIL import Image
+from typing import Optional
+
+from .config import IMAGE_EXTENSIONS
+
 
 # Constant
 PATTERN = r"(/u/|http|coll|mfn|URI)"
@@ -98,7 +103,7 @@ def check_dir(directory: str) -> None:
     if not os.path.isdir(directory):
         raise FileNotFoundError(f"The directory '{directory}' does not exist.")
 
-    jpg_files = [f for f in os.listdir(directory) if f.lower().endswith((".jpg", ".jpeg"))]
+    jpg_files = [f for f in os.listdir(directory) if f.lower().endswith(IMAGE_EXTENSIONS)]
 
     if not jpg_files:
         raise FileNotFoundError(
@@ -226,6 +231,34 @@ def replace_nuri(transcript: dict[str, str]) -> dict[str, str]:
 
 # ---------------------Load CSV and JPG Files---------------------#
 
+def glob_image_files(
+    directory: str,
+    check_integrity: bool = True,
+    raise_when_no_entries: bool = False,
+) -> list[str]:
+    """
+    Get all image files in a directory.
+
+    Args:
+        directory (str): path to directory
+        check_integrity (bool): if True, check image integrity
+        raise_when_no_entries (bool): if True, raise an error if no valid image files
+            are found
+    Returns:
+        list[str]: list of image file paths
+    """
+    img_paths = [
+        img_path
+        for ext in IMAGE_EXTENSIONS
+        for img_path in glob(os.path.join(directory, f"*.{ext}"))
+        if validate_image_integrity(img_path) or not check_integrity
+    ]
+
+    if raise_when_no_entries and len(img_paths) == 0:
+        raise ValueError(f"No valid image files found in {directory}")
+
+    return img_paths
+
 
 def load_dataframe(filepath_csv: str) -> pd.DataFrame:
     """
@@ -288,7 +321,7 @@ def read_vocabulary(file: str) -> dict:
 
 
 def verify_model_integrity(
-    model_path: str, checksums_file: str = None, require_checksum: bool = True
+    model_path: str, checksums_file: Optional[str] = None, require_checksum: bool = True
 ) -> bool:
     """
     SECURITY: Mandatory model file integrity verification using SHA256 checksums.
@@ -323,7 +356,13 @@ def verify_model_integrity(
         print(f"SECURITY: Calculating SHA256 hash for {model_path}...")
         sha256_hash = hashlib.sha256()
         with open(model_path, "rb") as f:
-            for byte_block in iter(lambda: f.read(4096), b""):
+            # Use explicit loop with type annotation instead of iter(lambda: f.read(4096), b"")
+            # to avoid type checker error: type checker can't infer that f.read() always
+            # returns bytes when used in a lambda, even though file is opened in binary mode
+            while True:
+                byte_block: bytes = f.read(4096)
+                if not byte_block:
+                    break
                 sha256_hash.update(byte_block)
         current_hash = sha256_hash.hexdigest()
 

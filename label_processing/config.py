@@ -7,7 +7,10 @@ Handles platform-specific paths and environment variables.
 import os
 import sys
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Dict
+
+
+IMAGE_EXTENSIONS = ("jpg", "jpeg")
 
 
 class PathConfig:

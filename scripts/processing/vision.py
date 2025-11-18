@@ -19,7 +19,7 @@ project_root = current_dir.parent.parent
 sys.path.insert(0, str(project_root))
 
 # Import the necessary module from the 'label_processing' module package
-from label_processing import utils
+from label_processing.utils import check_dir, glob_image_files, save_json
 
 # Suppress warning messages during execution
 warnings.filterwarnings('ignore')
@@ -174,9 +174,9 @@ def main(crop_dir: str, credentials: str, output_dir: str, encoding: str = 'utf8
         client = vision.ImageAnnotatorClient(credentials=service_account.Credentials.from_service_account_file(credentials))
     except Exception as e:
         print(f"Failed to initialize Google Vision API client: {e}")
-        return
-    utils.check_dir(crop_dir)
-    filenames = glob.glob(os.path.join(crop_dir, "*.jpg")) + glob.glob(os.path.join(crop_dir, "*.jpeg"))
+        raise Exception(f"Failed to initialize Google Vision API client: {e}")
+    check_dir(crop_dir)
+    filenames = glob_image_files(crop_dir, check_integrity=False)
     if verbose:
         print(f"Total files found: {len(filenames)}")
     filenames = [file for file in filenames if not detect_qr_code(file, verbose)]
@@ -184,9 +184,9 @@ def main(crop_dir: str, credentials: str, output_dir: str, encoding: str = 'utf8
         print(f"Files to process after QR filtering: {len(filenames)}")
     results_json = [vision_caller(filename, client, output_dir, verbose) for filename in filenames]
     print("OCR process completed. Saving results...")
-    utils.save_json(results_json, RESULTS_JSON_BOUNDING, output_dir)
+    save_json(results_json, RESULTS_JSON_BOUNDING, output_dir)
     json_no_bounding = [{k: v for k, v in entry.items() if k != "bounding_boxes"} for entry in results_json]
-    utils.save_json(json_no_bounding, RESULTS_JSON, output_dir)
+    save_json(json_no_bounding, RESULTS_JSON, output_dir)
     print(f"Finished in {round(time.perf_counter() - start_time, 2)} seconds")
 
 if __name__ == '__main__':

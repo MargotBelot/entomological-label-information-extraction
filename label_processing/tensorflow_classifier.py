@@ -11,7 +11,7 @@ import platform
 import sys
 
 # Import the necessary module from the 'label_processing' module package
-from label_processing import utils
+from .utils import check_dir, glob_image_files, validate_image_integrity
 
 # Suppress warning messages during execution
 warnings.filterwarnings("ignore")
@@ -90,11 +90,11 @@ def class_prediction(
     Returns:
         DataFrame (pd.DataFrame): Pandas DataFrame with the predicted results.
     """
-    utils.check_dir(jpg_dir)
+    check_dir(jpg_dir)
     print("\nPredicting classes with memory-safe batch processing")
 
     # Get all image files
-    image_files = list(glob.glob(f"{jpg_dir}/*.jpg"))
+    image_files = glob_image_files(jpg_dir, verbose=True)
 
     # SECURITY: Limit total number of images to prevent resource exhaustion
     if len(image_files) > max_images:
@@ -119,7 +119,7 @@ def class_prediction(
         # Validate all images in batch first
         valid_batch_files = []
         for file in batch_files:
-            if utils.validate_image_integrity(
+            if validate_image_integrity(
                 file, max_size_mb=10, max_dimensions=(4000, 4000)
             ):
                 valid_batch_files.append(file)
