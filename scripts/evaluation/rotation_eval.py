@@ -1,6 +1,7 @@
 # Third-Party Libraries
 import argparse
 import os
+import shutil
 from glob import glob
 import numpy as np
 import cv2
@@ -8,7 +9,6 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix
-from sklearn.utils.class_weight import compute_class_weight
 from keras.models import load_model
 from keras.layers import BatchNormalization
 import time
@@ -105,13 +105,13 @@ def rotate_image(img_path: str, angle: int) -> None:
     except Exception as e:
         print(f"Error rotating image '{img_path}': {e}")
 
-def evaluate_rotation_model(input_image_dir: str, output_folder_path: str) -> None:
+def evaluate_rotation_model(input_image_dir: str, output_dir: str) -> None:
     """
     Load model, predict rotations, and evaluate performance.
     
     Args:
         input_image_dir (str): Directory containing images.
-        output_folder_path (str): Path to save evaluation results.
+        output_dir (str): Path to directory where the evaluation results are saved.
     """
     start_time = time.time()
     images, true_labels, filenames = load_images(input_image_dir)
@@ -145,17 +145,26 @@ def evaluate_rotation_model(input_image_dir: str, output_folder_path: str) -> No
         return
     
     predicted_labels = np.argmax(model.predict(images), axis=1)
-    for img_path, predicted_angle in zip(filenames, predicted_labels):
-        rotate_image(img_path, predicted_angle)
     
+    # idem potency fix
+    # ...save rotated images to output directory instead of overwriting input
+    # alternative: Don't overwrite the input images in the rotate-function
+    os.makedirs(output_dir, exist_ok=True)
+    for img_path, predicted_angle in zip(filenames, predicted_labels):
+        # copy to output directory, then rotate and overwrite (not in place)
+        img_filename = os.path.basename(img_path)
+        rotated_img_path = os.path.join(output_dir, img_filename)
+        shutil.copy2(img_path, rotated_img_path)
+        rotate_image(rotated_img_path, predicted_angle)
+
     accuracy = accuracy_score(true_labels, predicted_labels)
     precision = precision_score(true_labels, predicted_labels, average='weighted', zero_division=1)
     recall = recall_score(true_labels, predicted_labels, average='weighted', zero_division=1)
     f1 = f1_score(true_labels, predicted_labels, average='weighted', zero_division=1)
     conf_matrix = confusion_matrix(true_labels, predicted_labels)
     
-    os.makedirs(output_folder_path, exist_ok=True)
-    accuracy_file_path = os.path.join(output_folder_path, TEXT_FILE)
+    os.makedirs(output_dir, exist_ok=True)
+    accuracy_file_path = os.path.join(output_dir, TEXT_FILE)
     with open(accuracy_file_path, 'w') as f:
         f.write(f"Accuracy: {accuracy:.2f}\nPrecision: {precision:.2f}\nRecall: {recall:.2f}\nF1-score: {f1:.2f}\n")
     
@@ -166,7 +175,7 @@ def evaluate_rotation_model(input_image_dir: str, output_folder_path: str) -> No
     plt.xlabel('Predicted labels')
     plt.ylabel('True labels')
     plt.title('Confusion Matrix')
-    plt.savefig(os.path.join(output_folder_path, 'confusion_matrix.png'))
+    plt.savefig(os.path.join(output_dir, 'confusion_matrix.png'))
     plt.close()
     
     print(f"Finished in {round(time.time() - start_time, 2)} seconds")

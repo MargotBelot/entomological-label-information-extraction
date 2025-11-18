@@ -79,7 +79,7 @@ def main():
     validate_directories(args.input_image_dir, args.output_image_dir)
     
     find_empty_labels(args.input_image_dir, args.output_image_dir)
-    print(f"\nEmpty and non-empty labels moved to respective folders in {args.output_image_dir}")
+    print(f"\nEmpty and non-empty labels copied to respective folders in {args.output_image_dir}")
     
     print(f"Finished in {round(time.perf_counter() - start_time, 2)} seconds")
 
