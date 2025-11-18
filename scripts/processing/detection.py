@@ -21,7 +21,7 @@ sys.path.insert(0, str(project_root))
 warnings.filterwarnings('ignore')
 
 # Import project configuration
-from label_processing.config import get_model_path, get_project_root
+from label_processing.config import get_model_path
 
 # Import the necessary module from the 'label_processing' module package
 import label_processing.label_detection as scrop
@@ -153,7 +153,7 @@ class OptimizedPredictLabel:
                 kwargs['map_location'] = 'cpu'  # Always load to CPU first for compatibility
                 return original_torch_load(*args, **kwargs)
             
-            torch.load = optimized_load
+            torch.load = optimized_load  # TODO refactor
             
             try:
                 model = Model.load(str(self.path_to_model), self.classes)
@@ -179,11 +179,11 @@ class OptimizedPredictLabel:
         model = Model(self.classes)
         
         if isinstance(state_dict, dict):
-            model.model.load_state_dict(state_dict, strict=False)
+            model._model.load_state_dict(state_dict, strict=False)
         else:
             # Handle model object
             if hasattr(state_dict, 'state_dict'):
-                model.model.load_state_dict(state_dict.state_dict(), strict=False)
+                model._model.load_state_dict(state_dict.state_dict(), strict=False)
             else:
                 raise Exception(f"Unknown model format: {type(state_dict)}")
         
