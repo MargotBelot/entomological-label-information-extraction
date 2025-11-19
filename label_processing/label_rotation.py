@@ -10,6 +10,7 @@ import shutil
 import logging
 from PIL import Image
 
+
 warnings.filterwarnings("ignore", category=UserWarning, module="absl")
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
@@ -233,8 +234,6 @@ def predict_angles(
     Returns:
         None
     """
-    import logging
-
     logging.basicConfig(
         level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
     )
@@ -252,6 +251,7 @@ def predict_angles(
 
     print(f"Loading model from {model_path}...")
     model = load_model(model_path)
+
     print("Compiling model...")
     model.compile(
         optimizer=tf.keras.optimizers.legacy.Adam(learning_rate=0.0001),

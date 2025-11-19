@@ -15,7 +15,8 @@ project_root = current_dir.parent.parent
 sys.path.insert(0, str(project_root))
 
 # Import project configuration
-from label_processing.config import get_model_path, config
+from label_processing.config import config, get_model_path
+from label_processing.tensorflow_classifier import load_keras_model_with_fallbacks
 
 # Import the necessary module from the 'label_processing' module package
 import label_processing.tensorflow_classifier
@@ -173,7 +174,7 @@ def run_classification(
         raise ValueError("You must provide a model number (-m 1, 2, or 3).")
 
     logging.info("Loading model...")
-    model = label_processing.tensorflow_classifier.get_model(str(model_path))
+    model = load_keras_model_with_fallbacks(str(model_path))
 
     logging.info("Classifying images...")
     df = label_processing.tensorflow_classifier.class_prediction(

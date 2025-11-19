@@ -1,16 +1,16 @@
 # Import third-party libraries
+import glob
+import os
+import platform
+import warnings
+from pathlib import Path
+
+import cv2
+import h5py
 import numpy as np
 import pandas as pd
-import cv2
-import glob, os
-from pathlib import Path
 import tensorflow as tf
-from tensorflow import keras
-import warnings
-import platform
-import sys
 
-# Import the necessary module from the 'label_processing' module package
 from .utils import check_dir, glob_image_files, validate_image_integrity
 
 # Suppress warning messages during execution
@@ -18,55 +18,6 @@ warnings.filterwarnings("ignore")
 
 
 # --------------------------------Predict Classes--------------------------------#
-
-
-def get_model(path_to_model: str) -> tf.keras.Sequential:
-    """
-    Load a trained Keras Sequential image classifier model with cross-platform compatibility.
-
-    Args:
-        path_to_model (str): Path to the model file.
-
-    Returns:
-        model (tf.keras.Sequential): Trained Keras Sequential image classifier model.
-    """
-    print("\nCalling classification model")
-
-    # Set up cross-platform environment
-    _setup_tensorflow_cross_platform_environment()
-
-    # Try multiple loading strategies for cross-platform compatibility
-    loading_strategies = [
-        # Strategy 1: Standard TensorFlow loading
-        lambda: tf.keras.models.load_model(path_to_model),
-        # Strategy 2: Loading with compile=False to avoid optimizer issues
-        lambda: tf.keras.models.load_model(path_to_model, compile=False),
-        # Strategy 3: Loading with custom options for protobuf compatibility
-        lambda: _load_with_protobuf_compatibility(path_to_model),
-        # Strategy 4: Loading with SavedModel format explicitly
-        lambda: _load_with_saved_model_format(path_to_model),
-    ]
-
-    last_error = None
-    for i, strategy in enumerate(loading_strategies, 1):
-        try:
-            print(f"Trying TensorFlow loading strategy {i}...")
-            model = strategy()
-            print("TensorFlow model loaded successfully")
-            return model
-        except Exception as e:
-            print(f"TensorFlow strategy {i} failed: {e}")
-            last_error = e
-            continue
-
-    # If all strategies fail, raise the last error with helpful message
-    print(f"All TensorFlow loading strategies failed. Last error: {last_error}")
-    raise Exception(
-        f"Failed to load TensorFlow model from {path_to_model}. "
-        f"This might be due to protobuf version incompatibility or "
-        f"model corruption. Last error: {last_error}"
-    )
-
 
 def class_prediction(
     model: tf.keras.Sequential,
@@ -94,7 +45,7 @@ def class_prediction(
     print("\nPredicting classes with memory-safe batch processing")
 
     # Get all image files
-    image_files = glob_image_files(jpg_dir, check_integrity=True, raise_when_no_entries=False)
+    image_files = glob_image_files(jpg_dir, check_integrity=True, raise_when_no_entries=True)
 
     # SECURITY: Limit total number of images to prevent resource exhaustion
     if len(image_files) > max_images:
@@ -275,7 +226,7 @@ def filter_pictures(
     print(f"\nThe images have been successfully saved in {out_dir}")
 
 
-# --------------------------------Cross-Platform Compatibility--------------------------------#
+# ---------------------TensorFlow Model Loading cross-platform with Fallbacks---------------------#
 
 
 def _setup_tensorflow_cross_platform_environment():
@@ -376,3 +327,48 @@ def _load_with_saved_model_format(path_to_model: str) -> tf.keras.Sequential:
 
     except Exception as e:
         raise Exception(f"SavedModel format loading failed: {e}")
+
+
+
+def load_keras_model_with_fallbacks(model_path: str):
+    """
+    Load a Keras model using multiple fallback strategies for cross-platform compatibility.
+    
+    This function tries multiple loading strategies to handle compatibility issues
+    between different Keras/TensorFlow versions and platforms.
+    
+    Args:
+        model_path (str): Path to the model file.
+        
+    Returns:
+        tf.keras.Model: Loaded Keras model.
+        
+    Raises:
+        Exception: If all loading strategies fail.
+    """    
+    _setup_tensorflow_cross_platform_environment()
+    
+    loading_strategies = [
+        lambda: tf.keras.models.load_model(model_path),
+        lambda: tf.keras.models.load_model(model_path, compile=False),
+        lambda: _load_with_protobuf_compatibility(model_path),
+        lambda: _load_with_saved_model_format(model_path),
+    ]
+    
+    last_error = None
+    for i, strategy in enumerate(loading_strategies, 1):
+        try:
+            print(f"Trying loading strategy {i}...")
+            model = strategy()
+            print("Model loaded successfully")
+            return model
+        except Exception as e:
+            print(f"Strategy {i} failed: {e}")
+            last_error = e
+            continue
+
+    raise Exception(
+        f"Failed to load Keras model from {model_path}. "
+        f"This might be due to protobuf version incompatibility or "
+        f"model corruption. Last error: {last_error}"
+    )
