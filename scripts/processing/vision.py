@@ -151,7 +151,14 @@ def detect_qr_code(image_path: str, verbose: bool) -> bool:
             print(f"QR detection error in {image_path}: {e}")
         return False
 
-def main(crop_dir: str, credentials: str, output_dir: str, encoding: str = 'utf8', verbose: bool = False) -> None:
+
+def run_ocr_with_google_vision(
+    crop_dir: str,
+    credentials: str,
+    output_dir: str,
+    encoding: str = 'utf8',
+    verbose: bool = False
+) -> None:
     """
     Perform OCR on all JPEG images in a directory using Google Cloud Vision API.
 
@@ -189,6 +196,20 @@ def main(crop_dir: str, credentials: str, output_dir: str, encoding: str = 'utf8
     save_json(json_no_bounding, RESULTS_JSON, output_dir)
     print(f"Finished in {round(time.perf_counter() - start_time, 2)} seconds")
 
-if __name__ == '__main__':
+
+def main():
+    """
+    Main function to parse arguments and execute OCR with Google Vision API.
+    """
     args = parse_arguments()
-    main(args.dir, args.credentials, args.output_dir, verbose=args.verbose)
+
+    run_ocr_with_google_vision(
+        crop_dir=args.dir,
+        credentials=args.credentials,
+        output_dir=args.output_dir,
+        verbose=args.verbose
+    )
+
+
+if __name__ == '__main__':
+    main()

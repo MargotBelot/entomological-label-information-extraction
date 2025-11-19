@@ -13,6 +13,8 @@ import sys
 from detecto.core import Model
 import pickle
 
+from typing import Union
+
 import warnings
 import platform
 
@@ -405,7 +407,7 @@ def crop_picture(img_raw: np.ndarray, path: str, filename: str, **coordinates) -
 
 
 def create_crops(
-    jpg_dir: Path, dataframe: pd.DataFrame, out_dir: Path = Path(os.getcwd())
+    jpg_dir: Path, dataframe: pd.DataFrame, out_dir: Union[str, Path] = Path(os.getcwd())
 ) -> None:
     """
     Creates crops by using the csv from applying the model and the original

@@ -139,49 +139,79 @@ def load_class_names_from_file(path: str) -> list[str]:
         return f.read().splitlines()
 
 
-def main() -> None:
+def run_classification(
+    jpg_dir: str,
+    out_dir: str,
+    model: int,
+) -> None:
     """
     Main function to execute classification using a TensorFlow model.
+
+    Args:
+        jpg_dir (str): Path to the input directory containing JPEG images.
+        out_dir (str): Path to the output directory.
+        model (int): Model number (1-3).
+
+    Raises:
+        ValueError: If the model number is not valid.
+        FileNotFoundError: If the class names file is not found.
     """
+    logging.info(f"Running classification for model {model} on directory {jpg_dir}...")
     start_time = time.time()
-    args = parse_arguments()
 
-    if not os.path.isdir(args.jpg_dir):
-        raise NotADirectoryError(f"JPEG input directory does not exist: {args.jpg_dir}")
-    
     # Ensure output directory exists
-    if not os.path.exists(args.out_dir):
-        logging.info(f"Creating output directory: {args.out_dir}")
-        os.makedirs(args.out_dir, exist_ok=True)
+    if not os.path.exists(out_dir):
+        logging.info(f"Creating output directory: {out_dir}")
+        os.makedirs(out_dir, exist_ok=True)
 
-    if args.model:
-        model_path = resolve_default_model_path(args.model)
-        class_names = get_class_names_by_model(args.model)
+    if model:
+        model_path = resolve_default_model_path(model)
+        class_names = get_class_names_by_model(model)
         if not class_names:
-            raise ValueError(f"No class names found for model {args.model}")
+            raise ValueError(f"No class names found for model {model}")
     else:
         raise ValueError("You must provide a model number (-m 1, 2, or 3).")
 
     logging.info("Loading model...")
-    model = label_processing.tensorflow_classifier.get_model(model_path)
+    model = label_processing.tensorflow_classifier.get_model(str(model_path))
 
     logging.info("Classifying images...")
     df = label_processing.tensorflow_classifier.class_prediction(
         model=model,
         class_names=class_names,
-        jpg_dir=args.jpg_dir,
-        out_dir=args.out_dir
+        jpg_dir=jpg_dir,
+        out_dir=out_dir
     )
 
     logging.info("Saving classified images...")
     label_processing.tensorflow_classifier.filter_pictures(
-        jpg_dir=args.jpg_dir,
+        jpg_dir=Path(jpg_dir),
         dataframe=df,
-        out_dir=args.out_dir
+        out_dir=Path(out_dir)
     )
 
     duration = time.time() - start_time
     logging.info(f"Classification completed in {duration:.2f} seconds.")
+
+
+def main():
+    """
+    Main function to parse arguments and execute classification.
+
+    Raises:
+        NotADirectoryError: If the JPEG input directory does not exist.
+    """
+    args = parse_arguments()
+
+    if not os.path.isdir(args.jpg_dir):
+        raise NotADirectoryError(f"JPEG input directory does not exist: {args.jpg_dir}")
+
+    run_classification(
+        jpg_dir=args.jpg_dir,
+        out_dir=args.out_dir,
+        model=args.model,
+    )
+
 
 
 if __name__ == '__main__':

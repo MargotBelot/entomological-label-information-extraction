@@ -368,18 +368,26 @@ def setup_device(device_arg: str) -> str:
     return device
 
 
-def main():
+def run_label_detection(
+    input_dir: str,
+    input_image: str,
+    output_dir: str,
+    confidence_threshold: float,
+    batch_size: int,
+    device: str,
+    no_cache: bool,
+    clear_cache: bool,
+):
     """
     Main execution function with performance optimizations.
-    """
+    """  
     start_time = time.perf_counter()
-    args = parse_arguments()
-    
+
     # Clear cache if requested
-    if args.clear_cache:
+    if clear_cache:
         clear_model_cache()
         return
-    
+  
     # Use centralized configuration for model path
     try:
         MODEL_PATH = get_model_path("detection")
@@ -389,12 +397,12 @@ def main():
         return
     
     # Handle input (directory or single file)
-    if args.input_dir:
-        jpg_dir = Path(args.input_dir)
+    if input_dir:
+        jpg_dir = Path(input_dir)
         input_type = "directory"
     else:
         # Single file input
-        single_file = Path(args.input_image)
+        single_file = Path(input_image)
         if not single_file.exists():
             print(f"Error: Input file '{single_file}' does not exist.")
             return
@@ -402,16 +410,13 @@ def main():
         input_type = "single_file"
         print(f"Processing single file: {single_file.name}")
     
-    out_dir = args.output_dir
-    confidence_threshold = args.confidence
-    batch_size = args.batch_size
-    use_cache = not args.no_cache
+    use_cache = not no_cache
     classes = ["label"]
     
     # Validate paths
-    if not os.path.exists(out_dir):
-        print(f"Creating output directory: {out_dir}")
-        os.makedirs(out_dir)
+    if not os.path.exists(output_dir):
+        print(f"Creating output directory: {output_dir}")
+        os.makedirs(output_dir)
     if not MODEL_PATH.exists():
         print(f"Error: Model file '{MODEL_PATH}' not found.")
         return
@@ -424,7 +429,7 @@ def main():
     print(f"Model caching: {'enabled' if use_cache else 'disabled'}")
     
     # Setup device
-    device = setup_device(args.device)
+    device = setup_device(device)
     
     try:
         # Initialize optimized predictor
@@ -473,7 +478,7 @@ def main():
         return
     
     try:
-        df = scrop.clean_predictions(jpg_dir, df, confidence_threshold, out_dir=out_dir)
+        df = scrop.clean_predictions(jpg_dir, df, confidence_threshold, out_dir=output_dir)
     except Exception as e:
         print(f"Error cleaning predictions: {e}")
         return
@@ -483,7 +488,7 @@ def main():
     
     try:
         crop_start = time.perf_counter()
-        create_crops(jpg_dir, df, out_dir=out_dir)
+        create_crops(jpg_dir, df, out_dir=output_dir)
         crop_time = time.perf_counter() - crop_start
         print(f" Cropping completed in {crop_time:.2f}s")
     except Exception as e:
@@ -497,10 +502,29 @@ def main():
     print(f"  - Model loading: {model_load_time:.2f}s ({model_load_time/total_time*100:.1f}%)")
     print(f"  - Prediction: {prediction_time:.2f}s ({prediction_time/total_time*100:.1f}%)")
     print(f"  - Cropping: {crop_time:.2f}s ({crop_time/total_time*100:.1f}%)")
-    print(f" Results saved to: {out_dir}")
-    print(f"  - CSV file: {out_dir}/input_predictions.csv")
-    print(f"  - Cropped images: {out_dir}/input_cropped/")
+    print(f" Results saved to: {output_dir}")
+    print(f"  - CSV file: {output_dir}/input_predictions.csv")
+    print(f"  - Cropped images: {output_dir}/input_cropped/")
     print("="*50)
+
+
+def main():
+    """
+    Main function to parse arguments and execute label detection.
+    """
+    args = parse_arguments()
+
+    run_label_detection(
+        input_dir=args.input_dir,
+        input_image=args.input_image,
+        output_dir=args.output_dir,
+        confidence_threshold=args.confidence,
+        batch_size=args.batch_size,
+        device=args.device,
+        no_cache=args.no_cache,
+        clear_cache=args.clear_cache,
+    )
+    
 
 
 if __name__ == '__main__':
