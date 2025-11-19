@@ -195,7 +195,7 @@ def build_mli_steps(cfg: PipelineConfig) -> list[Step]:
             (),
             {
                 "input_image_dir": str(printed_dir),
-                "output_image_dir": str(cfg.output_dir),
+                "output_image_dir": str(rotated_dir),
             },
         ),
         (
@@ -260,7 +260,7 @@ def build_sli_steps(cfg: PipelineConfig) -> list[Step]:
             (),
             {
                 "input_image_dir": str(printed_dir),
-                "output_image_dir": str(cfg.output_dir),
+                "output_image_dir": str(rotated_dir),
             },
         ),
         (
