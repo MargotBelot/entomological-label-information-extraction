@@ -142,7 +142,6 @@ def build_mli_steps(cfg: PipelineConfig) -> list[Step]:
     not_empty_dir = cfg.output_dir / "not_empty"
     not_identifier_dir = cfg.output_dir / "not_identifier"
     printed_dir = cfg.output_dir / "printed"
-    rotated_dir = cfg.output_dir / "rotated"
 
     return [
         (
@@ -190,20 +189,11 @@ def build_mli_steps(cfg: PipelineConfig) -> list[Step]:
             },
         ),
         (
-            "Rotation Correction",
-            run_rotation_correction,
-            (),
-            {
-                "input_image_dir": str(printed_dir),
-                "output_image_dir": str(rotated_dir),
-            },
-        ),
-        (
             "OCR Processing",
             run_ocr_with_tesseract,
             (),
             {
-                "crop_dir": str(rotated_dir),
+                "crop_dir": str(printed_dir),
                 "outdir": str(cfg.output_dir),
                 "thresholding": 1,
                 "blocksize": None,
