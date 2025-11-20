@@ -16,8 +16,8 @@ dependencies:
   - scikit-image
 
   # Deep learning
-  - tensorflow==2.16.0
-  - keras==2.16.0
+  - tensorflow==2.15.0
+  - keras==2.15.0
 
   # Image processing
   # opencv-python moved to pip section
