@@ -53,7 +53,7 @@ services:
   # EMPTY LABELS CLASSIFIER
   # ============================================
   empty_labels:
-    profiles: [mli, sli, standalone]
+    profiles: [standalone]
     stdin_open: true
     tty: true
     build:
@@ -109,7 +109,7 @@ services:
   # IDENTIFIER/NOT-IDENTIFIER CLASSIFIER
   # ============================================
   classification_nuri:
-    profiles: [mli, sli, standalone]
+    profiles: [standalone]
     stdin_open: true
     tty: true
     build:
@@ -162,7 +162,7 @@ services:
   # HANDWRITTEN/PRINTED CLASSIFIER
   # ============================================
   classification_hp:
-    profiles: [mli, sli, standalone]
+    profiles: [standalone]
     stdin_open: true
     tty: true
     build:
@@ -254,7 +254,7 @@ services:
   # TESSERACT OCR SERVICE
   # ============================================
   tesseract:
-    profiles: [mli, sli, standalone]
+    profiles: [standalone]
     stdin_open: true
     tty: true
     build:
@@ -307,7 +307,7 @@ services:
   # POSTPROCESSING SERVICE
   # ============================================
   postprocessing:
-    profiles: [mli, sli, standalone]
+    profiles: [standalone]
     stdin_open: true
     tty: true
     build:
