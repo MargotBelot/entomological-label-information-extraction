@@ -215,7 +215,7 @@ services:
   # ROTATION SERVICE (SLI ONLY)
   # ============================================
   rotation:
-    profiles: [sli, standalone]
+    profiles: [standalone]
     stdin_open: true
     tty: true
     build:
