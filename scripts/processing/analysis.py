@@ -56,17 +56,21 @@ def parse_arguments() -> argparse.Namespace:
 
 def validate_directories(input_dir: str, output_dir: str) -> None:
     """
-    Validate that the specified directories exist.
-    If either directory does not exist, print an error message and exit the program.
+    Validate that the input directory exists and create the output directory if needed.
     
     Args:
         input_dir (str): Path to the input directory.
         output_dir (str): Path to the output directory.
     """
-    for directory, name in [(input_dir, "Input"), (output_dir, "Output")]:
-        if not os.path.exists(directory):
-            print(f"Error: {name} directory '{directory}' not found.")
-            sys.exit(1)
+    # Input directory must exist
+    if not os.path.exists(input_dir):
+        print(f"Error: Input directory '{input_dir}' not found.")
+        sys.exit(1)
+    
+    # Create output directory if it doesn't exist
+    if not os.path.exists(output_dir):
+        print(f"Creating output directory: {output_dir}")
+        os.makedirs(output_dir, exist_ok=True)
 
 def main():
     """
