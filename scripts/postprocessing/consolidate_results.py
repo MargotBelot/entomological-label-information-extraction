@@ -329,23 +329,31 @@ def consolidate_results(output_dir: str) -> List[Dict[str, Any]]:
     
     return consolidated
 
-def main():
-    """Main function to consolidate pipeline results."""
-    args = parse_arguments()
+
+def run_consolidate_results(
+    output_dir: str,
+    filename: str = 'consolidated_results.json',
+):
+    """
+    Main function to consolidate pipeline results.
     
-    if not os.path.exists(args.output_dir):
-        print(f"Error: Output directory {args.output_dir} does not exist.")
+    Args:
+        output_dir (str): Path to the output directory.
+        filename (str): Name of the output file.
+    """
+    if not os.path.exists(output_dir):
+        print(f"Error: Output directory {output_dir} does not exist.")
         return
     
-    print(f"Consolidating results from: {args.output_dir}")
+    print(f"Consolidating results from: {output_dir}")
     
     # Consolidate all results
-    consolidated_results = consolidate_results(args.output_dir)
+    consolidated_results = consolidate_results(output_dir)
     
     print(f"Consolidated {len(consolidated_results)} files with processing results")
     
     # Save consolidated results
-    output_file = os.path.join(args.output_dir, args.filename)
+    output_file = os.path.join(output_dir, filename)
     
     try:
         with open(output_file, 'w', encoding='utf-8') as f:
@@ -370,6 +378,16 @@ def main():
         
     except Exception as e:
         print(f"Error saving consolidated results: {e}")
+
+
+def main():
+    """
+    Main function to parse arguments and execute consolidate results.
+    """
+    args = parse_arguments()
+
+    run_consolidate_results(args.output_dir, args.filename)
+
 
 if __name__ == "__main__":
     main()

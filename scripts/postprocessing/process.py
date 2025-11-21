@@ -60,6 +60,7 @@ def parse_arguments() -> argparse.Namespace:
 
     return parser.parse_args()
 
+
 def process_ocr_output(ocr_output: str, outdir: str) -> None:
     """
     Process OCR output to identify Nuri labels, empty labels, and correct plausible labels.
@@ -101,12 +102,14 @@ def process_ocr_output(ocr_output: str, outdir: str) -> None:
     
     print(f"Finished in {round(time.perf_counter() - start_time, 2)} seconds")
 
+
 def main():
     """
     Main function to parse arguments and execute OCR processing.
     """
     args = parse_arguments()
     process_ocr_output(args.json, args.outdir)
+
 
 if __name__ == "__main__":
     main()

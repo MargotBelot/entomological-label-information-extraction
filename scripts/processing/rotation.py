@@ -18,6 +18,7 @@ from label_processing.label_rotation import predict_angles
 # Suppress warning messages during execution
 warnings.filterwarnings('ignore')
 
+
 def parse_arguments() -> argparse.Namespace:
     """
     Parse command-line arguments using argparse.
@@ -41,6 +42,7 @@ def parse_arguments() -> argparse.Namespace:
 
     return parser.parse_args()
 
+
 def remove_dot_underscore_files(directory: str) -> None:
     """
     Remove all files starting with "._" from the specified directory.
@@ -59,6 +61,7 @@ def remove_dot_underscore_files(directory: str) -> None:
                 print(f"Removed: {file_path}")
             except Exception as e:
                 print(f"Warning: Could not remove {file_path} - {e}")
+
 
 def validate_paths(input_dir: str, output_dir: str) -> list:
     """
@@ -99,6 +102,7 @@ def validate_paths(input_dir: str, output_dir: str) -> list:
 
     return images
 
+
 def validate_model_path(model_path: str) -> bool:
     """
     Validate the existence and accessibility of the model file.
@@ -113,6 +117,7 @@ def validate_model_path(model_path: str) -> bool:
         print(f"Error: Model file '{model_path}' is missing or not readable.")
         return False
     return True
+
 
 def is_valid_image(image_path: str) -> bool:
     """
@@ -129,14 +134,25 @@ def is_valid_image(image_path: str) -> bool:
     except Exception:
         return False
 
-def main():
+
+def run_rotation_correction(
+    input_image_dir: str,
+    output_image_dir: str,
+):
     """
     Main script execution.
     This function parses command-line arguments, validates input/output paths,
     checks for valid images, and calls the rotation prediction function.
+    
+    Args:
+        input_image_dir (str): Path to the input directory containing images.
+        output_image_dir (str): Path to the output directory.
+
+    Raises:
+        SystemExit: If the input/output paths are not valid or the model is not found.
+        Exception: If an error occurs during image rotation.
     """
     start_time = time.time()
-    args = parse_arguments()
     
     # Use platform-independent path resolution
     script_dir = Path(__file__).parent
@@ -162,7 +178,7 @@ def main():
             print("Please ensure the rotation model is available in the models directory.")
 
     # Validate input/output paths and retrieve valid images
-    valid_images = validate_paths(args.input_image_dir, args.output_image_dir)
+    valid_images = validate_paths(input_image_dir, output_image_dir)
 
     if not valid_images or not validate_model_path(str(model_path)):
         sys.exit(1)
@@ -174,13 +190,27 @@ def main():
         sys.exit(1)
 
     try:
-        predict_angles(args.input_image_dir, args.output_image_dir, str(model_path))
-        print(f"\nThe rotated images have been successfully saved in {args.output_image_dir}")
+        predict_angles(input_image_dir, output_image_dir, str(model_path))
+        print(f"\nThe rotated images have been successfully saved in {output_image_dir}")
     except Exception as e:
         print(f"Error during image rotation: {e}")
         sys.exit(1)
 
     print(f"Finished in {round(time.perf_counter() - start_time, 2)} seconds.")
+
+
+def main():
+    """
+    Main function to parse arguments and execute rotation correction.
+    """
+    args = parse_arguments()
+
+    run_rotation_correction(
+        input_image_dir=args.input_image_dir,
+        output_image_dir=args.output_image_dir,
+    )
+
+
 
 if __name__ == "__main__":
     main()

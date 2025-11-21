@@ -8,7 +8,13 @@ import os
 from tensorflow import keras
 
 # Import the necessary module from the 'label_processing' module package
-from label_processing.tensorflow_classifier import *
+from label_processing.tensorflow_classifier import (
+    class_prediction,
+    create_dirs,
+    make_file_name,
+    filter_pictures,
+)
+from label_processing.tensorflow_classifier import load_keras_model_with_fallbacks
 from label_processing.config import config
 
 class TestTFClassifier(unittest.TestCase):
@@ -71,7 +77,7 @@ class TestTFClassifier(unittest.TestCase):
             print(f"Python version: {platform.python_version()}")
             
             # Try to load the model with error handling
-            self.model = get_model(str(self.model_path))
+            self.model = load_keras_model_with_fallbacks(str(self.model_path))
             print(" TensorFlow model initialized successfully in setUp")
             
         except ImportError as e:

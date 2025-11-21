@@ -66,22 +66,22 @@ if [ -d "$OUTPUT_DIR/printed" ] && [ -n "$(ls -A "$OUTPUT_DIR/printed" 2>/dev/nu
     echo "Attempting rotation correction on printed labels..."
     
     # Create output directory first
-    mkdir -p "$OUTPUT_DIR/printed_preprocessed"
+    mkdir -p "$OUTPUT_DIR/rotated"
     
     # Try the working simple rotation script first
-    if python scripts/processing/rotation_simple.py -i "$OUTPUT_DIR/printed" -o "$OUTPUT_DIR/printed_preprocessed" 2>/dev/null; then
+    if python scripts/processing/rotation_simple.py -i "$OUTPUT_DIR/printed" -o "$OUTPUT_DIR/rotated" 2>/dev/null; then
         echo "✅ Rotation correction completed successfully using OpenCV-based detection"
-        ROTATED_COUNT=$(ls -1 "$OUTPUT_DIR/printed_preprocessed/"*.jpg 2>/dev/null | wc -l | tr -d ' ')
+        ROTATED_COUNT=$(ls -1 "$OUTPUT_DIR/rotated/"*.jpg 2>/dev/null | wc -l | tr -d ' ')
         echo "   Processed $ROTATED_COUNT images with rotation correction"
-    elif python scripts/processing/rotation.py -i "$OUTPUT_DIR/printed" -o "$OUTPUT_DIR/printed_preprocessed" 2>/dev/null; then
+    elif python scripts/processing/rotation.py -i "$OUTPUT_DIR/printed" -o "$OUTPUT_DIR/rotated" 2>/dev/null; then
         echo "✅ Rotation correction completed successfully using AI model"
-        ROTATED_COUNT=$(ls -1 "$OUTPUT_DIR/printed_preprocessed/"*.jpg 2>/dev/null | wc -l | tr -d ' ')
+        ROTATED_COUNT=$(ls -1 "$OUTPUT_DIR/rotated/"*.jpg 2>/dev/null | wc -l | tr -d ' ')
         echo "   Processed $ROTATED_COUNT images with AI rotation correction"
     else
         echo "⚠️  Both rotation methods failed, using fallback (copying original images)"
         # Fallback: copy original images if both rotation methods fail
-        cp "$OUTPUT_DIR/printed/"*.jpg "$OUTPUT_DIR/printed_preprocessed/" 2>/dev/null || true
-        COPIED_COUNT=$(ls -1 "$OUTPUT_DIR/printed_preprocessed/"*.jpg 2>/dev/null | wc -l | tr -d ' ')
+        cp "$OUTPUT_DIR/printed/"*.jpg "$OUTPUT_DIR/rotated/" 2>/dev/null || true
+        COPIED_COUNT=$(ls -1 "$OUTPUT_DIR/rotated/"*.jpg 2>/dev/null | wc -l | tr -d ' ')
         echo "   Copied $COPIED_COUNT original images to processed directory"
         echo "   Note: OCR will proceed with unrotated images (may be less accurate)"
     fi
@@ -91,8 +91,8 @@ fi
 
 echo ""
 echo "=== Step 5: OCR with Tesseract ==="
-if [ -d "$OUTPUT_DIR/printed_preprocessed" ] && [ -n "$(ls -A "$OUTPUT_DIR/printed_preprocessed" 2>/dev/null)" ]; then
-    python scripts/processing/tesseract.py -d "$OUTPUT_DIR/printed_preprocessed" -o "$OUTPUT_DIR" || echo "OCR step completed with warnings"
+if [ -d "$OUTPUT_DIR/rotated" ] && [ -n "$(ls -A "$OUTPUT_DIR/rotated" 2>/dev/null)" ]; then
+    python scripts/processing/tesseract.py -d "$OUTPUT_DIR/rotated" -o "$OUTPUT_DIR" || echo "OCR step completed with warnings"
 elif [ -d "$OUTPUT_DIR/printed" ] && [ -n "$(ls -A "$OUTPUT_DIR/printed" 2>/dev/null)" ]; then
     # Fallback: use unrotated images if rotation failed
     python scripts/processing/tesseract.py -d "$OUTPUT_DIR/printed" -o "$OUTPUT_DIR" || echo "OCR step completed with warnings"

@@ -54,6 +54,7 @@ def parse_arguments() -> argparse.Namespace:
 
     return parser.parse_args()
 
+
 def validate_directories(input_dir: str, output_dir: str) -> None:
     """
     Validate that the input directory exists and create the output directory if needed.
@@ -72,20 +73,35 @@ def validate_directories(input_dir: str, output_dir: str) -> None:
         print(f"Creating output directory: {output_dir}")
         os.makedirs(output_dir, exist_ok=True)
 
-def main():
+
+def run_empty_label_classification(
+    input_image_dir: str,
+    output_image_dir: str,
+):
     """
     Main execution function.
     Parses command-line arguments, validates directories, processes images, and prints the execution duration.
     """
     start_time = time.time()
-    args = parse_arguments()
-    
-    validate_directories(args.input_image_dir, args.output_image_dir)
-    
-    find_empty_labels(args.input_image_dir, args.output_image_dir)
-    print(f"\nEmpty and non-empty labels moved to respective folders in {args.output_image_dir}")
-    
+
+    validate_directories(input_image_dir, output_image_dir)    
+    find_empty_labels(input_image_dir, output_image_dir)
+    print(f"\nEmpty and non-empty labels copied to respective folders in {output_image_dir}")
+
     print(f"Finished in {round(time.perf_counter() - start_time, 2)} seconds")
+    
+
+def main():
+    """
+    Main function to parse arguments and execute empty label classification.
+    """
+    args = parse_arguments()
+
+    run_empty_label_classification(
+        input_image_dir=args.input_image_dir,
+        output_image_dir=args.output_image_dir,
+    )
+    
 
 if __name__ == "__main__":
     main()

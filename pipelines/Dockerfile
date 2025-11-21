@@ -72,7 +72,7 @@ CMD ["python", "scripts/processing/tesseract.py"]
 FROM base AS empty_labels
 
 RUN pip install --no-cache-dir -r pipelines/requirements/empty_labels.txt
-CMD ["python", "scripts/processing/empty_labels.py"]
+CMD ["python", "scripts/processing/analysis.py"]
 
 # ============================================
 # POSTPROCESSING STAGE

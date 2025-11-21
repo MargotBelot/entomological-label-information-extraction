@@ -120,6 +120,7 @@ def parse_arguments() -> argparse.Namespace:
     
     return parser.parse_args()
 
+
 def validate_paths(crop_dir: str, outdir: str) -> bool:
     """
     Validate the existence of directories.
@@ -139,15 +140,24 @@ def validate_paths(crop_dir: str, outdir: str) -> bool:
         os.makedirs(outdir)
     return True
 
-def ocr_on_file(file_path: str, args: argparse.Namespace, thresh_mode: Threshmode, tesseract: Tesseract, new_dir: str) -> tuple[dict[str, str], bool, bool]:
+
+def ocr_on_file(
+    file_path: str,
+    new_dir: str,
+    blocksize: int,
+    c_value: int,
+    thresh_mode: Threshmode,
+    tesseract: Tesseract,
+) -> tuple[dict[str, str], bool, bool]:
     """
     Perform OCR on a single image file.
     Args:
         file_path (str): Path to the image file.
-        args (argparse.Namespace): Parsed command-line arguments.
+        new_dir (str): Directory to save preprocessed images.
+        blocksize (int): Blocksize for image preprocessing.
+        c_value (int): C value for image preprocessing.
         thresh_mode (Threshmode): Thresholding mode for image preprocessing.
         tesseract (Tesseract): Tesseract OCR instance.
-        new_dir (str): Directory to save preprocessed images.
     Returns:
         tuple: A tuple containing the transcript dictionary, a boolean indicating if a QR code was detected,
                and a boolean indicating if a NURI format was detected.
@@ -156,10 +166,10 @@ def ocr_on_file(file_path: str, args: argparse.Namespace, thresh_mode: Threshmod
         image = ImageProcessor.read_image(file_path)
         qr_detected, nuri_detected = False, False
 
-        if args.blocksize:
-            image.blocksize(args.blocksize)
-        if args.c_value:
-            image.c_value(args.c_value)
+        if blocksize:
+            image.blocksize(blocksize)
+        if c_value:
+            image.c_value(c_value)
 
         decoded_qr = image.read_qr_code()
         if decoded_qr:
@@ -180,65 +190,156 @@ def ocr_on_file(file_path: str, args: argparse.Namespace, thresh_mode: Threshmod
         print(f"Error processing file {file_path}: {e}")
         return {"ID": file_path, "text": "ERROR"}, False, False
 
-def ocr_on_dir(crop_dir: str, new_dir: str, verbose_print: Callable, args: argparse.Namespace) -> list[dict[str, str]]:
+
+def ocr_on_dir(
+    crop_dir: str,
+    new_dir: str,
+    thresholding: int,
+    blocksize: int,
+    c_value: int,
+    multiprocessing: bool,
+    verbose: bool = False,
+) -> list[dict[str, str]]:
     """
     Perform OCR on all images in a directory.
+
     Args:
         crop_dir (str): Directory containing cropped images.
         new_dir (str): Directory to save preprocessed images.
-        verbose_print (Callable): Function to print verbose messages.
-        args (argparse.Namespace): Parsed command-line arguments.
+        thresholding (int): Thresholding mode for image preprocessing.
+        blocksize (int): Blocksize for image preprocessing.
+        c_value (int): C value for image preprocessing.
+        multiprocessing (bool): Whether to use multiprocessing.
+        verbose (bool): Whether to print verbose output.
     Returns:
         list[dict[str, str]]: List of dictionaries containing OCR results.
     """
     tesseract = Tesseract()
     ocr_results = []
     count_qr, total_nuri = 0, 0
-    thresh_mode = Threshmode(args.thresholding)
-    files = glob.glob(os.path.join(crop_dir, "*.jpg"))
+    thresh_mode = Threshmode(thresholding)
+    file_paths = glob.glob(os.path.join(crop_dir, "*.jpg"))
 
-    if not files:
+    if not file_paths:
         print("Error: No JPG files found in the specified directory.")
         return []
 
-    if args.multiprocessing:
+    if multiprocessing:
         with mp.Pool() as pool:
-            results = pool.starmap(ocr_on_file, [(file, args, thresh_mode, tesseract, new_dir) for file in files])
+            results = pool.starmap(ocr_on_file, [(
+                file_path,
+                new_dir,
+                blocksize,
+                c_value,
+                thresh_mode,
+                tesseract,
+            ) for file_path in file_paths])
             for transcript, qr, nuri in results:
                 ocr_results.append(transcript)
                 count_qr += qr
                 total_nuri += nuri
     else:
-        for file in files:
-            transcript, qr, nuri = ocr_on_file(file, args, thresh_mode, tesseract, new_dir)
+        for file_path in file_paths:
+            transcript, qr, nuri = ocr_on_file(
+                file_path=file_path,
+                new_dir=new_dir,
+                blocksize=blocksize,
+                c_value=c_value,
+                thresh_mode=thresh_mode,
+                tesseract=tesseract,
+            )
             ocr_results.append(transcript)
             count_qr += qr
             total_nuri += nuri
 
-    verbose_print(f"QR-codes read: {count_qr}")
-    verbose_print(f"get_nuri: {total_nuri}")
+    if verbose:
+        print(f"QR-codes read: {count_qr}")
+        print(f"get_nuri: {total_nuri}")
+
     return ocr_results
 
-if __name__ == "__main__":
+
+
+def run_ocr_with_tesseract(
+    crop_dir: str,
+    outdir: str,
+    thresholding: int,
+    blocksize: int,
+    c_value: int,
+    multiprocessing: bool,
+    verbose: bool = False,
+) -> None:
+    """
+    Main function to parse arguments and execute OCR with Tesseract.
+    
+    Args:
+        crop_dir (str): Directory containing cropped images.
+        outdir (str): Directory to save preprocessed images.
+        thresholding (int): Thresholding mode for image preprocessing.
+        blocksize (int): Blocksize for image preprocessing.
+        c_value (int): C value for image preprocessing.
+        multiprocessing (bool): Whether to use multiprocessing.
+        verbose (bool): Whether to print verbose output.
+
+    Raises:
+        NotADirectoryError: If the cropped images directory does not exist.
+    """
     start_time = time.time()
-    args = parse_arguments()
-    verbose_print = print if args.verbose else lambda *a, **k: None
 
     find_tesseract()
-    verbose_print("Tesseract successfully detected.")
 
-    if not validate_paths(args.dir, args.outdir):
+    if verbose:
+        print("Tesseract successfully detected.")
+
+    if not validate_paths(crop_dir, outdir):
         exit(1)
 
-    new_dir = utils.generate_filename(args.dir, "preprocessed")
-    new_dir_path = os.path.join(args.outdir, new_dir)
+    new_dir = utils.generate_filename(crop_dir, "preprocessed")
+    new_dir_path = os.path.join(outdir, new_dir)
     Path(new_dir_path).mkdir(parents=True, exist_ok=True)
 
-    verbose_print(f"Performing OCR on {os.path.abspath(args.dir)}.")
-    result_data = ocr_on_dir(args.dir, new_dir_path, verbose_print, args)
+    if verbose:
+        print(f"Performing OCR on {os.path.abspath(crop_dir)}.")
+
+    result_data = ocr_on_dir(
+        crop_dir=crop_dir,
+        new_dir=new_dir_path,
+        thresholding=thresholding,
+        multiprocessing=multiprocessing,
+        blocksize=blocksize,
+        c_value=c_value,
+        verbose=verbose,
+    )
 
     if result_data:
-        verbose_print(f"Saving results in {os.path.abspath(args.outdir)}.")
-        utils.save_json(result_data, FILENAME, args.outdir)
+        if verbose:
+            print(f"Saving results in {os.path.abspath(outdir)}.")
+
+        utils.save_json(result_data, FILENAME, outdir)
 
     print(f"Finished in {round(time.perf_counter() - start_time, 2)} seconds")
+
+
+def main():
+    """
+    Main function to parse arguments and execute OCR with Tesseract.
+
+    Raises:
+        NotADirectoryError: If the cropped images directory does not exist.
+    """
+    args = parse_arguments()
+
+    run_ocr_with_tesseract(
+        crop_dir=args.dir,
+        outdir=args.outdir,
+        thresholding=args.thresholding,
+        blocksize=args.blocksize,
+        c_value=args.c_value,
+        multiprocessing=args.multiprocessing,
+        verbose=args.verbose,
+    )
+
+
+
+if __name__ == "__main__":
+    main()
