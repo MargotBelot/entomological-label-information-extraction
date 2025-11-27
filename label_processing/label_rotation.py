@@ -3,7 +3,6 @@ import os
 import cv2
 import numpy as np
 import tensorflow as tf
-from keras.models import load_model
 import warnings
 from typing import List
 import shutil
@@ -14,6 +13,9 @@ warnings.filterwarnings("ignore", category=UserWarning, module="absl")
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
+
+# Use tensorflow.keras for consistency across TF versions
+from tensorflow.keras.models import load_model
 
 # Define constants
 IMAGE_SIZE = (224, 224)
@@ -251,13 +253,32 @@ def predict_angles(
         return
 
     print(f"Loading model from {model_path}...")
-    model = load_model(model_path)
+    try:
+        model = load_model(model_path)
+    except Exception as e:
+        print(f"Warning: Standard model loading failed: {e}")
+        print("Attempting to load with custom objects...")
+        try:
+            model = load_model(model_path, custom_objects={'BatchNormalization': tf.keras.layers.BatchNormalization})
+        except Exception as e2:
+            print(f"Error: Could not load model with either method. {e2}")
+            raise
+    
     print("Compiling model...")
-    model.compile(
-        optimizer=tf.keras.optimizers.legacy.Adam(learning_rate=0.0001),
-        loss="categorical_crossentropy",
-        metrics=["accuracy"],
-    )
+    try:
+        model.compile(
+            optimizer=tf.keras.optimizers.legacy.Adam(learning_rate=0.0001),
+            loss="categorical_crossentropy",
+            metrics=["accuracy"],
+        )
+    except Exception as e:
+        print(f"Warning: Compilation with legacy optimizer failed: {e}")
+        print("Retrying with standard Adam optimizer...")
+        model.compile(
+            optimizer=tf.keras.optimizers.Adam(learning_rate=0.0001),
+            loss="categorical_crossentropy",
+            metrics=["accuracy"],
+        )
 
     image_paths = get_image_paths(input_image_dir)
     if not image_paths:
