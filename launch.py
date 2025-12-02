@@ -18,13 +18,13 @@ def main():
     interface_path = project_root / "interfaces" / "launch_streamlit.py"
     
     if not interface_path.exists():
-        print("❌ Streamlit interface not found at:", interface_path)
+        print("Streamlit interface not found at:", interface_path)
         print("Please ensure the interfaces directory contains launch_streamlit.py")
         sys.exit(1)
     
-    print("🔬 Launching ELIE Streamlit Interface...")
-    print(f"   Interface: {interface_path}")
-    print("   Press Ctrl+C to stop")
+    print("Launching ELIE Streamlit Interface...")
+    print(f"Interface: {interface_path}")
+    print("Press Ctrl+C to stop")
     print()
     
     # Change to project root directory
@@ -44,10 +44,10 @@ def main():
             "--theme.base", "light"
         ])
     except KeyboardInterrupt:
-        print("\n👋 ELIE interface stopped.")
+        print("\nELIE interface stopped.")
     except FileNotFoundError:
-        print("❌ Streamlit not found. Please install it with:")
-        print("   pip install streamlit")
+        print("Streamlit not found. Please install it with:")
+        print("pip install streamlit")
         sys.exit(1)
 
 if __name__ == "__main__":
