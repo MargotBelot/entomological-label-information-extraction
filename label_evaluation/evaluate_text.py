@@ -135,10 +135,11 @@ def create_plot(data: list, score_name: str, file_name: str) -> None:
         linestyle="-",
         label=f"Median: {df[score_name].median():.2f}",
     )
-    plt.title(f"Distribution of {score_name}", fontsize=16)
-    plt.xlabel(score_name, fontsize=14)
-    plt.ylabel("Density", fontsize=14)
-    plt.legend()
+    plt.title(f"Distribution of {score_name}", fontsize=24)
+    plt.xlabel(score_name, fontsize=20)
+    plt.ylabel("Density", fontsize=20)
+    plt.tick_params(axis='both', which='major', labelsize=18)
+    plt.legend(fontsize=16)
     plt.savefig(file_name, dpi=300)
     plt.close()
     print(f"Plot saved as {file_name}")
