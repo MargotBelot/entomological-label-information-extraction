@@ -24,7 +24,7 @@ echo ""
 
 # Activate conda environment
 source "$(conda info --base)/etc/profile.d/conda.sh"
-conda activate ELIE
+conda activate entomological-label
 
 # Set PYTHONPATH to include the project root
 export PYTHONPATH="$PROJECT_ROOT:$PYTHONPATH"
@@ -68,15 +68,11 @@ if [ -d "$OUTPUT_DIR/printed" ] && [ -n "$(ls -A "$OUTPUT_DIR/printed" 2>/dev/nu
     # Create output directory first
     mkdir -p "$OUTPUT_DIR/printed_preprocessed"
     
-    # Try the working simple rotation script first
-    if python scripts/processing/rotation_simple.py -i "$OUTPUT_DIR/printed" -o "$OUTPUT_DIR/printed_preprocessed" 2>/dev/null; then
-        echo "✅ Rotation correction completed successfully using OpenCV-based detection"
+    # Apply rotation correction
+    if python scripts/processing/rotation.py -i "$OUTPUT_DIR/printed" -o "$OUTPUT_DIR/printed_preprocessed" 2>/dev/null; then
+        echo "✅ Rotation correction completed successfully"
         ROTATED_COUNT=$(ls -1 "$OUTPUT_DIR/printed_preprocessed/"*.jpg 2>/dev/null | wc -l | tr -d ' ')
         echo "   Processed $ROTATED_COUNT images with rotation correction"
-    elif python scripts/processing/rotation.py -i "$OUTPUT_DIR/printed" -o "$OUTPUT_DIR/printed_preprocessed" 2>/dev/null; then
-        echo "✅ Rotation correction completed successfully using AI model"
-        ROTATED_COUNT=$(ls -1 "$OUTPUT_DIR/printed_preprocessed/"*.jpg 2>/dev/null | wc -l | tr -d ' ')
-        echo "   Processed $ROTATED_COUNT images with AI rotation correction"
     else
         echo "⚠️  Both rotation methods failed, using fallback (copying original images)"
         # Fallback: copy original images if both rotation methods fail
