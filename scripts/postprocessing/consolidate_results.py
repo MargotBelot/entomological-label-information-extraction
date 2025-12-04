@@ -141,24 +141,31 @@ def load_rotation_results(output_dir: str) -> Dict[str, Dict[str, Any]]:
     rotation_results = {}
     
     # First try to load from rotation metadata file (preferred method)
-    meta_file = os.path.join(output_dir, 'rotation_metadata.csv')
-    if os.path.exists(meta_file):
-        try:
-            with open(meta_file, 'r', encoding='utf-8') as f:
-                reader = csv.DictReader(f)
-                for row in reader:
-                    filename = row.get('filename', '')
-                    if filename:
-                        angle = int(row.get('angle', 0))
-                        corrected = str(row.get('corrected', 'False')).lower() == 'true'
-                        rotation_results[filename] = {
-                            'angle': angle,
-                            'corrected': corrected
-                        }
-            return rotation_results
-        except Exception as e:
-            print(f"Error loading rotation metadata: {e}")
-            # Fall back to directory-based detection
+    # Check both main directory and subdirectories (like printed_preprocessed)
+    meta_files = [
+        os.path.join(output_dir, 'rotation_metadata.csv'),
+        os.path.join(output_dir, 'printed_preprocessed', 'rotation_metadata.csv'),
+        os.path.join(output_dir, 'printed_rotated', 'rotation_metadata.csv')
+    ]
+    
+    for meta_file in meta_files:
+        if os.path.exists(meta_file):
+            try:
+                with open(meta_file, 'r', encoding='utf-8') as f:
+                    reader = csv.DictReader(f)
+                    for row in reader:
+                        filename = row.get('filename', '')
+                        if filename:
+                            angle = int(row.get('angle', 0))
+                            corrected = str(row.get('corrected', 'False')).lower() == 'true'
+                            rotation_results[filename] = {
+                                'angle': angle,
+                                'corrected': corrected
+                            }
+                return rotation_results
+            except Exception as e:
+                print(f"Error loading rotation metadata from {meta_file}: {e}")
+                # Fall back to directory-based detection
     
     # Fallback: directory-based detection (legacy method)
     rotated_dir = os.path.join(output_dir, 'rotated')
