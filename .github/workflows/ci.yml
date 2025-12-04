@@ -12,9 +12,20 @@ jobs:
     strategy:
       matrix:
         python-version: ["3.10", "3.11", "3.12"]
+      fail-fast: false
 
     steps:
     - uses: actions/checkout@v4
+    
+    - name: Free up disk space
+      run: |
+        # Remove unnecessary packages to free up space
+        sudo rm -rf /usr/share/dotnet
+        sudo rm -rf /usr/local/lib/android
+        sudo rm -rf /opt/ghc
+        sudo rm -rf /opt/hostedtoolcache/CodeQL
+        sudo docker image prune --all --force
+        df -h
     
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v4
@@ -50,7 +61,11 @@ jobs:
         pip install "tensorflow-cpu>=2.16.0" "keras>=2.16.0"
         pip install opencv-python-headless pillow
         pip install nltk jiwer pytesseract
-        pip install plotly detecto
+        pip install plotly
+        # Install PyTorch CPU-only to avoid huge CUDA dependencies
+        pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+        # Install detecto after PyTorch CPU is installed
+        pip install detecto --no-deps
         # Install the package in development mode without heavy dependencies
         pip install -e . --no-deps
         # Download required NLTK data
