@@ -435,7 +435,14 @@ MIT License - see [LICENSE](LICENSE) file
 
 **Full documentation:** https://entomological-label-information-extraction.readthedocs.io/
 
+### Quick Links
 - [Quick Start Guide](https://entomological-label-information-extraction.readthedocs.io/en/latest/quickstart.html)
 - [User Guide](https://entomological-label-information-extraction.readthedocs.io/en/latest/user_guide.html)
 - [API Reference](https://entomological-label-information-extraction.readthedocs.io/en/latest/api/modules.html)
 - [Troubleshooting](https://entomological-label-information-extraction.readthedocs.io/en/latest/troubleshooting.html)
+
+### Additional Guides
+- [Advanced Configuration](docs/ADVANCED_CONFIG.md) - Environment variables, model caching, performance tuning
+- [Rotation Model Setup](docs/ROTATION_MODEL_SETUP.md) - Rotation model installation and troubleshooting
+- [Docker README](pipelines/README.md) - Docker deployment details
+- [HPC Quickstart](pipelines/HPC_QUICKSTART.md) - HPC/Apptainer deployment

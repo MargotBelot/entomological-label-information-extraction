@@ -643,11 +643,10 @@ def main():
                 # Check if process is still running
                 poll = st.session_state.pipeline_process.poll()
                 
-                # Debug: log process status
+                # Track process status changes
                 if 'last_poll_status' not in st.session_state:
                     st.session_state.last_poll_status = None
                 if poll != st.session_state.last_poll_status:
-                    st.session_state.logs.append(f"[{current_time}] [DEBUG] Process poll status changed: {st.session_state.last_poll_status} → {poll}")
                     st.session_state.last_poll_status = poll
                 
                 if poll is None:
@@ -675,7 +674,6 @@ def main():
                                             
                                             # Check for completion in the logs as backup (be more specific)
                                             if ('pipeline completed successfully' in clean_line.lower() and '✅ pipeline completed successfully' in clean_line) or 'final output captured' in clean_line.lower():
-                                                st.session_state.logs.append(f"[{current_time}] [DEBUG] Found pipeline completion in logs")
                                                 # Force completion
                                                 st.session_state.pipeline_progress = 100
                                                 st.session_state.current_stage = "✅ Completed"
@@ -683,7 +681,6 @@ def main():
                                                 # Clean up process
                                                 if st.session_state.pipeline_process:
                                                     st.session_state.pipeline_process = None
-                                                    st.session_state.logs.append(f"[{current_time}] [DEBUG] Pipeline process cleaned up")
                                         
                         except Exception as e:
                             pass  # Continue without error if file reading fails
@@ -726,7 +723,6 @@ def main():
                         st.session_state.pipeline_progress = 100
                         st.session_state.current_stage = "✅ Completed"
                         # Force immediate UI refresh to show completion
-                        st.session_state.logs.append(f"[{current_time}] [DEBUG] Forcing UI refresh to show completion")
                         time.sleep(0.5)  # Brief pause to ensure state is updated
                         st.rerun()
                     else:
