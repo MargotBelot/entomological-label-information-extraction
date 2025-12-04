@@ -160,6 +160,8 @@ def main():
             for alt_path in alternative_paths:
                 print(f"  - {alt_path}")
             print("Please ensure the rotation model is available in the models directory.")
+            print("See docs/ROTATION_MODEL_SETUP.md for setup instructions.")
+            sys.exit(1)
 
     # Validate input/output paths and retrieve valid images
     valid_images = validate_paths(args.input_image_dir, args.output_image_dir)

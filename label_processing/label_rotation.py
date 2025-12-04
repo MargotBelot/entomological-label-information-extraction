@@ -143,7 +143,8 @@ def get_image_paths(input_image_dir: str) -> List[str]:
     return [
         os.path.join(input_image_dir, filename)
         for filename in os.listdir(input_image_dir)
-        if filename.lower().endswith((".jpg", ".jpeg", ".tiff", ".tif"))
+        if filename.lower().endswith((".jpg", ".jpeg", ".tiff", ".tif", ".png"))
+        and not filename.startswith("._")  # Skip macOS resource fork files
     ]
 
 
