@@ -6,6 +6,7 @@
 __pycache__/
 *.py[cod]
 *.pyo
+*.pyc
 
 # Virtual environments
 .env/
@@ -19,6 +20,12 @@ venv/
 # macOS system files
 .DS_Store
 ._*
+
+# Editor temporary files
+*.swp
+*.swo
+*~
+.idea/
 
 # VS Code settings
 *.code-workspace
@@ -48,3 +55,10 @@ Pipfile.lock
 
 # Local data
 *.sqlite3
+
+# Model cache (from detection.py)
+.entomological_cache/
+
+# Temporary pipeline outputs
+*.tmp
+*.temp
