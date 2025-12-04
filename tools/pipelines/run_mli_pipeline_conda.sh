@@ -24,7 +24,7 @@ echo ""
 
 # Activate conda environment
 source "$(conda info --base)/etc/profile.d/conda.sh"
-conda activate ELIE
+conda activate entomological-label
 
 # Set PYTHONPATH to include the project root
 export PYTHONPATH="$PROJECT_ROOT:$PYTHONPATH"
@@ -73,15 +73,43 @@ else
 fi
 
 echo ""
-echo "=== Step 5: OCR with Tesseract ==="
+echo "=== Step 5: Rotation Correction ==="
 if [ -d "$OUTPUT_DIR/printed" ] && [ -n "$(ls -A "$OUTPUT_DIR/printed" 2>/dev/null)" ]; then
+    echo "Attempting rotation correction on printed labels..."
+    
+    # Create output directory first
+    mkdir -p "$OUTPUT_DIR/printed_preprocessed"
+    
+    # Apply rotation correction
+    if python scripts/processing/rotation.py -i "$OUTPUT_DIR/printed" -o "$OUTPUT_DIR/printed_preprocessed" 2>/dev/null; then
+        echo "✅ Rotation correction completed successfully"
+        ROTATED_COUNT=$(ls -1 "$OUTPUT_DIR/printed_preprocessed/"*.jpg 2>/dev/null | wc -l | tr -d ' ')
+        echo "   Processed $ROTATED_COUNT images with rotation correction"
+    else
+        echo "⚠️  Both rotation methods failed, using fallback (copying original images)"
+        # Fallback: copy original images if both rotation methods fail
+        cp "$OUTPUT_DIR/printed/"*.jpg "$OUTPUT_DIR/printed_preprocessed/" 2>/dev/null || true
+        COPIED_COUNT=$(ls -1 "$OUTPUT_DIR/printed_preprocessed/"*.jpg 2>/dev/null | wc -l | tr -d ' ')
+        echo "   Copied $COPIED_COUNT original images to processed directory"
+        echo "   Note: OCR will proceed with unrotated images (may be less accurate)"
+    fi
+else
+    echo "Warning: No printed labels found for rotation correction"
+fi
+
+echo ""
+echo "=== Step 6: OCR with Tesseract ==="
+if [ -d "$OUTPUT_DIR/printed_preprocessed" ] && [ -n "$(ls -A "$OUTPUT_DIR/printed_preprocessed" 2>/dev/null)" ]; then
+    python scripts/processing/tesseract.py -d "$OUTPUT_DIR/printed_preprocessed" -o "$OUTPUT_DIR" || echo "OCR step completed with warnings"
+elif [ -d "$OUTPUT_DIR/printed" ] && [ -n "$(ls -A "$OUTPUT_DIR/printed" 2>/dev/null)" ]; then
+    # Fallback: use unrotated images if rotation failed
     python scripts/processing/tesseract.py -d "$OUTPUT_DIR/printed" -o "$OUTPUT_DIR" || echo "OCR step completed with warnings"
 else
     echo "Warning: No printed labels found for OCR"
 fi
 
 echo ""
-echo "=== Step 6: Post-processing ==="
+echo "=== Step 7: Post-processing ==="
 if [ -f "$OUTPUT_DIR/ocr_preprocessed.json" ]; then
     python scripts/postprocessing/process.py -j "$OUTPUT_DIR/ocr_preprocessed.json" -o "$OUTPUT_DIR" || echo "Post-processing completed with warnings"
     python scripts/postprocessing/consolidate_results.py -o "$OUTPUT_DIR" -f consolidated_results.json || echo "Consolidation completed with warnings"
