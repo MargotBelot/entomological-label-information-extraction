@@ -1,6 +1,14 @@
 # Entomological Label Information Extraction
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE) ![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue) ![Status](https://img.shields.io/badge/status-stable-brightgreen) [![Documentation](https://img.shields.io/badge/docs-read%20the%20docs-blue)](https://entomological-label-information-extraction.readthedocs.io/en/latest/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue)
+![Status](https://img.shields.io/badge/status-stable-brightgreen)
+[![Documentation](https://img.shields.io/badge/docs-read%20the%20docs-blue)](https://entomological-label-information-extraction.readthedocs.io/en/latest/)
+[![Tests](https://img.shields.io/badge/tests-passing-success)](unit_tests/)
+![Platform](https://img.shields.io/badge/platform-linux%20%7C%20macOS%20%7C%20windows-lightgrey)
+[![Docker](https://img.shields.io/badge/docker-supported-2496ED?logo=docker&logoColor=white)](pipelines/Dockerfile)
+[![Conda](https://img.shields.io/badge/conda-supported-44A833?logo=anaconda&logoColor=white)](environment.yml)
+![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)
 
 **AI-powered text extraction from insect specimen labels using computer vision and OCR**
 
