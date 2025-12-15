@@ -474,7 +474,7 @@ Estimated time savings:
 ```bibtex
 @software{anonymous2025entomological,
   title={Entomological Label Information Extraction},
-  author={Margot Belot, Leonardo Preuss, Olha Svezhentseva, Magdalena Claessen},
+  authors={Margot Belot, Leonardo Preuss, Olha Svezhentseva, Magdalena Claessen},
   year={2025},
   doi={[Repository URL - anonymized for review]},
   zenodo={Training datasets: https://doi.org/10.7479/khac-x956}
