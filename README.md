@@ -424,10 +424,10 @@ See Jupyter notebooks in `training_notebooks/`
 ```bibtex
 @software{anonymous2025entomological,
   title={Entomological Label Information Extraction},
-  author={Anonymous},
+  author={Margot Belot, Leonardo Preuss, Olha Svezhentseva, Magdalena Claessen},
   year={2025},
-  url={[Repository URL - anonymized for review]},
-  note={Training datasets: https://doi.org/10.7479/khac-x956}
+  doi={[Repository URL - anonymized for review]},
+  zenodo={Training datasets: https://doi.org/10.7479/khac-x956}
 }
 ```
 
