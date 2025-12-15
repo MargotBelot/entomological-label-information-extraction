@@ -65,8 +65,8 @@ templates_path = ['_templates']
 
 # The suffix(es) of source filenames.
 source_suffix = {
-    '.rst': None,
-    '.md': 'myst_parser',
+    '.rst': 'restructuredtext',
+    '.md': 'markdown',
 }
 
 # List of patterns, relative to source directory, that match files and
