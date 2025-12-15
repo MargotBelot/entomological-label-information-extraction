@@ -16,6 +16,37 @@ Extract and digitize text from museum specimen labels automatically. Perfect for
 
 ---
 
+## Table of Contents
+
+- [Complete Beginner? Start Here!](#complete-beginner-start-here)
+- [What It Does](#what-it-does)
+- [Quick Start](#quick-start)
+- [Advanced Usage](#advanced-usage)
+  - [Individual Processing Steps](#individual-processing-steps)
+  - [Docker (Optional)](#docker-optional)
+  - [Apptainer/Singularity (HPC)](#apptainersingularity-hpc)
+  - [Development Setup](#development-setup)
+  - [GPU Acceleration](#gpu-acceleration)
+  - [Custom OCR](#custom-ocr)
+- [Pipeline Workflow](#pipeline-workflow)
+- [Project Structure](#project-structure)
+- [Troubleshooting](#troubleshooting)
+- [Sample Data](#sample-data)
+- [Technical Details](#technical-details)
+  - [Models](#models)
+  - [Preprocessing](#preprocessing)
+  - [Resource Requirements](#resource-requirements)
+  - [Minimum Hardware Requirements](#minimum-hardware-requirements)
+  - [Performance Benchmarks](#performance-benchmarks)
+  - [Accuracy](#accuracy)
+  - [Efficiency & Time Savings](#efficiency--time-savings)
+  - [Limitations](#limitations)
+- [Citation](#citation)
+- [License](#license)
+- [Documentation](#documentation)
+
+---
+
 ## Complete Beginner? Start Here!
 
 **5-Minute Overview:**
