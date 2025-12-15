@@ -415,7 +415,57 @@ See Jupyter notebooks in `training_notebooks/`
 | OCR | 4 GB | 3 | 30-60 min |
 | Post-processing | 2 GB | 2 | 5-10 min |
 
-*Times vary by number/size of images*
+*Times vary by number/size of images and represent estimates for individual stages*
+
+### Minimum Hardware Requirements
+- **RAM**: 6 GB minimum (8 GB recommended)
+- **Storage**: 2 GB for models + space for images
+- **CPU**: Multi-core processor (4+ cores recommended)
+- **GPU**: Optional (models run on CPU by default)
+
+### Performance Benchmarks
+
+Actual pipeline performance on test datasets:
+
+| Dataset | Images | Pipeline Modules | Total Runtime | Avg. Time/Image |
+|---------|--------|------------------|---------------|------------------|
+| MfN_LEP_SEASIA | 25,844 SLI | 7 modules (all except detection) | 2h 44min | ~6 sec |
+| MCZ_ENT_Boston | 1,596 MLI | 5 modules | 51min 10s | ~1.9 sec |
+| USNM_COL_CAM | 912 MLI | All 8 modules | 47min 21s | ~3.1 sec |
+
+*Benchmarks run on Apple MacBook M1 (CPU only, no GPU acceleration). Total runtime depends on which modules are executed and dataset characteristics.*
+
+### Accuracy
+
+Pipeline performance on held-out test data:
+- **Label Detection**: 94% accuracy (IoU ≥ 0.8)
+- **Empty Label Detection**: 100% precision
+- **Handwritten/Printed Classifier**: 98-99% accuracy
+- **Specimen Identifier Classifier**: 100% accuracy
+- **Rotation Correction**: 97.3% accuracy
+- **OCR (Google Vision, printed labels)**: Median CER 0.0-5.0%, WER 0.0-22%
+- **Clustering**: 75-97% accuracy depending on dataset redundancy
+
+### Efficiency & Time Savings
+
+ELIE reduces manual transcription effort by **up to 87%** by:
+- Automatically extracting printed labels with OCR
+- Clustering recurring labels for one-time validation
+- Routing only unique/representative labels for manual review
+
+Estimated time savings:
+- **Small dataset** (10,000 labels): ~408 hours saved
+- **Large dataset** (100,000 labels): ~1,787 hours saved
+
+*Based on average manual transcription time of 74 seconds per label*
+
+### Limitations
+
+- **Handwritten text**: OCR accuracy drops significantly (29% CER vs 5% for printed). HTR integration planned for future releases.
+- **Image quality**: Low-resolution, blurred, or damaged labels reduce accuracy
+- **Non-Latin scripts**: Current models trained primarily on Latin-alphabet text
+- **Historical labels**: Faded ink and archaic fonts may require manual review
+- **Complex layouts**: Labels with unusual formatting or mixed orientations may need preprocessing
 
 ---
 
