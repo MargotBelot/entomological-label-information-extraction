@@ -14,6 +14,8 @@
 
 Extract and digitize text from museum specimen labels automatically. Perfect for museum digitization, research data preparation, and biodiversity informatics.
 
+> **Related Repository**: For advanced clustering and deduplication of extracted labels, see [ELIE-clustering](https://github.com/joel-tuberosa/ELIE-clustering)
+
 ---
 
 ## Table of Contents
@@ -477,6 +479,8 @@ Pipeline performance on held-out test data:
 - **OCR (Google Vision, printed labels)**: Median CER 0.0-5.0%, WER 0.0-22%
 - **Clustering**: 75-97% accuracy depending on dataset redundancy
 
+**For advanced clustering capabilities**, see the companion [ELIE-clustering](https://github.com/joel-tuberosa/ELIE-clustering) package, which provides enhanced algorithms for label deduplication and textual similarity analysis.
+
 ### Efficiency & Time Savings
 
 ELIE reduces manual transcription effort by **up to 87%** by:
@@ -535,3 +539,6 @@ MIT License - see [LICENSE](LICENSE) file
 - [Rotation Model Setup](docs/ROTATION_MODEL_SETUP.md) - Rotation model installation and troubleshooting
 - [Docker README](pipelines/README.md) - Docker deployment details
 - [HPC Quickstart](pipelines/HPC_QUICKSTART.md) - HPC/Apptainer deployment
+
+### Related Projects
+- [ELIE-clustering](https://github.com/joel-tuberosa/ELIE-clustering) - Advanced clustering package for label deduplication and similarity analysis
