@@ -257,29 +257,7 @@ python scripts/processing/vision.py -c credentials.json -d data/input -o data/ou
 
 ## Pipeline Workflow
 
-```mermaid
-flowchart TD
-    A[Input Images] --> B{Pipeline Type}
-    B -->|MLI| C[Detection<br/>Faster R-CNN]
-    B -->|SLI| D[Pre-cropped Labels]
-    C --> E[Cropped Labels]
-    E --> F[Classification]
-    D --> F
-    F --> G[Empty Filter]
-    G --> H[ID/Description<br/>Classification]
-    H --> I[Handwritten/Printed<br/>Classification]
-    I --> J[Rotation Correction]
-    J --> K[OCR<br/>Tesseract]
-    K --> L[Post-processing]
-    L --> M[Results JSON/CSV]
-    
-    classDef input fill:#e1f5fe
-    classDef process fill:#f3e5f5
-    classDef output fill:#e8f5e8
-    class A input
-    class C,D,F,G,H,I,J,K,L process
-    class E,M output
-```
+![Pipeline Workflow](docs/images/pipeline_flowchart.png)
 
 **Pipeline stages:**
 1. **Detection** (MLI only): Detect and crop labels from specimen photos
