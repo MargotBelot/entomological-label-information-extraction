@@ -456,10 +456,28 @@ def main():
             if df.empty:
                 df = pd.DataFrame(columns=['filename', 'class', 'score', 'xmin', 'ymin', 'xmax', 'ymax'])
         else:
-            # For directory processing, we'll use the original parallel processing
-            # but with our optimized predictor
-            processes = min(PROCESSES, batch_size) if batch_size < PROCESSES else PROCESSES
-            df = scrop.prediction_parallel(jpg_dir, predictor, processes)
+            # For CPU inference, use sequential processing to avoid multiprocessing overhead
+            # For GPU/MPS, parallel processing could be beneficial
+            if device == 'cpu':
+                print("Processing images sequentially (CPU mode)...")
+                # Collect image files
+                file_names = [p for p in sorted(jpg_dir.iterdir()) if scrop.is_image_file(p)]
+                print(f"Found {len(file_names)} images to process")
+                
+                # Process sequentially
+                results = []
+                for i, file_path in enumerate(file_names, 1):
+                    print(f"Processing {i}/{len(file_names)}: {file_path.name}", end='\r')
+                    result_df = predictor.class_prediction(file_path)
+                    if not result_df.empty:
+                        results.append(result_df)
+                
+                print()  # New line after progress
+                df = pd.concat(results, ignore_index=True) if results else pd.DataFrame()
+            else:
+                # For GPU/MPS, use parallel processing
+                processes = min(PROCESSES, batch_size) if batch_size < PROCESSES else PROCESSES
+                df = scrop.prediction_parallel(jpg_dir, predictor, processes)
         
         prediction_time = time.perf_counter() - prediction_start
         print(f" Prediction completed in {prediction_time:.2f}s")
