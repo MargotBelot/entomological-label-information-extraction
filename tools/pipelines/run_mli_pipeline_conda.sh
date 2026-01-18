@@ -24,7 +24,7 @@ echo ""
 
 # Activate conda environment
 source "$(conda info --base)/etc/profile.d/conda.sh"
-conda activate entomological-label
+conda activate ELIE
 
 # Set PYTHONPATH to include the project root
 export PYTHONPATH="$PROJECT_ROOT:$PYTHONPATH"
