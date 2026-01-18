@@ -356,14 +356,22 @@ def setup_device(device_arg: str) -> str:
             device = 'cuda'
             print(f" Using CUDA GPU: {torch.cuda.get_device_name()}")
         elif hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
-            device = 'mps'
-            print(" Using Apple Metal Performance Shaders (MPS)")
+            # MPS has compatibility issues with some PyTorch operations (e.g., _share_filename_)
+            # Fall back to CPU for reliable inference
+            device = 'cpu'
+            print(f" MPS available but using CPU for better compatibility")
+            print(f" Using CPU with {torch.get_num_threads()} threads")
         else:
             device = 'cpu'
             print(f" Using CPU with {torch.get_num_threads()} threads")
     else:
-        device = device_arg
-        print(f" Using specified device: {device}")
+        # If user explicitly requests MPS, warn them about potential issues
+        if device_arg == 'mps':
+            print(f"Warning: MPS has known compatibility issues. Using CPU instead.")
+            device = 'cpu'
+        else:
+            device = device_arg
+        print(f" Using device: {device}")
     
     return device
 
