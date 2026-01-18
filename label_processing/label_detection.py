@@ -424,7 +424,12 @@ def create_crops(
 
     total_crops = 0
     # iterate Path objects and skip hidden / '._*' files
-    for p in sorted(Path(dir_path).glob("*.jpg")):
+    # Get all image files (case-insensitive)
+    image_files = []
+    for pattern in ["*.jpg", "*.JPG", "*.jpeg", "*.JPEG", "*.png", "*.PNG"]:
+        image_files.extend(Path(dir_path).glob(pattern))
+    
+    for p in sorted(image_files):
         filepath = str(p)
         if not p.exists():
             print(f"File cannot be found: {filepath}")
