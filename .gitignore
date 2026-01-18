@@ -62,3 +62,8 @@ Pipfile.lock
 # Temporary pipeline outputs
 *.tmp
 *.temp
+# Pipeline data and results - NEVER PUSH
+data/
+results/
+output/
+*.output
