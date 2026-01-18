@@ -56,7 +56,7 @@ def find_empty_labels(
     crop_margin: float = 0.1,
 ) -> None:
     """
-    Find and move empty and non-empty labels to respective folders.
+    Find and copy empty and non-empty labels to respective folders (keeps originals in input).
 
     Args:
         input_folder (str): Path to the directory containing input images.
@@ -77,12 +77,12 @@ def find_empty_labels(
             try:
                 with Image.open(filename) as img:
                     if is_empty(img, crop_margin, threshold):
-                        shutil.move(
+                        shutil.copy(
                             filename,
                             os.path.join(empty_folder, os.path.basename(filename)),
                         )
                     else:
-                        shutil.move(
+                        shutil.copy(
                             filename,
                             os.path.join(not_empty_folder, os.path.basename(filename)),
                         )
