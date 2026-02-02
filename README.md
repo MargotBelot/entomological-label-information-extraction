@@ -20,32 +20,44 @@ Extract and digitize text from museum specimen labels automatically. Perfect for
 
 ## Table of Contents
 
-- [Complete Beginner? Start Here!](#complete-beginner-start-here)
-- [What It Does](#what-it-does)
-- [Quick Start](#quick-start)
-- [Advanced Usage](#advanced-usage)
-  - [Individual Processing Steps](#individual-processing-steps)
-  - [Docker (Optional)](#docker-optional)
-  - [Apptainer/Singularity (HPC)](#apptainersingularity-hpc)
-  - [Development Setup](#development-setup)
-  - [GPU Acceleration](#gpu-acceleration)
-  - [Custom OCR](#custom-ocr)
-- [Pipeline Workflow](#pipeline-workflow)
-- [Project Structure](#project-structure)
-- [Troubleshooting](#troubleshooting)
-- [Sample Data](#sample-data)
-- [Technical Details](#technical-details)
-  - [Models](#models)
-  - [Preprocessing](#preprocessing)
-  - [Resource Requirements](#resource-requirements)
-  - [Minimum Hardware Requirements](#minimum-hardware-requirements)
-  - [Performance Benchmarks](#performance-benchmarks)
-  - [Accuracy](#accuracy)
-  - [Efficiency & Time Savings](#efficiency--time-savings)
-  - [Limitations](#limitations)
-- [Citation](#citation)
-- [License](#license)
-- [Documentation](#documentation)
+- [Entomological Label Information Extraction](#entomological-label-information-extraction)
+  - [Table of Contents](#table-of-contents)
+  - [Complete Beginner? Start Here!](#complete-beginner-start-here)
+  - [What It Does](#what-it-does)
+    - [Two Pipeline Types](#two-pipeline-types)
+  - [Quick Start](#quick-start)
+    - [1. Install Prerequisites](#1-install-prerequisites)
+    - [2. Install ELIE](#2-install-elie)
+    - [3. Add Your Images](#3-add-your-images)
+    - [4. Run Pipeline](#4-run-pipeline)
+    - [5. View Results](#5-view-results)
+  - [Advanced Usage](#advanced-usage)
+    - [Individual Processing Steps](#individual-processing-steps)
+    - [Docker (Optional)](#docker-optional)
+    - [Apptainer/Singularity (HPC)](#apptainersingularity-hpc)
+    - [Development Setup](#development-setup)
+    - [GPU Acceleration](#gpu-acceleration)
+    - [Custom OCR](#custom-ocr)
+  - [Pipeline Workflow](#pipeline-workflow)
+  - [Project Structure](#project-structure)
+  - [Troubleshooting](#troubleshooting)
+    - [Common First-Time Issues](#common-first-time-issues)
+  - [Sample Data](#sample-data)
+  - [Technical Details](#technical-details)
+    - [Models](#models)
+    - [Preprocessing](#preprocessing)
+    - [Resource Requirements](#resource-requirements)
+    - [Minimum Hardware Requirements](#minimum-hardware-requirements)
+    - [Performance Benchmarks](#performance-benchmarks)
+    - [Accuracy](#accuracy)
+    - [Efficiency \& Time Savings](#efficiency--time-savings)
+    - [Limitations](#limitations)
+  - [Citation](#citation)
+  - [License](#license)
+  - [Documentation](#documentation)
+    - [Quick Links](#quick-links)
+    - [Additional Guides](#additional-guides)
+    - [Related Projects](#related-projects)
 
 ---
 
@@ -485,15 +497,15 @@ Estimated time savings:
 ## Citation
 
 ```bibtex
-@software{anonymous2025entomological,
-  title={Entomological Label Information Extraction},
-  authors={Margot Belot, Leonardo Preuss, Olha Svezhentseva, Magdalena Claessen},
-  year={2025},
-  doi={[Repository URL - anonymized for review]},
-  zenodo={Training datasets: https://doi.org/10.7479/khac-x956}
+@article{belot2026high,
+  author = {Belot, Margot and Tuberosa, J. and Preuss, Leonardo and Svezhentseva, Olha and Claessen, Magdalena and B{\"o}lling, C. and Schuster, F. and L{\'e}ger, T.},
+  title = {High-throughput information extraction of printed specimen labels from large-scale digitization of entomological collections using a semi-automated pipeline},
+  journal = {Methods in Ecology and Evolution},
+  year = {2026},
+  doi = {10.1111/2041-210x.70235},
+  url = {https://doi.org/10.1111/2041-210x.70235}
 }
 ```
-
 ---
 
 ## License
