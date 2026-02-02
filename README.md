@@ -205,6 +205,12 @@ python scripts/processing/rotation.py -i data/input -o data/output
 # OCR
 python scripts/processing/tesseract.py -d data/input -o data/output
 
+# OCR with CLAHE (for low-contrast labels)
+python scripts/processing/tesseract.py -d data/input -o data/output --clahe
+
+# OCR with illumination normalization (for uneven lighting)
+python scripts/processing/tesseract.py -d data/input -o data/output --normalize-illumination
+
 # Post-processing
 python scripts/postprocessing/process.py -j data/ocr_preprocessed.json -o data/output
 ```
@@ -412,7 +418,9 @@ python scripts/processing/detection.py --clear-cache -j data/MLI/input -o data/M
 Available on Zenodo: https://doi.org/10.7479/khac-x956
 
 **Model retraining:**
-See Jupyter notebooks in `training_notebooks/`
+See training notebooks in `training_notebooks/`
+- HPC-optimized training scripts with EfficientNetV2
+- Complete guide: `training_notebooks/README_HPC_TRAINING.md`
 
 ---
 
@@ -427,6 +435,8 @@ See Jupyter notebooks in `training_notebooks/`
 ### Preprocessing
 - Stage 1 (detection/classification/rotation): Geometric normalization only
 - Stage 2 (OCR): Grayscale, denoising, adaptive thresholding, deskewing
+  - Optional CLAHE for contrast enhancement (useful for faded/low-contrast labels)
+  - Optional illumination normalization (useful for uneven lighting)
 - Empty label detection: 10% border crop, dark pixel threshold < 1%
 
 ### Resource Requirements
@@ -491,6 +501,38 @@ Estimated time savings:
 - **Non-Latin scripts**: Current models trained primarily on Latin-alphabet text
 - **Historical labels**: Faded ink and archaic fonts may require manual review
 - **Complex layouts**: Labels with unusual formatting or mixed orientations may need preprocessing
+
+---
+
+## Roadmap & Planned Improvements
+
+Future enhancements planned for ELIE:
+
+### Model Improvements
+- [ ] **Retrain rotation model** with EfficientNetV2 architecture (3x faster, 70% smaller)
+- [ ] **Retrain classifiers** (SLI/HPC) with modern architectures
+- [ ] **Add "Mixed" label category** for labels containing both handwritten and printed text
+- [ ] Upgrade all models from ResNet50 to EfficientNetV2-B0/B1
+
+### New Features
+- [ ] **Named Entity Recognition (NER)** module for automatic extraction of:
+  - Taxonomy (genus, species, author)
+  - Geographic locations
+  - Collection dates
+  - Collector names
+- [ ] **Data enrichment** with LLM/API integration:
+  - Taxonomic validation and standardization
+  - Geographic coordinate lookup
+  - Automated data quality checks
+- [ ] **Darwin Core output format** for biodiversity data standards compliance
+- [ ] **Rebuilt web interface** with improved UX and visualization
+
+### Documentation & Training
+- [ ] HPC training guide for model retraining (see `training_notebooks/README_HPC_TRAINING.md`)
+- [ ] Best practices for custom dataset preparation
+- [ ] Model performance comparison tools
+
+**Contributions welcome!** See issues or contact maintainers for collaboration.
 
 ---
 
