@@ -167,6 +167,52 @@ class ImageProcessor:
         image_instance.image = image
         return image_instance
 
+    def apply_clahe(
+        self, clip_limit: float = 2.0, tile_grid_size: tuple[int, int] = (8, 8)
+    ) -> ImageProcessor:
+        """
+        Apply Contrast Limited Adaptive Histogram Equalization (CLAHE).
+
+        CLAHE improves contrast in images with uneven illumination or low contrast,
+        which is common in aged specimen labels or images with inconsistent lighting.
+
+        Args:
+            clip_limit (float, optional): Threshold for contrast limiting. Higher values
+                give more contrast. Defaults to 2.0.
+            tile_grid_size (tuple[int, int], optional): Size of grid for histogram equalization.
+                Defaults to (8, 8).
+
+        Returns:
+            ImageProcessor: An instance of the Image class with CLAHE applied.
+        """
+        clahe = cv2.createCLAHE(clipLimit=clip_limit, tileGridSize=tile_grid_size)
+        image = clahe.apply(self.image)
+        image_instance = self.copy_this()
+        image_instance.image = image
+        return image_instance
+
+    def normalize_illumination(self) -> ImageProcessor:
+        """
+        Normalize image illumination using morphological operations.
+
+        This method corrects uneven lighting by estimating and removing the background
+        illumination, useful for images with shadows or uneven flash lighting.
+
+        Returns:
+            ImageProcessor: An instance of the Image class with normalized illumination.
+        """
+        # Estimate background using morphological closing with large kernel
+        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (19, 19))
+        background = cv2.morphologyEx(self.image, cv2.MORPH_CLOSE, kernel)
+
+        # Subtract background and normalize to 0-255 range
+        image = cv2.subtract(background, self.image)
+        image = cv2.normalize(image, None, 0, 255, cv2.NORM_MINMAX)
+
+        image_instance = self.copy_this()
+        image_instance.image = image
+        return image_instance
+
     def thresholding(self, thresh_mode: Enum) -> ImageProcessor:
         """
         Perform thresholding on the image.
@@ -310,12 +356,25 @@ class ImageProcessor:
         image_instance.image = image
         return image_instance
 
-    def preprocessing(self, thresh_mode: Threshmode) -> ImageProcessor:
+    def preprocessing(
+        self,
+        thresh_mode: Threshmode,
+        use_clahe: bool = False,
+        normalize_illum: bool = False,
+        clahe_clip_limit: float = 2.0,
+        clahe_tile_grid_size: tuple[int, int] = (8, 8),
+    ) -> ImageProcessor:
         """
         Perform a series of preprocessing steps on the image.
 
         Args:
             thresh_mode (Threshmode): The thresholding mode to use (OTSU, ADAPTIVE_MEAN, or ADAPTIVE_GAUSSIAN).
+            use_clahe (bool, optional): Apply CLAHE for contrast enhancement. Useful for low-contrast
+                or faded labels. Defaults to False.
+            normalize_illum (bool, optional): Apply illumination normalization to correct uneven lighting.
+                Useful for images with shadows or hotspots. Defaults to False.
+            clahe_clip_limit (float, optional): CLAHE contrast limiting threshold. Defaults to 2.0.
+            clahe_tile_grid_size (tuple[int, int], optional): CLAHE grid size. Defaults to (8, 8).
 
         Returns:
             ImageProcessor: An instance of the Image class representing the preprocessed image.
@@ -331,12 +390,20 @@ class ImageProcessor:
 
         # Perform preprocessing
         image = self.get_grayscale()
+
+        # Optional: normalize illumination before other processing
+        if normalize_illum:
+            image = image.normalize_illumination()
+
+        # Optional: apply CLAHE before blurring for better contrast
+        if use_clahe:
+            image = image.apply_clahe(
+                clip_limit=clahe_clip_limit, tile_grid_size=clahe_tile_grid_size
+            )
+
         image = image.blur()
         image = image.thresholding(thresh_mode=thresh_mode)
         image = image.deskew(angle)
-        # Check if angle is None before deskewing
-        if angle is not None:
-            image = image.deskew(angle)
         return image
 
     # ---------------------Read QR-Code---------------------#

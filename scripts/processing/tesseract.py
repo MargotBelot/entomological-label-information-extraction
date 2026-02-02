@@ -39,7 +39,8 @@ def parse_arguments() -> argparse.Namespace:
         argparse.Namespace: Parsed command-line arguments.
     """
     usage = 'tesseract.py [-h] [-v] [-t <thresholding>] [-b <blocksize>] \
-            [-c <c_value>] -d <crop-dir> [-multi <multiprocessing>] -o <outdir> [-o <out-dir>]'
+            [-c <c_value>] [--clahe] [--normalize-illumination] [--clahe-clip-limit <float>] \
+            -d <crop-dir> [-multi <multiprocessing>] -o <outdir>'
     
     parser = argparse.ArgumentParser(
         description="Execute the text_recognition.py module.",
@@ -91,6 +92,32 @@ def parse_arguments() -> argparse.Namespace:
             type = int,
             default = None,
             help=('Optional argument: c_value parameter for adaptive thresholding.')
+            )
+    
+    parser.add_argument(
+            '--clahe',
+            action=argparse.BooleanOptionalAction,
+            default=False,
+            help=('Optional argument: Apply CLAHE for contrast enhancement. '
+                  'Useful for low-contrast or faded labels.')
+            )
+    
+    parser.add_argument(
+            '--normalize-illumination',
+            action=argparse.BooleanOptionalAction,
+            default=False,
+            help=('Optional argument: Apply illumination normalization. '
+                  'Useful for images with shadows or uneven lighting.')
+            )
+    
+    parser.add_argument(
+            '--clahe-clip-limit',
+            metavar='',
+            action="store",
+            type=float,
+            default=2.0,
+            help=('Optional argument: CLAHE clip limit (default: 2.0). '
+                  'Higher values give more contrast.')
             )
     
     parser.add_argument(
@@ -166,7 +193,12 @@ def ocr_on_file(file_path: str, args: argparse.Namespace, thresh_mode: Threshmod
             transcript = {"ID": image.filename, "text": decoded_qr}
             qr_detected = True
         else:
-            image = image.preprocessing(thresh_mode)
+            image = image.preprocessing(
+                thresh_mode,
+                use_clahe=args.clahe,
+                normalize_illum=args.normalize_illumination,
+                clahe_clip_limit=args.clahe_clip_limit,
+            )
             image.save_image(new_dir)
             tesseract.image = image
             transcript = tesseract.image_to_string()
