@@ -79,6 +79,10 @@ OCR Dependencies
     Apache License 2.0
     https://cloud.google.com/terms/
 
+**Google GenAI (Gemini)**
+    Apache License 2.0
+    https://github.com/googleapis/python-genai/blob/main/LICENSE
+
 Web and GUI Dependencies
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -141,7 +145,7 @@ Commercial Use
 
 This software is free for commercial use under the MIT license terms. However, please note:
 
-- Google Cloud Vision API usage is subject to Google's pricing and terms
+- Google Cloud Vision and Gemini API usage is subject to Google's pricing and terms
 - Some training datasets may have restrictions on commercial use
 - Users are responsible for compliance with all applicable laws and regulations
 
@@ -185,7 +189,7 @@ For licensing questions or commercial inquiries, please contact:
 
 Margot Belot
 Email: [contact information]
-GitHub: https://github.com/your-username/entomological-label-information-extraction
+GitHub: https://github.com/MargotBelot/entomological-label-information-extraction
 
 Legal Notice
 ------------

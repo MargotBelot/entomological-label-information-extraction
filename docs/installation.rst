@@ -14,7 +14,8 @@ System Requirements
 - **Memory**: 8GB RAM minimum, 16GB recommended
 - **Storage**: 5GB free space minimum
 - **Conda**: Required for Python environment management
-- **Tesseract OCR**: Required for text extraction
+- **Gemini API Key**: Required for the Gemini pipeline (free from `Google AI Studio <https://aistudio.google.com/apikey>`_)
+- **Tesseract OCR**: Required only for the traditional pipelines (not needed for Gemini)
 - **Docker**: Optional (for containerized execution or HPC)
 
 Software Dependencies
@@ -35,10 +36,20 @@ Conda is **required** for managing the Python environment.
    # Verify installation
    conda --version
 
+Gemini API Key
+^^^^^^^^^^^^^^
+
+A Gemini API key is **required** for the Gemini pipeline (recommended). It is free to obtain.
+
+.. code-block:: bash
+
+   # Get your key from https://aistudio.google.com/apikey
+   export GEMINI_API_KEY=<your-api-key>
+
 Tesseract OCR Installation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Tesseract is **required** for optical character recognition.
+Tesseract is **required only for the traditional pipelines** (not needed for the Gemini pipeline).
 
 **macOS**
 
@@ -105,14 +116,14 @@ Option 1: Conda Environment (Recommended)
 .. code-block:: bash
 
    # Clone the repository
-   git clone https://github.com/your-repo/entomological-label-information-extraction.git
+   git clone https://github.com/MargotBelot/entomological-label-information-extraction.git
    cd entomological-label-information-extraction
 
    # Create conda environment
    conda env create -f environment.yml
 
    # Activate environment
-   conda activate entomological-label
+   conda activate ELIE
 
    # Install package in development mode
    pip install -e .
@@ -123,7 +134,7 @@ Option 2: pip Installation
 .. code-block:: bash
 
    # Clone the repository
-   git clone https://github.com/your-repo/entomological-label-information-extraction.git
+   git clone https://github.com/MargotBelot/entomological-label-information-extraction.git
    cd entomological-label-information-extraction
 
    # Create virtual environment
@@ -146,12 +157,12 @@ For developers who want to contribute:
 .. code-block:: bash
 
    # Clone the repository
-   git clone https://github.com/your-repo/entomological-label-information-extraction.git
+   git clone https://github.com/MargotBelot/entomological-label-information-extraction.git
    cd entomological-label-information-extraction
 
    # Create conda environment
    conda env create -f environment.yml
-   conda activate entomological-label
+   conda activate ELIE
 
    # Install with development dependencies
    pip install -e .[dev]
@@ -187,7 +198,7 @@ Test Installation
 .. code-block:: bash
 
    # Verify conda environment
-   conda activate entomological-label
+   conda activate ELIE
    
    # Check that the package is installed
    python -c "import label_processing; print('✅ Installation successful!')"
@@ -234,8 +245,8 @@ Common Issues
 **Conda not found**
    Install Miniconda from https://conda.io/miniconda.html and restart your terminal.
 
-**Tesseract not found**
-   Install Tesseract: ``brew install tesseract`` (macOS) or ``sudo apt install tesseract-ocr`` (Linux).
+**Tesseract not found** (traditional pipelines only)
+   Install Tesseract: ``brew install tesseract`` (macOS) or ``sudo apt install tesseract-ocr`` (Linux). Not needed for the Gemini pipeline.
 
 **Docker not found** (optional)
    Only needed for containerized execution. Install from https://docker.com if needed.
@@ -247,7 +258,7 @@ Common Issues
    Try updating conda: ``conda update conda`` and retry.
 
 **Import errors**
-   Make sure you've activated the environment: ``conda activate entomological-label``.
+   Make sure you've activated the environment: ``conda activate ELIE``.
 
 **Memory errors**
    Ensure you have sufficient RAM available. Close other applications if needed.

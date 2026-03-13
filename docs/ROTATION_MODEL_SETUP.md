@@ -90,7 +90,7 @@ Error: Could not load model with either method.
 
 1. **Check TensorFlow version compatibility:**
    ```bash
-   conda activate entomological-label
+   conda activate ELIE
    python -c "import tensorflow as tf; print(tf.__version__)"
    # Should be 2.15.0 or compatible
    ```

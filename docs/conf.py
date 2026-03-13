@@ -18,8 +18,8 @@ sys.path.insert(0, os.path.abspath('../scripts'))
 project = 'Entomological Label Information Extraction'
 copyright = '2025, Margot Belot'
 author = 'Margot Belot'
-version = '1.0.0'
-release = '1.0.0'
+version = '2.0.0'
+release = '2.0.0'
 
 # -- General configuration ---------------------------------------------------
 
@@ -101,7 +101,7 @@ html_theme_options = {
 # Project information displayed in the sidebar
 html_context = {
     "display_github": True,
-    "github_user": "your-username",
+    "github_user": "MargotBelot",
     "github_repo": "entomological-label-information-extraction",
     "github_version": "main",
     "conf_py_path": "/docs/",
@@ -217,5 +217,8 @@ autodoc_mock_imports = [
     'jiwer',
     'cer',
     'deskew',
-    'pyopenssl'
+    'pyopenssl',
+    'google.genai',
+    'streamlit',
+    'psutil'
 ]

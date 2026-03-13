@@ -6,23 +6,36 @@ This comprehensive guide covers all aspects of using the Entomological Label Inf
 System Overview
 ---------------
 
-The system is designed to extract and digitize text from museum specimen labels using AI and OCR technologies. It supports two main processing pipelines:
+The system is designed to extract and digitize text from museum specimen labels using AI and OCR technologies. It supports three processing pipelines:
 
-- **Multi-Label Images (MLI)**: Full specimen photos with multiple labels
-- **Single-Label Images (SLI)**: Pre-cropped individual label images
+- **Gemini Pipeline** *(recommended)*: Cloud-based detection, classification, OCR (printed + handwritten), entity recognition, and Darwin Core export via the Google Gemini API
+- **Multi-Label Images (MLI)**: Full specimen photos processed with local models (Detectron2, TensorFlow, Tesseract)
+- **Single-Label Images (SLI)**: Pre-cropped individual label images processed with local models
 
 Architecture
 ~~~~~~~~~~~~
 
+**Gemini Pipeline:**
+
 .. code-block:: text
 
-   Input Images → Detection → Classification → OCR → Post-processing → Structured Output
+   Input Images → Gemini Detection + Classification + Rotation → OCR/HTR → Post-processing → Entity Recognition + GBIF/OSM → Darwin Core Export
+
+**Traditional Pipelines (MLI / SLI):**
+
+.. code-block:: text
+
+   Input Images → Detection (Faster R-CNN) → Classification (TensorFlow) → OCR (Tesseract/Google Vision) → Post-processing → Structured Output
 
 Core Components:
-- Label detection using Faster R-CNN
-- Classification models for label types
-- OCR using Tesseract and Google Vision API
+
+- **Gemini API**: Cloud-based detection, classification, OCR, HTR, and entity extraction (recommended)
+- Label detection using Faster R-CNN (traditional)
+- Classification models for label types (traditional)
+- OCR using Tesseract and Google Vision API (traditional)
+- Entity recognition with GBIF validation and OSM geocoding
 - Post-processing for text cleaning and structuring
+- Darwin Core / OpenDS export
 
 Preprocessing and Thresholds
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -94,27 +107,51 @@ Starting the Interface
 
 The **Streamlit web interface** (recommended) provides:
 
+- **Pipeline Selection**: Choose between Gemini (recommended), MLI, or SLI
 - **Interactive Web UI**: Modern browser-based interface
 - **Real-time Progress**: Live progress tracking with job duration display
 - **Processing Dashboard**: System metrics and performance monitoring
 - **Results Browser**: Interactive file preview and analysis
-- **Docker Management**: Automatic Docker status checking and startup
+- **OCR Correction**: Edit transcribed text directly in the browser
+- **Entity Viewer**: See extracted scientific names, collectors, dates, localities
+- **Re-run Entity Recognition**: After correcting OCR text, re-extract entities with one click
+- **Darwin Core Export**: Download standardised Darwin Core records (JSON/CSV)
 
 Interface Workflow
 ~~~~~~~~~~~~~~~~~~
 
 1. **Select Input Directory**: Browse and choose folder containing your images
-2. **Choose Pipeline Type**: MLI for specimen photos, SLI for cropped labels
-3. **Configure Settings**: Set batch size and processing options
+2. **Choose Pipeline Type**: Gemini (recommended), MLI for specimen photos, SLI for cropped labels
+3. **Configure Settings**: Set processing options (OCR engine, entity recognition, exports)
 4. **Start Processing**: Click "Start Processing" and monitor real-time progress
 5. **View Results**: Browse generated files, charts, and structured data
-6. **Track Performance**: See total job duration and processing metrics
+6. **Correct OCR** *(optional)*: Edit transcribed text in the label explorer
+7. **Re-run Entity Recognition** *(optional)*: Extract entities again after corrections
+8. **Export**: Download all outputs (JSON, CSV, Darwin Core)
 
 Command Line Usage
 ------------------
 
-Basic Commands
-~~~~~~~~~~~~~~
+Gemini Pipeline (Recommended)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: bash
+
+   # Set your API key
+   export GEMINI_API_KEY=<your-api-key>
+
+   # Run the full Gemini pipeline
+   ./tools/pipelines/run_gemini_pipeline_conda.sh
+
+   # With custom options
+   INPUT_DIR=data/MLI/input OUTPUT_DIR=data/MLI/output \
+   ENTITY_RECOGNITION=true EXPORT_DWC=true EXPORT_CSV=true \
+   ./tools/pipelines/run_gemini_pipeline_conda.sh
+
+The Gemini pipeline handles detection, classification, OCR (printed and handwritten), post-processing, entity recognition, GBIF validation, OSM geocoding, and Darwin Core export in a single run.
+
+Traditional Pipeline Commands
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 **Multi-Label Processing:**
 
@@ -211,7 +248,20 @@ Understanding Results
 Output Structure
 ~~~~~~~~~~~~~~~~
 
-**Multi-Label Results:**
+**Gemini Pipeline Results:**
+
+.. code-block:: text
+
+   data/MLI/output/
+   ├── entity_master.json             # All labels with entities, GBIF, OSM
+   ├── consolidated_results.json      # Labels with OCR text and metadata
+   ├── quality_report.json            # Extraction quality scores per label
+   ├── darwin_core.json               # Darwin Core formatted records
+   ├── darwin_core.csv                # Same in CSV format
+   ├── validated_results.json         # After manual OCR corrections (Streamlit)
+   └── input_cropped/                 # Cropped label images
+
+**Traditional Multi-Label Results:**
 
 .. code-block:: text
 
@@ -221,7 +271,7 @@ Output Structure
    ├── detection_stats.json           # Processing statistics
    └── consolidated_results.json      # Complete detection report
 
-**Single-Label Results:**
+**Traditional Single-Label Results:**
 
 .. code-block:: text
 
@@ -243,6 +293,19 @@ Output Structure
 Key Output Files
 ~~~~~~~~~~~~~~~~
 
+**entity_master.json** *(Gemini pipeline)*
+   Complete results with extracted entities per label including:
+   - Scientific names validated against GBIF
+   - Collector names and collection dates
+   - Localities geocoded with OpenStreetMap
+   - Confidence scores and quality metrics
+
+**darwin_core.json / darwin_core.csv** *(Gemini pipeline)*
+   Standardised Darwin Core records suitable for:
+   - Direct import into biodiversity databases
+   - GBIF data publishing
+   - Research data sharing
+
 **consolidated_results.json**
    Complete processing results including:
    - Original image metadata
@@ -251,14 +314,13 @@ Key Output Files
    - Confidence scores
    - Processing timestamps
 
-**corrected_transcripts.json**
+**corrected_transcripts.json** *(traditional pipelines)*
    Post-processed text with:
    - Spelling corrections
    - Format standardization
-   - Entity extraction
    - Confidence ratings
 
-**plausible_transcripts.json**
+**plausible_transcripts.json** *(traditional pipelines)*
    High-quality extractions suitable for:
    - Automated database entry
    - Research analysis
@@ -433,6 +495,19 @@ Data Management
 - Archive original images separately
 - Document metadata and provenance
 - Plan for long-term data storage
+
+Entity Recognition (Gemini Pipeline)
+-------------------------------------
+
+The Gemini pipeline includes an entity recognition step that extracts structured data from OCR text:
+
+- **Scientific names**: Genus, species, subspecies — validated against the GBIF Backbone Taxonomy
+- **Collectors**: Person names associated with specimens
+- **Collection dates**: Parsed and normalised dates
+- **Localities**: Place names geocoded with OpenStreetMap (Nominatim)
+- **Other fields**: Altitude, habitat, collection methods, identifiers
+
+Results are exported as Darwin Core records (``darwin_core.json`` and ``darwin_core.csv``) for direct use in biodiversity databases.
 
 Advanced Features
 -----------------

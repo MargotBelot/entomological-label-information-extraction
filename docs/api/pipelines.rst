@@ -17,6 +17,19 @@ This package contains a unified Docker configuration and requirements for differ
 Pipeline Configurations
 ------------------------
 
+Gemini Pipeline (Recommended)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The Gemini pipeline uses the Google Gemini API for all vision tasks. It is the recommended pipeline for most users and handles both printed and handwritten labels:
+
+1. **Detection + Classification**: Gemini detects all labels in a specimen image, classifies them (printed, handwritten, mixed, identifier, empty), and determines rotation angle
+2. **OCR / HTR**: Gemini reads text from each label (works for printed AND handwritten)
+3. **Post-processing**: Text cleaning and consolidation
+4. **Entity Recognition**: Gemini extracts structured entities (scientific names, collectors, dates, localities)
+5. **GBIF + OSM Enrichment**: Validates names against GBIF Backbone Taxonomy and geocodes localities with OpenStreetMap
+6. **Darwin Core Export**: Outputs standardised Darwin Core records (JSON and CSV)
+7. **Crop & Cleanup**: Optional label cropping and intermediate file removal
+
 Multi-Label Pipeline
 ~~~~~~~~~~~~~~~~~~~~
 
@@ -42,12 +55,13 @@ Requirements Structure
 
 The ``requirements/`` directory contains specialized dependency files:
 
-* ``classifier.txt`` - Dependencies for classification models
-* ``empty_labels.txt`` - Dependencies for empty label detection
+* ``gemini.txt`` - Dependencies for the Gemini pipeline (lightweight: google-genai, opencv, pandas, requests, numpy, nltk)
+* ``classifier.txt`` - Dependencies for classification models (traditional)
+* ``empty_labels.txt`` - Dependencies for empty label detection (traditional)
 * ``postprocess.txt`` - Dependencies for text post-processing
-* ``rotation.txt`` - Dependencies for rotation correction
-* ``segmentation.txt`` - Dependencies for label segmentation
-* ``tesseract.txt`` - Dependencies for Tesseract OCR
+* ``rotation.txt`` - Dependencies for rotation correction (traditional)
+* ``segmentation.txt`` - Dependencies for label segmentation (traditional)
+* ``tesseract.txt`` - Dependencies for Tesseract OCR (traditional)
 
 Docker Usage
 ------------
@@ -56,15 +70,19 @@ To run the pipelines:
 
 .. code-block:: bash
 
-   # Multi-label processing (MLI)
+   # Gemini pipeline (recommended — lightweight, API-based)
+   cd pipelines
+   GEMINI_API_KEY=<your-key> docker-compose --profile gemini up
+
+   # Multi-label processing (MLI, traditional)
    cd pipelines
    docker-compose --profile mli up
 
-   # Single-label processing (SLI)
+   # Single-label processing (SLI, traditional)
    cd pipelines
    docker-compose --profile sli up
    
-   # Run individual services
+   # Run individual services (traditional)
    cd pipelines
    docker-compose up segmentation  # Detection only
    docker-compose up rotation      # Rotation correction only

@@ -85,20 +85,26 @@ Key Features
 
 ✨ **What makes this special:**
 
+- **Gemini Pipeline** *(recommended)*: Cloud-based detection, classification, OCR, and handwritten text via Google Gemini API
 - **Smart Detection**: Automatically finds labels in specimen photos
 - **AI Classification**: Distinguishes handwritten, printed, and empty labels
-- **Dual OCR Support**: Choose between Tesseract (free) or Google Vision (accurate)
-- **Easy to Use**: GUI interface + command line + Docker options
+- **Triple OCR Support**: Gemini API (recommended), Tesseract (free/offline), or Google Vision
+- **Entity Recognition**: Extracts structured entities (species, collectors, dates, localities) with GBIF validation and OSM geocoding
+- **Darwin Core Export**: Outputs standardised Darwin Core records (JSON and CSV)
+- **Easy to Use**: Streamlit web interface + command line + Docker options
 - **Museum Ready**: Designed specifically for scientific specimens
 - **Open Source**: MIT license, fully extensible
 
 Supported Workflows
 -------------------
 
-**Option 1: Multi-Label Images (MLI)** 📷
-   Full specimen photos → Detect labels → Crop individual labels
+**Option 1: Gemini Pipeline (Recommended)** 🚀
+   Specimen photos or pre-cropped labels → Gemini detection + classification + OCR/HTR → Entity recognition → GBIF/OSM enrichment → Darwin Core export
 
-**Option 2: Single-Label Images (SLI)** 🏷️
+**Option 2: Multi-Label Images (MLI)** 📷
+   Full specimen photos → Detect labels (Detectron2) → Crop → Classify → Tesseract OCR → Structured output
+
+**Option 3: Single-Label Images (SLI)** 🏷️
    Pre-cropped labels → Classify → OCR → Clean text → Structured output
 
 Performance Stats

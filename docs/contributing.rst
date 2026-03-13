@@ -27,7 +27,7 @@ Development Setup
 
    .. code-block:: bash
 
-      git clone https://github.com/your-username/entomological-label-information-extraction.git
+      git clone https://github.com/<your-username>/entomological-label-information-extraction.git
       cd entomological-label-information-extraction
 
 2. **Set up development environment**
@@ -36,7 +36,7 @@ Development Setup
 
       # Create conda environment
       conda env create -f environment.yml
-      conda activate entomological-label
+      conda activate ELIE
 
       # Install in development mode
       pip install -e .[dev]

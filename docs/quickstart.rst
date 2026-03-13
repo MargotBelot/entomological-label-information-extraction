@@ -4,42 +4,51 @@ Quick Start Guide
 🎆 **Get running in 5 minutes!** Perfect for first-time users who want to test the system quickly.
 
 .. tip::
-   📋 **Prerequisites**: Make sure you have `Docker <https://docker.com>`_ and `Git <https://git-scm.com/>`_ installed first!
+   📋 **Prerequisites**: Make sure you have `Git <https://git-scm.com/>`_ and `Conda <https://conda.io/miniconda.html>`_ installed first!
 
-🚀 Option 1: Easy GUI Setup
----------------------------
+🚀 Option 1: Gemini Pipeline (Recommended)
+-----------------------------------------
 
-**The simplest way to get started:**
+**The simplest and most powerful way to get started — handles printed AND handwritten labels:**
 
 .. code-block:: bash
 
    # 1. Get the code
-   git clone https://github.com/your-repo/entomological-label-information-extraction.git
+   git clone https://github.com/MargotBelot/entomological-label-information-extraction.git
    cd entomological-label-information-extraction
 
    # 2. One-command setup
    conda env create -f environment.yml
-   conda activate entomological-label
+   conda activate ELIE
    pip install -e .
 
-   # 3. Launch the interface
+   # 3. Set up your Gemini API key (free from https://aistudio.google.com/apikey)
+   export GEMINI_API_KEY=<your-api-key>
+
+   # 4. Add your images
+   cp /path/to/your/photos/*.jpg data/MLI/input/
+
+   # 5. Launch the interface
    python launch.py
 
-**That's it!** 🎉 The modern Streamlit web interface will open with:
-- Real-time progress tracking and job duration display
-- Live processing dashboard with system metrics
-- Interactive results browser
-- Automatic Docker management
+**That's it!** 🎉 The Streamlit web interface will open where you can:
 
-🔧 Option 2: Alternative Interfaces
-----------------------------------
+- Select the Gemini pipeline and configure options
+- Monitor real-time processing progress
+- Browse results and correct OCR text directly
+- View extracted entities (species, collectors, dates, localities)
+- Re-run entity recognition after corrections
+- Export Darwin Core records (JSON/CSV)
 
-**Alternative ways to launch the interface:**
+🔧 Option 2: Traditional Pipelines (Offline)
+-------------------------------------------
+
+**For offline use with local models (Detectron2 + TensorFlow + Tesseract). Printed labels only.**
 
 .. code-block:: bash
 
    # 1. Get the code
-   git clone https://github.com/your-repo/entomological-label-information-extraction.git
+   git clone https://github.com/MargotBelot/entomological-label-information-extraction.git
    cd entomological-label-information-extraction
 
    # 2. Setup environment
@@ -47,26 +56,45 @@ Quick Start Guide
    conda activate ELIE
    pip install -e .
 
-   # 3. Choose your interface:
-   # Streamlit directly
-   streamlit run interfaces/launch_streamlit.py
+   # 3. Install Tesseract OCR (required for traditional pipelines)
+   # macOS: brew install tesseract
+   # Linux: sudo apt install tesseract-ocr
+
+   # 4. Choose your interface:
+   # Streamlit (recommended)
+   python launch.py
    
    # OR Desktop GUI (Tkinter-based)
    python interfaces/launch_gui.py
    
    # OR Manual pipeline scripts
-   ./tools/pipelines/run_mli_pipeline_conda.sh  # Multi-label
-   ./tools/pipelines/run_sli_pipeline_conda.sh  # Single-label
+   ./tools/pipelines/run_gemini_pipeline_conda.sh  # Gemini (recommended)
+   ./tools/pipelines/run_mli_pipeline_conda.sh     # Multi-label (traditional)
+   ./tools/pipelines/run_sli_pipeline_conda.sh     # Single-label (traditional)
 
 🎯 What Happens Next?
 ----------------------
 
 After processing, you'll find your results in the output folders:
 
+**Gemini Pipeline Output:**
+
 .. code-block:: text
 
    data/MLI/output/
-   ├── consolidated_results.json    # 📊 Complete summary 
+   ├── entity_master.json          # 📊 All labels with entities, GBIF, OSM
+   ├── consolidated_results.json   # 📝 Labels with OCR text and metadata
+   ├── quality_report.json         # ✅ Extraction quality scores
+   ├── darwin_core.json            # 🧬 Darwin Core formatted records
+   ├── darwin_core.csv             # 📄 Same in CSV format
+   └── input_cropped/              # 🖼️ Cropped label images
+
+**Traditional Pipeline Output:**
+
+.. code-block:: text
+
+   data/MLI/output/
+   ├── consolidated_results.json    # 📊 Complete summary
    ├── input_predictions.csv       # 🗺 Label locations
    └── input_cropped/              # 🖼️ Cropped label images
 
@@ -91,7 +119,7 @@ Open ``consolidated_results.json`` to see all your extracted text and confidence
 - **Weird results?** → Check :doc:`troubleshooting`
 - **Ready for production?** → Read the full :doc:`user_guide`
 - **Want to contribute?** → See :doc:`contributing`
-- **Found a bug?** → Report it on `GitHub Issues <https://github.com/your-repo/entomological-label-information-extraction/issues>`_
+- **Found a bug?** → Report it on `GitHub Issues <https://github.com/MargotBelot/entomological-label-information-extraction/issues>`_
 
 Understanding Pipeline Types
 ----------------------------
@@ -149,23 +177,37 @@ Streamlit Interface (Recommended)
    streamlit run interfaces/launch_streamlit.py
 
 The Streamlit interface provides:
-- Interactive web-based UI
+
+- Interactive web-based UI with pipeline selection (Gemini, MLI, SLI)
 - Real-time progress tracking with job duration display
 - Live processing dashboard with system metrics
 - Results browser with file preview
-- Automatic Docker management
+- OCR text correction and entity recognition re-run
+- Darwin Core export
 
 Command Line Method
 ~~~~~~~~~~~~~~~~~~~
 
-**Multi-Label Processing:**
+**Gemini Pipeline (Recommended):**
+
+.. code-block:: bash
+
+   # Full Gemini pipeline — detection, classification, OCR, entities
+   ./tools/pipelines/run_gemini_pipeline_conda.sh
+
+   # With custom options
+   INPUT_DIR=data/MLI/input OUTPUT_DIR=data/MLI/output \
+   ENTITY_RECOGNITION=true EXPORT_DWC=true EXPORT_CSV=true \
+   ./tools/pipelines/run_gemini_pipeline_conda.sh
+
+**Traditional Multi-Label Processing:**
 
 .. code-block:: bash
 
    # Run detection on multi-label images
    python scripts/processing/detection.py -j data/MLI/input -o data/MLI/output
 
-**Single-Label Processing:**
+**Traditional Single-Label Processing:**
 
 .. code-block:: bash
 
@@ -179,22 +221,18 @@ Command Line Method
    python scripts/processing/tesseract.py -d data/SLI/output/printed/rotated -o data/SLI/output
    python scripts/processing/vision.py -c credentials.json -d data/SLI/output/printed/rotated -o data/SLI/output
 
-**Individual Components:**
+Pipeline Scripts
+~~~~~~~~~~~~~~~~
 
 .. code-block:: bash
 
-   # Just classification
-   python scripts/processing/classifiers.py -j data/SLI/input -o data/SLI/output
+   # Gemini pipeline (recommended)
+   ./tools/pipelines/run_gemini_pipeline_conda.sh
 
-Manual Pipeline Scripts
-~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. code-block:: bash
-
-   # Multi-label pipeline (conda-based)
+   # Multi-label pipeline (traditional, conda-based)
    ./tools/pipelines/run_mli_pipeline_conda.sh
 
-   # Single-label pipeline (conda-based)
+   # Single-label pipeline (traditional, conda-based)
    ./tools/pipelines/run_sli_pipeline_conda.sh
 
 Understanding Results
@@ -329,6 +367,6 @@ Result Validation
 Performance Optimization
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-- Use GPU acceleration when available
+- Use GPU acceleration when available (traditional pipelines)
 - Adjust batch sizes based on available memory
-- Consider using Google Vision API for better OCR accuracy
+- Consider the Gemini pipeline for best accuracy on both printed and handwritten labels

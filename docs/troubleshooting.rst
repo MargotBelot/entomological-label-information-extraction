@@ -4,7 +4,7 @@ Troubleshooting
 🚑 **Quick Fixes for Common Issues**
 
 .. tip::
-   💬 **Still stuck?** Open a `GitHub Issue <https://github.com/your-repo/entomological-label-information-extraction/issues>`_ with your error message!
+   💬 **Still stuck?** Open a `GitHub Issue <https://github.com/MargotBelot/entomological-label-information-extraction/issues>`_ with your error message!
 
 🔧 Installation Issues
 -----------------------
@@ -18,6 +18,35 @@ Troubleshooting
    - 🍎 **macOS/Windows**: Download Docker Desktop from https://docker.com and start it
    - 🐧 **Linux**: ``sudo apt install docker.io && sudo systemctl start docker``
    - 🔒 **Linux permissions**: ``sudo usermod -aG docker $USER`` then log out/in
+
+.. dropdown:: 🔑 "GEMINI_API_KEY not set" or "Missing API key"
+
+   **Problem**: The Gemini pipeline requires an API key
+   
+   **Quick Fix**:
+   
+   .. code-block:: bash
+      
+      # Get a free key from https://aistudio.google.com/apikey
+      export GEMINI_API_KEY=<your-api-key>
+      
+      # Or add to your shell profile for persistence:
+      echo 'export GEMINI_API_KEY=<your-api-key>' >> ~/.bashrc
+      source ~/.bashrc
+
+.. dropdown:: 📦 "ModuleNotFoundError: No module named 'google.genai'"
+
+   **Problem**: The ``google-genai`` package is not installed
+   
+   **Quick Fix**:
+   
+   .. code-block:: bash
+      
+      conda activate ELIE
+      pip install google-genai>=1.0.0
+      
+      # Or reinstall all dependencies:
+      pip install -e .
 
 .. dropdown:: 🐍 "Conda environment creation failed"
 
@@ -40,7 +69,7 @@ Troubleshooting
    
    **Quick Fix**:
    
-   - Make sure you activated the environment: ``conda activate entomological-label``
+   - Make sure you activated the environment: ``conda activate ELIE``
    - Try ``python3`` instead of ``python``
    - On Windows, use the Anaconda Prompt
 
@@ -97,7 +126,7 @@ python scripts/processing/analysis.py -i path/to/images_dir -o test_output/
 📞 Still Need Help?
 ----------------------
 
-1. 💬 **GitHub Issues**: `Report bugs or ask questions <https://github.com/your-repo/entomological-label-information-extraction/issues>`_
+1. 💬 **GitHub Issues**: `Report bugs or ask questions <https://github.com/MargotBelot/entomological-label-information-extraction/issues>`_
 2. 📖 **Documentation**: Check the full :doc:`user_guide` for detailed instructions
 3. 🤝 **Contributing**: See :doc:`contributing` if you want to help improve the project
 4. 🔧 **API Reference**: Check :doc:`api/modules` for technical details
@@ -149,7 +178,7 @@ Specific Error Messages
 **ImportError: No module named 'cv2'**
 
 Solution:
-- Activate the conda environment: ``conda activate entomological-label``
+- Activate the conda environment: ``conda activate ELIE``
 - Reinstall OpenCV: ``pip install opencv-python``
 
 **FileNotFoundError: [Errno 2] No such file or directory**

@@ -5,20 +5,41 @@ All notable changes to the Entomological Label Information Extraction project wi
 
 The format is based on `Keep a Changelog <https://keepachangelog.com/>`_, and this project adheres to `Semantic Versioning <https://semver.org/>`_.
 
-[Unreleased]
-------------
+[2.0.0] - 2025-03-13
+---------------------
 
 Added
 ~~~~~
-- Comprehensive Sphinx documentation
-- Read the Docs integration
-- API documentation with autodoc
-- User guides and tutorials
+- **Gemini Pipeline**: New recommended pipeline using Google Gemini API for detection, classification, OCR, and handwritten text recognition (HTR)
+- **Entity Recognition**: Automated extraction of structured entities (scientific names, collectors, dates, localities) from OCR text
+- **GBIF Validation**: Scientific name validation against the GBIF Backbone Taxonomy
+- **OSM Geocoding**: Locality geocoding via OpenStreetMap Nominatim
+- **Darwin Core Export**: Standardised Darwin Core records in JSON and CSV formats
+- **Streamlit OCR Correction**: Edit transcribed text directly in the browser and re-run entity recognition
+- **Streamlit Entity Viewer**: Browse extracted entities per label with GBIF/OSM enrichment
+- **Docker Gemini Profile**: Lightweight ``docker-compose --profile gemini`` for cloud-based processing
+- **Gemini Requirements**: Minimal ``pipelines/requirements/gemini.txt`` for the Gemini Docker stage
+- **Gemini Pipeline Script**: ``tools/pipelines/run_gemini_pipeline_conda.sh`` for command-line execution
+- New CLI scripts: ``scripts/processing/gemini_classify.py``, ``scripts/processing/gemini_ocr.py``, ``scripts/processing/entity_recognition.py``
+- New modules: ``label_processing/gemini_processor.py``, ``label_processing/entity_recognition.py``
+- Unit tests for ``gemini_processor.py`` and ``entity_recognition.py``
+- Comprehensive Sphinx documentation with Read the Docs integration
 
 Changed
 ~~~~~~~
-- Improved documentation structure
-- Enhanced configuration options
+- Conda environment renamed from ``entomological-label`` to ``ELIE``
+- Removed all hardcoded API keys from scripts
+- Warning suppressions centralised in ``label_processing/__init__.py``
+- Improved Streamlit interface with pipeline selection, progress tracking, and export features
+- Updated documentation structure for v2.0
+- Version bumped to 2.0.0 in ``pyproject.toml`` and Sphinx ``conf.py``
+
+Fixed
+~~~~~
+- Fixed ``check_text`` → ``check_nuri_format`` call in ``ocr_vision.py``
+- Fixed broken imports in test modules
+- Fixed redundant exception handling in ``utils.py``
+- Updated stale docstrings in ``text_recognition.py``
 
 [1.0.0] - 2024-01-01
 ---------------------
@@ -99,29 +120,13 @@ Future Releases
 Planned Features
 ~~~~~~~~~~~~~~~~
 
-Version 1.1.0
+Version 2.1.0
 ~~~~~~~~~~~~~~
-- Enhanced multi-language support
-- Improved handwriting recognition
-- Advanced post-processing rules
-- Performance optimizations
-- Additional evaluation metrics
-
-Version 1.2.0
-~~~~~~~~~~~~~~
-- RESTful API for remote processing
-- Database integration capabilities
-- Advanced clustering analysis
-- Custom model training tools
+- Enhanced multi-language support for entity recognition
+- Batch Gemini API processing with rate-limit management
+- Advanced clustering analysis integration (ELIE-clustering)
 - Extended format support (TIFF, WebP)
-
-Version 2.0.0
-~~~~~~~~~~~~~~
-- Modern transformer-based OCR models
-- Real-time processing capabilities
-- Cloud deployment options
-- Advanced AI features
-- Breaking API changes for improved usability
+- RESTful API for remote processing
 
 Contributing
 ------------
