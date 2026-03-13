@@ -22,6 +22,56 @@ from PIL import Image
 import base64
 from datetime import datetime
 import psutil
+import cv2
+
+
+def _load_consolidated(output_path: Path) -> list:
+    """Load label data from entity_master.json or consolidated_results.json.
+
+    Returns a flat list of per-label dicts, each containing source_image,
+    label_filename, label_index, category, bbox, rotation_angle, ocr,
+    and (when available) entity_extraction.
+    """
+    # Prefer entity_master.json (has entities embedded)
+    master_path = output_path / "entity_master.json"
+    if master_path.exists():
+        try:
+            with open(master_path, "r") as f:
+                data = json.load(f)
+            if isinstance(data, list) and data and "labels" in data[0]:
+                # Flatten grouped structure into flat label list
+                labels = []
+                for entry in data:
+                    for lbl in entry.get("labels", []):
+                        if "source_image" not in lbl:
+                            lbl["source_image"] = entry.get("source_image", "")
+                        labels.append(lbl)
+                return labels
+        except Exception:
+            pass
+    # Fall back to consolidated_results.json
+    path = output_path / "consolidated_results.json"
+    if path.exists():
+        try:
+            with open(path, "r") as f:
+                data = json.load(f)
+            if isinstance(data, list):
+                return data
+        except Exception:
+            pass
+    return []
+
+
+def _group_labels_by_image(consolidated: list) -> dict:
+    """Group a flat consolidated list into {source_image: [label, ...]}."""
+    grouped: dict = {}
+    for entry in consolidated:
+        img = entry.get("source_image", "")
+        if img:
+            grouped.setdefault(img, []).append(entry)
+    return grouped
+
+
 # Page configuration
 st.set_page_config(
     page_title="ELIE - Entomological Label Information Extraction",
@@ -29,6 +79,65 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
+
+# ---- Custom CSS for a clean, professional look ----
+st.markdown("""
+<style>
+/* Tighten vertical spacing */
+.block-container { padding-top: 2rem; padding-bottom: 1rem; }
+
+/* Section headers */
+h1 { letter-spacing: -0.5px; }
+h2 { color: #1565C0 !important; border-bottom: 2px solid #E0E7EF; padding-bottom: 0.3rem; }
+h3 { color: #1976D2 !important; }
+
+/* Sidebar */
+section[data-testid="stSidebar"] { background-color: #F5F7FA; }
+
+/* Metric cards */
+[data-testid="stMetric"] {
+    background: #F5F7FA;
+    border: 1px solid #E0E7EF;
+    border-radius: 8px;
+    padding: 12px 16px;
+}
+
+/* Primary button */
+button[kind="primary"] {
+    background: #1565C0 !important;
+    border: none !important;
+    font-weight: 600 !important;
+}
+
+/* Expanders */
+details {
+    border: 1px solid #E0E7EF !important;
+    border-radius: 6px !important;
+}
+
+/* OCR edit text areas */
+textarea {
+    border: 1px solid #D0D7E0 !important;
+    border-radius: 6px !important;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace !important;
+    font-size: 0.85rem !important;
+}
+
+/* Download buttons full width */
+button[data-testid="stDownloadButton"] { width: 100%; }
+
+/* Progress bar */
+[data-testid="stProgress"] > div > div > div {
+    background: linear-gradient(90deg, #1565C0, #42A5F5) !important;
+}
+
+/* Dividers */
+hr { border-color: #E0E7EF !important; margin: 0.5rem 0 !important; }
+
+/* Hide default footer */
+footer { visibility: hidden; }
+</style>
+""", unsafe_allow_html=True)
 
 # Clear Streamlit cache to avoid deprecation warnings from cached sessions
 if hasattr(st, 'cache_data'):
@@ -139,50 +248,78 @@ class ELIEProcessor:
         # Get pipeline type from session state if available
         pipeline_type = getattr(st.session_state, 'current_pipeline_type', 'MLI')
         
-        # Update progress based on pipeline steps (different for MLI vs SLI)
-        if 'step 1:' in output_lower:
-            if pipeline_type == 'MLI' and 'detection' in output_lower:
-                st.session_state.pipeline_progress = 15
+        # ── Gemini pipeline: 7 steps ──
+        # Step 1: Detection | Step 2: Classification+Rotation | Step 3: OCR
+        # Step 4: Post-processing | Step 5: Entity Recognition
+        # Step 6: Crop Labels | Step 7: Cleanup
+        #
+        # ── Traditional MLI/SLI pipelines: 6 steps (unchanged) ──
+        if pipeline_type == 'Gemini':
+            if 'step 1:' in output_lower:
+                st.session_state.pipeline_progress = 10
                 st.session_state.current_stage = "🔍 Detection"
-            else:
-                st.session_state.pipeline_progress = 20
-                st.session_state.current_stage = "🚫 Empty/Not-Empty Classification"
-        elif 'step 2:' in output_lower:
-            if pipeline_type == 'MLI':
-                st.session_state.pipeline_progress = 30
-                st.session_state.current_stage = "🚫 Empty/Not-Empty Classification"
-            else:  # SLI
+            elif 'step 2:' in output_lower:
+                st.session_state.pipeline_progress = 25
+                st.session_state.current_stage = "🏷️ Classification + Rotation"
+            elif 'step 3:' in output_lower:
                 st.session_state.pipeline_progress = 40
+                st.session_state.current_stage = "📖 OCR"
+            elif 'step 4:' in output_lower:
+                st.session_state.pipeline_progress = 60
+                st.session_state.current_stage = "🔧 Post-processing"
+            elif 'step 5:' in output_lower:
+                st.session_state.pipeline_progress = 75
+                st.session_state.current_stage = "🧬 Entity Recognition"
+            elif 'step 6:' in output_lower:
+                st.session_state.pipeline_progress = 88
+                st.session_state.current_stage = "✂️ Crop Labels"
+            elif 'step 7:' in output_lower:
+                st.session_state.pipeline_progress = 95
+                st.session_state.current_stage = "🧹 Cleanup"
+        else:
+            # Traditional MLI / SLI pipelines
+            if 'step 1:' in output_lower:
+                if pipeline_type == 'MLI' and 'detection' in output_lower:
+                    st.session_state.pipeline_progress = 15
+                    st.session_state.current_stage = "🔍 Detection"
+                else:
+                    st.session_state.pipeline_progress = 20
+                    st.session_state.current_stage = "🚫 Empty/Not-Empty Classification"
+            elif 'step 2:' in output_lower:
+                st.session_state.pipeline_progress = 35
                 st.session_state.current_stage = "🏷️ ID/Description Classification"
-        elif 'step 3:' in output_lower:
-            if pipeline_type == 'MLI':
-                st.session_state.pipeline_progress = 45
-                st.session_state.current_stage = "🏷️ ID/Description Classification"
-            else:  # SLI
+            elif 'step 3:' in output_lower:
                 st.session_state.pipeline_progress = 50
                 st.session_state.current_stage = "✍️ Handwritten/Printed Classification"
-        elif 'step 4:' in output_lower:
-            if pipeline_type == 'MLI':
-                st.session_state.pipeline_progress = 60
-                st.session_state.current_stage = "✍️ Handwritten/Printed Classification"
-            else:  # SLI
+            elif 'step 4:' in output_lower:
                 st.session_state.pipeline_progress = 65
                 st.session_state.current_stage = "🔄 Rotation Correction"
-        elif 'step 5:' in output_lower:
-            if pipeline_type == 'MLI':
-                st.session_state.pipeline_progress = 75
-                st.session_state.current_stage = "📖 OCR Processing"
-            else:  # SLI
+            elif 'step 5:' in output_lower:
                 st.session_state.pipeline_progress = 80
                 st.session_state.current_stage = "📖 OCR Processing"
-        elif 'step 6:' in output_lower:
-            if pipeline_type == 'MLI':
-                st.session_state.pipeline_progress = 90
+            elif 'step 6:' in output_lower:
+                st.session_state.pipeline_progress = 92
                 st.session_state.current_stage = "🔧 Post-processing"
-            else:  # SLI
-                st.session_state.pipeline_progress = 90
-                st.session_state.current_stage = "🔧 Post-processing"
-        elif 'pipeline completed successfully' in output_lower or '✅ pipeline completed successfully' in output_lower:
+        
+        # Track label / image counts from pipeline output
+        if 'generated' in output_lower and 'crops' in output_lower:
+            # e.g. "0a0b11...jpg generated 8 crops"
+            import re as _re
+            m = _re.search(r'generated\s+(\d+)\s+crops', output_lower)
+            if m:
+                st.session_state.setdefault('labels_detected', 0)
+                st.session_state.labels_detected += int(m.group(1))
+        elif 'processed' in output_lower and output_lower.strip().startswith('processed'):
+            # Entity recognition: "Processed label_x in 1.2s"
+            st.session_state.setdefault('labels_processed', 0)
+            st.session_state.labels_processed += 1
+        elif 'found' in output_lower and 'images to process' in output_lower:
+            import re as _re
+            m = _re.search(r'found\s+(\d+)\s+images', output_lower)
+            if m:
+                st.session_state.images_to_process = int(m.group(1))
+        
+        if 'pipeline completed successfully' in output_lower or '✅ pipeline completed successfully' in output_lower:
             st.session_state.pipeline_progress = 100
             st.session_state.current_stage = "✅ Completed"
             st.session_state.processing = False
@@ -192,6 +329,11 @@ class ELIEProcessor:
         input_path = Path(input_dir)
         if not input_path.exists():
             return []
+        
+        # If the user pointed at a single file, return it directly
+        if input_path.is_file():
+            image_extensions = {'.jpg', '.jpeg', '.png', '.bmp', '.tiff', '.tif'}
+            return [input_path] if input_path.suffix.lower() in image_extensions else []
         
         image_extensions = {'.jpg', '.jpeg', '.png', '.bmp', '.tiff', '.tif'}
         return [f for f in input_path.iterdir() 
@@ -206,8 +348,10 @@ class ELIEProcessor:
             # Select pipeline script
             if pipeline_type == "MLI":
                 script_path = self.project_root / "tools" / "pipelines" / "run_mli_pipeline_conda.sh"
-            else:
+            elif pipeline_type == "SLI":
                 script_path = self.project_root / "tools" / "pipelines" / "run_sli_pipeline_conda.sh"
+            else:  # Gemini
+                script_path = self.project_root / "tools" / "pipelines" / "run_gemini_pipeline_conda.sh"
             
             if not script_path.exists():
                 raise FileNotFoundError(f"Pipeline script not found: {script_path}")
@@ -285,7 +429,11 @@ def main():
     """Main Streamlit application"""
     
     # Title and description
-    st.title("🔬 ELIE - Entomological Label Information Extraction")
+    st.markdown(
+        "<h1 style='margin-bottom:0'>🔬 ELIE</h1>"
+        "<p style='color:#1976D2; margin-top:0; font-size:1.1rem'>Entomological Label Information Extraction</p>",
+        unsafe_allow_html=True
+    )
     st.markdown("---")
     
     # Initialize all session state variables first
@@ -327,12 +475,68 @@ def main():
     with col1:
         pipeline_type = st.selectbox(
             "Select Pipeline Type",
-            ["MLI", "SLI"],
-            help="MLI: Multi-Label (full specimen photos), SLI: Single-Label (pre-cropped labels)"
+            ["MLI", "SLI", "Gemini"],
+            help=(
+                "MLI: Multi-Label (full specimen photos, traditional classifiers)\n"
+                "SLI: Single-Label (pre-cropped labels, traditional classifiers)\n"
+                "Gemini: Uses Gemini API for classification, rotation, and optionally OCR/HTR"
+            )
         )
         
+        # For Gemini pipeline, select pipeline mode and OCR engine
+        if pipeline_type == "Gemini":
+            gemini_mode = st.selectbox(
+                "Image Type",
+                ["MLI", "SLI"],
+                help="MLI: Full specimen photos (runs detection first). SLI: Pre-cropped labels."
+            )
+            ocr_engine = st.selectbox(
+                "OCR Engine",
+                ["Gemini", "Tesseract", "Google Vision"],
+                help=(
+                    "Gemini: Handles printed, handwritten, and mixed labels\n"
+                    "Tesseract: Printed labels only (local, free)\n"
+                    "Google Vision: Printed labels only (requires credentials)"
+                )
+            )
+            st.markdown("---")
+            st.markdown("**Post-OCR Options**")
+            enable_entity_recognition = st.checkbox(
+                "Entity Recognition",
+                value=False,
+                help="Extract structured biodiversity entities (scientific names, collectors, dates, geography) from OCR text using Gemini, with GBIF validation and OSM geocoding."
+            )
+            if enable_entity_recognition:
+                er_col1, er_col2, er_col3 = st.columns(3)
+                with er_col1:
+                    export_dwc = st.checkbox("Darwin Core JSON", value=True, help="Export records in Darwin Core format")
+                with er_col2:
+                    export_opends = st.checkbox("OpenDS JSON", value=False, help="Export records in OpenDS format")
+                with er_col3:
+                    export_csv = st.checkbox("DwC CSV", value=False, help="Export Darwin Core records as CSV")
+            else:
+                export_dwc = False
+                export_opends = False
+                export_csv = False
+            enable_crop_labels = st.checkbox(
+                "Crop Labels",
+                value=False,
+                help="Crop individual label regions from original images using detected bounding boxes."
+            )
+        else:
+            gemini_mode = None
+            ocr_engine = None
+            enable_entity_recognition = False
+            export_dwc = False
+            export_opends = False
+            export_csv = False
+            enable_crop_labels = False
+        
         # Input directory
-        default_input = str(Path(__file__).parent.parent / "data" / pipeline_type / "input")
+        if pipeline_type == "Gemini" and gemini_mode:
+            default_input = str(Path(__file__).parent.parent / "data" / gemini_mode / "input")
+        else:
+            default_input = str(Path(__file__).parent.parent / "data" / pipeline_type / "input")
         input_dir = st.text_input(
             "Input Directory", 
             value=default_input,
@@ -341,7 +545,10 @@ def main():
     
     with col2:
         # Output directory
-        default_output = str(Path(__file__).parent.parent / "data" / pipeline_type / "output")
+        if pipeline_type == "Gemini" and gemini_mode:
+            default_output = str(Path(__file__).parent.parent / "data" / gemini_mode / "output")
+        else:
+            default_output = str(Path(__file__).parent.parent / "data" / pipeline_type / "output")
         output_dir = st.text_input(
             "Output Directory",
             value=default_output,
@@ -350,6 +557,35 @@ def main():
         
         # Processing options
         batch_size = st.slider("Batch Size", 1, 8, 1, help="Number of images to process simultaneously")
+    
+    # API credentials section
+    if pipeline_type == "Gemini" or (ocr_engine and ocr_engine == "Google Vision"):
+        st.subheader("🔑 API Credentials")
+        cred_col1, cred_col2 = st.columns(2)
+        
+        with cred_col1:
+            if pipeline_type == "Gemini":
+                gemini_api_key = st.text_input(
+                    "Gemini API Key",
+                    type="password",
+                    help="Your Gemini API key (from Google AI Studio). Required for Gemini pipeline.",
+                    placeholder="Enter your Gemini API key"
+                )
+            else:
+                gemini_api_key = None
+        
+        with cred_col2:
+            if ocr_engine == "Google Vision":
+                vision_credentials = st.text_input(
+                    "Google Vision Credentials Path",
+                    help="Path to your Google Cloud Vision API credentials JSON file.",
+                    placeholder="/path/to/credentials.json"
+                )
+            else:
+                vision_credentials = None
+    else:
+        gemini_api_key = None
+        vision_credentials = None
     
     # Input validation and preview
     st.subheader("📁 Input Data")
@@ -368,7 +604,12 @@ def main():
                     with cols[i]:
                         try:
                             img = Image.open(img_path)
-                            st.image(img, caption=img_path.name, width='stretch')
+                            # Cap preview to 400px wide
+                            max_w = 400
+                            if img.width > max_w:
+                                ratio = max_w / img.width
+                                img = img.resize((max_w, int(img.height * ratio)), Image.LANCZOS)
+                            st.image(img, caption=img_path.name, use_container_width=True)
                         except Exception as e:
                             st.error(f"Error loading {img_path.name}")
         else:
@@ -414,6 +655,9 @@ def main():
             # Reset progress tracking
             st.session_state.pipeline_progress = 0
             st.session_state.current_stage = "Starting..."
+            st.session_state.labels_detected = 0
+            st.session_state.labels_processed = 0
+            st.session_state.images_to_process = 0
             st.rerun()
     
     with col2:
@@ -495,10 +739,15 @@ def main():
                 st.metric("Processing Time", "0s")
         
         with col3:
-            # Images processed (estimate)
-            if 'images' in locals():
-                processed_images = int((overall_progress / 100) * len(images))
-                st.metric("Images Processed", f"{processed_images}/{len(images)}")
+            # Labels detected / processed
+            labels_det = getattr(st.session_state, 'labels_detected', 0)
+            labels_proc = getattr(st.session_state, 'labels_processed', 0)
+            if labels_det > 0:
+                st.metric("Labels Detected", labels_det)
+                if labels_proc > 0:
+                    st.metric("Labels Processed", f"{labels_proc}/{labels_det}")
+            elif 'images' in locals():
+                st.metric("Input Images", len(images))
         
         
         # Real-time metrics chart
@@ -579,8 +828,10 @@ def main():
                 # Determine which pipeline script to run
                 if pipeline_type == "MLI":
                     script_path = st.session_state.processor.project_root / "tools" / "pipelines" / "run_mli_pipeline_conda.sh"
-                else:
+                elif pipeline_type == "SLI":
                     script_path = st.session_state.processor.project_root / "tools" / "pipelines" / "run_sli_pipeline_conda.sh"
+                else:  # Gemini
+                    script_path = st.session_state.processor.project_root / "tools" / "pipelines" / "run_gemini_pipeline_conda.sh"
                 
                 # Validate input directory first
                 input_path = Path(input_dir)
@@ -591,7 +842,12 @@ def main():
                 
                 # Check for images in input directory
                 image_extensions = {'.jpg', '.jpeg', '.png', '.bmp', '.tiff', '.tif'}
-                input_images = [f for f in input_path.iterdir() if f.suffix.lower() in image_extensions]
+                if input_path.is_dir():
+                    input_images = [f for f in input_path.iterdir() if f.suffix.lower() in image_extensions]
+                elif input_path.is_file() and input_path.suffix.lower() in image_extensions:
+                    input_images = [input_path]
+                else:
+                    input_images = []
                 if not input_images:
                     st.session_state.logs.append(f"[{current_time}] ⚠️ No images found in input directory: {input_dir}")
                     st.session_state.logs.append(f"[{current_time}] 🗂️ Supported formats: {', '.join(image_extensions)}")
@@ -605,6 +861,30 @@ def main():
                         env = os.environ.copy()
                         env['INPUT_DIR'] = input_dir
                         env['OUTPUT_DIR'] = output_dir
+                        
+                        # Set Gemini pipeline environment variables
+                        if pipeline_type == "Gemini":
+                            if gemini_api_key:
+                                env['GEMINI_API_KEY'] = gemini_api_key
+                            if gemini_mode:
+                                env['PIPELINE_MODE'] = gemini_mode
+                            if ocr_engine:
+                                engine_map = {"Gemini": "gemini", "Tesseract": "tesseract", "Google Vision": "vision"}
+                                env['OCR_ENGINE'] = engine_map.get(ocr_engine, "gemini")
+                            if vision_credentials:
+                                env['GOOGLE_VISION_CREDENTIALS'] = vision_credentials
+                            # Entity recognition flags
+                            if enable_entity_recognition:
+                                env['ENTITY_RECOGNITION'] = 'true'
+                                if export_dwc:
+                                    env['EXPORT_DWC'] = 'true'
+                                if export_opends:
+                                    env['EXPORT_OPENDS'] = 'true'
+                                if export_csv:
+                                    env['EXPORT_CSV'] = 'true'
+                            # Crop labels flag
+                            if enable_crop_labels:
+                                env['CROP_LABELS'] = 'true'
                         
                         # Create a temporary file to capture output
                         output_fd, st.session_state.pipeline_output_file = tempfile.mkstemp(suffix='.log')
@@ -787,40 +1067,452 @@ def main():
             st.success(f"✅ Job completed in {st.session_state.job_duration}")
         
         output_path = Path(output_dir)
+        input_path = Path(input_dir)
+        
         if output_path.exists():
             # Look for result files
             result_files = list(output_path.glob("*.json")) + list(output_path.glob("*.csv"))
-            image_files = list(output_path.glob("**/*.jpg")) + list(output_path.glob("**/*.png"))
             
-            if result_files or image_files:
-                st.success(f"✅ Found {len(result_files)} result files and {len(image_files)} images")
+            # Load consolidated results (single source of truth)
+            consolidated = _load_consolidated(output_path)
+            bbox_data = _group_labels_by_image(consolidated)
+            
+            # Initialise OCR edits store in session state
+            if 'ocr_edits' not in st.session_state:
+                st.session_state.ocr_edits = {}
+            if 'validated' not in st.session_state:
+                st.session_state.validated = False
+            
+            if consolidated or result_files:
+                # ─── Interactive Label Explorer ───
+                st.subheader("🔍 Label Explorer")
+                st.caption("Browse images, review and correct OCR results, then validate.")
                 
-                # Simple file browser
-                if result_files:
-                    st.subheader("📄 Result Files")
-                    for file_path in result_files:
-                        with st.expander(f"📄 {file_path.name}"):
-                            try:
-                                if file_path.suffix == '.json':
-                                    with open(file_path, 'r') as f:
-                                        data = json.load(f)
-                                    st.json(data)
-                                elif file_path.suffix == '.csv':
-                                    df = pd.read_csv(file_path)
-                                    st.dataframe(df, width='stretch')
-                            except Exception as e:
-                                st.error(f"❌ Error reading {file_path.name}: {str(e)}")
+                # Collect input images (all formats)
+                image_extensions = {'.jpg', '.jpeg', '.png', '.bmp', '.tiff', '.tif'}
+                if input_path.exists() and input_path.is_dir():
+                    input_images = sorted(
+                        f for f in input_path.iterdir()
+                        if f.suffix.lower() in image_extensions and not f.name.startswith("._")
+                    )
+                elif input_path.exists() and input_path.is_file() and input_path.suffix.lower() in image_extensions:
+                    input_images = [input_path]
+                else:
+                    input_images = []
                 
-                if image_files:
-                    st.subheader("🖼️ Generated Images")
-                    cols = st.columns(3)
-                    for i, img_path in enumerate(image_files[:9]):  # Show first 9 images
-                        with cols[i % 3]:
-                            try:
-                                img = Image.open(img_path)
-                                st.image(img, caption=img_path.name, width='stretch')
-                            except Exception as e:
-                                st.error(f"❌ Error loading {img_path.name}")
+                # Color maps
+                color_map = {
+                    "printed": (0, 180, 0), "handwritten": (0, 120, 255),
+                    "mixed": (255, 165, 0), "identifier": (255, 0, 0),
+                    "empty": (128, 128, 128),
+                }
+                hex_color_map = {
+                    "printed": "#00B400", "handwritten": "#0078FF",
+                    "mixed": "#FFA500", "identifier": "#FF0000",
+                    "empty": "#808080",
+                }
+                
+                if input_images:
+                    selected_name = st.selectbox(
+                        "Select an image",
+                        [img.name for img in input_images],
+                        key="explorer_image_select"
+                    )
+                    selected_path = input_path / selected_name
+                    labels_for_image = bbox_data.get(selected_name, [])
+                    
+                    try:
+                        img = Image.open(selected_path)
+                        img_cv = cv2.imread(str(selected_path))
+                        
+                        # --- Side-by-side: image (left) + editable labels (right) ---
+                        img_col, info_col = st.columns([1, 1])
+                        
+                        with img_col:
+                            MAX_DISPLAY_W = 800  # cap image sent to browser
+                            if labels_for_image and img_cv is not None:
+                                annotated = img_cv.copy()
+                                h, w = annotated.shape[:2]
+                                thickness = max(1, int(min(h, w) / 400))
+                                font_scale = max(0.3, min(h, w) / 800)
+                                for lbl in labels_for_image:
+                                    bbox = lbl.get("bbox", {})
+                                    x1 = int(bbox.get("xmin", lbl.get("xmin", 0)))
+                                    y1 = int(bbox.get("ymin", lbl.get("ymin", 0)))
+                                    x2 = int(bbox.get("xmax", lbl.get("xmax", 0)))
+                                    y2 = int(bbox.get("ymax", lbl.get("ymax", 0)))
+                                    cat = lbl.get("category", "label")
+                                    color = color_map.get(cat, (0, 255, 0))
+                                    cv2.rectangle(annotated, (x1, y1), (x2, y2), color, thickness)
+                                    txt = f"{lbl.get('label_index', '')} {cat}"
+                                    cv2.putText(annotated, txt, (x1, max(y1 - 4, 12)),
+                                                cv2.FONT_HERSHEY_SIMPLEX, font_scale, color, thickness)
+                                # Downscale for browser
+                                if w > MAX_DISPLAY_W:
+                                    scale = MAX_DISPLAY_W / w
+                                    annotated = cv2.resize(annotated, (MAX_DISPLAY_W, int(h * scale)))
+                                annotated_rgb = cv2.cvtColor(annotated, cv2.COLOR_BGR2RGB)
+                                st.image(annotated_rgb,
+                                         caption=f"{selected_name} — {len(labels_for_image)} labels",
+                                         use_container_width=True)
+                            else:
+                                # Downscale plain image too
+                                display_img = img.copy()
+                                if display_img.width > MAX_DISPLAY_W:
+                                    ratio = MAX_DISPLAY_W / display_img.width
+                                    display_img = display_img.resize(
+                                        (MAX_DISPLAY_W, int(display_img.height * ratio)), Image.LANCZOS
+                                    )
+                                st.image(display_img, caption=selected_name, use_container_width=True)
+                        
+                        with info_col:
+                            if labels_for_image:
+                                for lbl in labels_for_image:
+                                    idx = lbl.get("label_index", "?")
+                                    cat = lbl.get("category", "unknown")
+                                    det_conf = lbl.get("detection_confidence", lbl.get("confidence", ""))
+                                    angle = lbl.get("rotation_angle", "-")
+                                    cat_color = hex_color_map.get(cat, "#00FF00")
+                                    label_fn = lbl.get("label_filename", f"{selected_name}_{idx}")
+                                    
+                                    # Get OCR text: user edit > consolidated ocr.text
+                                    ocr_block = lbl.get("ocr", {})
+                                    original_text = ocr_block.get("text", "") if isinstance(ocr_block, dict) else ""
+                                    current_text = st.session_state.ocr_edits.get(label_fn, original_text)
+                                    
+                                    # Header
+                                    st.markdown(
+                                        f"**Label {idx}** — "
+                                        f"<span style='color:{cat_color}; font-weight:bold'>{cat}</span>"
+                                        f" &nbsp; (conf: {det_conf}, rot: {angle}°)",
+                                        unsafe_allow_html=True
+                                    )
+                                    # Editable OCR text
+                                    edited = st.text_area(
+                                        f"OCR text",
+                                        value=current_text,
+                                        key=f"ocr_{label_fn}",
+                                        height=80,
+                                        label_visibility="collapsed"
+                                    )
+                                    # Track edits
+                                    if edited != original_text:
+                                        st.session_state.ocr_edits[label_fn] = edited
+                                        st.caption("✏️ Modified")
+                                    elif label_fn in st.session_state.ocr_edits:
+                                        # User reverted to original
+                                        del st.session_state.ocr_edits[label_fn]
+                                    
+                                    # --- Entity extraction data (if available) ---
+                                    entities = lbl.get("entity_extraction", {})
+                                    if entities:
+                                        with st.expander("🧬 Extracted Entities", expanded=False):
+                                            sci = entities.get("scientific_names", [])
+                                            if sci and sci[0].get("name"):
+                                                name_str = sci[0]["name"]
+                                                auth = sci[0].get("authority", "")
+                                                gbif = sci[0].get("gbif_validation", {})
+                                                badge = "✅ GBIF" if gbif else "⚠️ unverified"
+                                                st.markdown(f"**Scientific name:** *{name_str}* {auth} &nbsp; {badge}")
+                                            if entities.get("recordedBy"):
+                                                st.markdown(f"**Collector:** {entities['recordedBy']}")
+                                            if entities.get("eventDate") or entities.get("verbatimEventDate"):
+                                                st.markdown(f"**Date:** {entities.get('eventDate', entities.get('verbatimEventDate', ''))}")
+                                            geo = entities.get("geographic_data", {})
+                                            if geo.get("locality") or geo.get("verbatimLocality"):
+                                                loc = geo.get("locality", geo.get("verbatimLocality", ""))
+                                                country = geo.get("parsed", {}).get("country", "")
+                                                loc_str = f"{loc}, {country}" if country else loc
+                                                st.markdown(f"**Locality:** {loc_str}")
+                                            traits = entities.get("traits_and_status", {})
+                                            if traits.get("type_status"):
+                                                st.markdown(f"**Type status:** {traits['type_status']}")
+                                            if entities.get("institutionCode"):
+                                                st.markdown(f"**Institution:** {entities['institutionCode']}")
+                                    st.markdown("---")
+                            else:
+                                st.info("No label data for this image.")
+                    except Exception as e:
+                        st.error(f"Error loading {selected_name}: {e}")
+                else:
+                    st.info("No input images found.")
+                
+                # ─── Validation ───
+                st.subheader("✅ Validation")
+                edit_count = len(st.session_state.ocr_edits)
+                total_labels = len(consolidated)
+                if edit_count:
+                    st.info(f"✏️ {edit_count} label(s) have been manually corrected.")
+                else:
+                    st.caption("No corrections made — OCR text is unchanged.")
+                
+                val_col1, val_col2 = st.columns(2)
+                with val_col1:
+                    if st.button("✅ Validate & Save", type="primary",
+                                 help="Save current OCR text (with your corrections) as the validated results."):
+                        # Build validated version of consolidated results
+                        validated = []
+                        for entry in consolidated:
+                            v = dict(entry)  # shallow copy
+                            label_fn = v.get("label_filename", "")
+                            ocr = dict(v.get("ocr", {}))
+                            if label_fn in st.session_state.ocr_edits:
+                                ocr["text"] = st.session_state.ocr_edits[label_fn]
+                                ocr["manually_corrected"] = True
+                            else:
+                                ocr["manually_corrected"] = False
+                            v["ocr"] = ocr
+                            v["validated"] = True
+                            validated.append(v)
+                        # Save
+                        validated_path = output_path / "validated_results.json"
+                        with open(validated_path, "w", encoding="utf-8") as f:
+                            json.dump(validated, f, indent=2, ensure_ascii=False)
+                        st.session_state.validated = True
+                        st.success(f"Saved {len(validated)} labels → `validated_results.json` ({edit_count} corrected)")
+                
+                with val_col2:
+                    if st.session_state.ocr_edits:
+                        if st.button("↩️ Reset all corrections"):
+                            st.session_state.ocr_edits = {}
+                            st.session_state.validated = False
+                            st.rerun()
+                
+                # ─── Re-run Entity Recognition ───
+                st.subheader("🧬 Re-run Entity Recognition")
+                st.caption(
+                    "Extract structured entities (scientific names, collectors, dates, geography) "
+                    "from the current OCR text using Gemini + GBIF validation + OSM geocoding. "
+                    "Uses validated results if available, otherwise consolidated results."
+                )
+                # Determine best input source
+                _er_validated_path = output_path / "validated_results.json"
+                _er_consolidated_path = output_path / "consolidated_results.json"
+                if _er_validated_path.exists():
+                    _er_source = _er_validated_path
+                    st.info(f"Source: `validated_results.json`")
+                elif _er_consolidated_path.exists():
+                    _er_source = _er_consolidated_path
+                    st.info(f"Source: `consolidated_results.json`")
+                else:
+                    _er_source = None
+                    st.warning("No consolidated or validated results found. Run the pipeline first.")
+                
+                er_opt_col1, er_opt_col2, er_opt_col3 = st.columns(3)
+                with er_opt_col1:
+                    er_rerun_dwc = st.checkbox("Darwin Core JSON", value=True, key="er_rerun_dwc")
+                with er_opt_col2:
+                    er_rerun_opends = st.checkbox("OpenDS JSON", value=False, key="er_rerun_opends")
+                with er_opt_col3:
+                    er_rerun_csv = st.checkbox("DwC CSV", value=False, key="er_rerun_csv")
+                
+                if st.button(
+                    "🧬 Run Entity Recognition",
+                    type="primary",
+                    disabled=_er_source is None,
+                    help="Extract entities with GBIF validation and OSM geocoding",
+                ):
+                    try:
+                        from label_processing.gemini_processor import get_client as _get_client
+                        from label_processing.entity_recognition import (
+                            extract_and_enrich as _extract,
+                            validate_and_normalize as _validate,
+                            generate_dwc as _gen_dwc,
+                            generate_opends as _gen_opends,
+                            export_to_csv as _export_csv,
+                            build_master_json as _build_master,
+                        )
+                        
+                        with open(_er_source, "r", encoding="utf-8") as f:
+                            source_data = json.load(f)
+                        
+                        # If source is entity_master.json-style (grouped), flatten it
+                        if isinstance(source_data, list) and source_data and "labels" in source_data[0]:
+                            flat = []
+                            for entry in source_data:
+                                for lbl in entry.get("labels", []):
+                                    if "source_image" not in lbl:
+                                        lbl["source_image"] = entry.get("source_image", "")
+                                    flat.append(lbl)
+                            source_data = flat
+                        
+                        label_count = len(source_data)
+                        with st.spinner(f"Running entity recognition on {label_count} labels (GBIF + OSM)..."):
+                            client = _get_client()
+                            enriched = _extract(source_data, client)
+                            validated_labels, quality_report = _validate(enriched)
+                            master = _build_master(validated_labels, quality_report)
+                            
+                            # Save outputs
+                            with open(output_path / "entity_master.json", "w", encoding="utf-8") as f:
+                                json.dump(master, f, indent=2, ensure_ascii=False)
+                            with open(output_path / "quality_report.json", "w", encoding="utf-8") as f:
+                                json.dump(quality_report, f, indent=2, ensure_ascii=False)
+                            
+                            if er_rerun_dwc:
+                                dwc_records = _gen_dwc(validated_labels)
+                                with open(output_path / "darwin_core.json", "w", encoding="utf-8") as f:
+                                    json.dump(dwc_records, f, indent=2, ensure_ascii=False)
+                                if er_rerun_csv:
+                                    _export_csv(dwc_records, str(output_path / "darwin_core.csv"))
+                            
+                            if er_rerun_opends:
+                                opends_records = _gen_opends(validated_labels)
+                                with open(output_path / "open_ds.json", "w", encoding="utf-8") as f:
+                                    json.dump(opends_records, f, indent=2, ensure_ascii=False)
+                        
+                        st.success(f"Entity recognition complete! Processed {len(validated_labels)} labels.")
+                        for line in quality_report.get("summary", []):
+                            st.write(f"  {line}")
+                        if quality_report.get("overall_extraction_rate"):
+                            st.write(f"  Overall extraction rate: {quality_report['overall_extraction_rate']}")
+                        time.sleep(1)
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"Entity recognition failed: {e}")
+                
+                # ─── Result Files ───
+                st.subheader("📄 Result Files")
+                for file_path in result_files:
+                    with st.expander(f"📄 {file_path.name}"):
+                        try:
+                            if file_path.suffix == '.json':
+                                with open(file_path, 'r') as f:
+                                    data = json.load(f)
+                                st.json(data)
+                            elif file_path.suffix == '.csv':
+                                df = pd.read_csv(file_path)
+                                st.dataframe(df, use_container_width=True)
+                        except Exception as e:
+                            st.error(f"❌ Error reading {file_path.name}: {str(e)}")
+                
+                # ─── Downloads & Cropping ───
+                st.subheader("📥 Download & Export")
+                dl_col1, dl_col2, dl_col3 = st.columns(3)
+                
+                with dl_col1:
+                    # Download validated results (preferred) or consolidated
+                    validated_path = output_path / "validated_results.json"
+                    if validated_path.exists():
+                        with open(validated_path, 'r') as f:
+                            st.download_button(
+                                "⬇️ validated_results.json",
+                                f.read(),
+                                file_name="validated_results.json",
+                                mime="application/json",
+                                key="dl_validated"
+                            )
+                    consolidated_path = output_path / "consolidated_results.json"
+                    if consolidated_path.exists():
+                        with open(consolidated_path, 'r') as f:
+                            st.download_button(
+                                "⬇️ consolidated_results.json",
+                                f.read(),
+                                file_name="consolidated_results.json",
+                                mime="application/json",
+                                key="dl_consolidated"
+                            )
+                
+                with dl_col2:
+                    # Download raw OCR backup
+                    for name in ("ocr_gemini.json", "ocr_preprocessed.json", "ocr_google_vision.json"):
+                        p = output_path / name
+                        if p.exists():
+                            with open(p, 'r') as f:
+                                st.download_button(
+                                    f"⬇️ {name}",
+                                    f.read(),
+                                    file_name=name,
+                                    mime="application/json",
+                                    key=f"dl_{name}"
+                                )
+                
+                # ─── Entity Recognition Downloads ───
+                entity_master_path = output_path / "entity_master.json"
+                quality_report_path = output_path / "quality_report.json"
+                dwc_path = output_path / "darwin_core.json"
+                opends_path = output_path / "open_ds.json"
+                csv_path = output_path / "darwin_core.csv"
+                entity_files = [entity_master_path, quality_report_path, dwc_path, opends_path, csv_path]
+                if any(p.exists() for p in entity_files):
+                    st.subheader("🧬 Entity Recognition Outputs")
+                    er_col1, er_col2, er_col3 = st.columns(3)
+                    with er_col1:
+                        if entity_master_path.exists():
+                            with open(entity_master_path, 'r') as f:
+                                st.download_button(
+                                    "⬇️ entity_master.json",
+                                    f.read(),
+                                    file_name="entity_master.json",
+                                    mime="application/json",
+                                    key="dl_entity_master"
+                                )
+                        if quality_report_path.exists():
+                            with open(quality_report_path, 'r') as f:
+                                st.download_button(
+                                    "⬇️ quality_report.json",
+                                    f.read(),
+                                    file_name="quality_report.json",
+                                    mime="application/json",
+                                    key="dl_quality_report"
+                                )
+                    with er_col2:
+                        if dwc_path.exists():
+                            with open(dwc_path, 'r') as f:
+                                st.download_button(
+                                    "⬇️ darwin_core.json",
+                                    f.read(),
+                                    file_name="darwin_core.json",
+                                    mime="application/json",
+                                    key="dl_dwc"
+                                )
+                        if csv_path.exists():
+                            with open(csv_path, 'r') as f:
+                                st.download_button(
+                                    "⬇️ darwin_core.csv",
+                                    f.read(),
+                                    file_name="darwin_core.csv",
+                                    mime="text/csv",
+                                    key="dl_dwc_csv"
+                                )
+                    with er_col3:
+                        if opends_path.exists():
+                            with open(opends_path, 'r') as f:
+                                st.download_button(
+                                    "⬇️ open_ds.json",
+                                    f.read(),
+                                    file_name="open_ds.json",
+                                    mime="application/json",
+                                    key="dl_opends"
+                                )
+                
+                with dl_col3:
+                    # Crop images button
+                    if bbox_data and st.button("✂️ Crop All Labels",
+                                               help="Crop label regions from original images"):
+                        crop_dir = output_path / "cropped_labels"
+                        crop_dir.mkdir(parents=True, exist_ok=True)
+                        crop_count = 0
+                        for img_name, labels in bbox_data.items():
+                            src_path = input_path / img_name
+                            if not src_path.exists():
+                                continue
+                            src_img = cv2.imread(str(src_path))
+                            if src_img is None:
+                                continue
+                            for lbl in labels:
+                                bbox = lbl.get("bbox", lbl)
+                                x1 = max(0, int(bbox.get("xmin", 0)))
+                                y1 = max(0, int(bbox.get("ymin", 0)))
+                                x2 = min(src_img.shape[1], int(bbox.get("xmax", 0)))
+                                y2 = min(src_img.shape[0], int(bbox.get("ymax", 0)))
+                                if x2 > x1 and y2 > y1:
+                                    crop = src_img[y1:y2, x1:x2]
+                                    stem = Path(img_name).stem
+                                    idx = lbl.get("label_index", crop_count + 1)
+                                    cv2.imwrite(str(crop_dir / f"{stem}_{idx}.jpg"), crop)
+                                    crop_count += 1
+                        st.success(f"✂️ Cropped {crop_count} labels → `{crop_dir}`")
             else:
                 st.info("📋 No result files found. Run a pipeline to generate results.")
         else:
@@ -831,9 +1523,11 @@ def main():
     # Footer
     st.markdown("---")
     st.markdown(
-        "🔬 **ELIE** - AI-powered system for museum specimen digitization | "
-        "[GitHub](https://github.com/MargotBelot/entomological-label-information-extraction) | "
-        "License: MIT"
+        "<div style='text-align:center; color:#888; font-size:0.85rem'>"
+        "🔬 <strong>ELIE</strong> · AI-powered museum specimen digitization · "
+        "<a href='https://github.com/MargotBelot/entomological-label-information-extraction' "
+        "style='color:#1565C0'>GitHub</a> · MIT License</div>",
+        unsafe_allow_html=True
     )
 
 if __name__ == "__main__":

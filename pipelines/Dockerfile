@@ -75,6 +75,16 @@ RUN pip install --no-cache-dir -r pipelines/requirements/empty_labels.txt
 CMD ["python", "scripts/processing/empty_labels.py"]
 
 # ============================================
+# GEMINI STAGE (lightweight — no local models)
+# ============================================
+FROM base AS gemini
+
+RUN pip install --no-cache-dir -r pipelines/requirements/gemini.txt
+RUN python -c 'import nltk; nltk.download("punkt"); nltk.download("punkt_tab");'
+
+CMD ["bash", "tools/pipelines/run_gemini_pipeline_conda.sh"]
+
+# ============================================
 # POSTPROCESSING STAGE
 # ============================================
 FROM base AS postprocessing

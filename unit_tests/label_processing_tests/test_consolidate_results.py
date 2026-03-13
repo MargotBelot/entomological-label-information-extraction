@@ -8,7 +8,7 @@ from pathlib import Path
 # Import the consolidate_results module
 import sys
 sys.path.insert(0, str(Path(__file__).parent.parent.parent / 'scripts' / 'postprocessing'))
-from consolidate_results import load_rotation_results
+from consolidate_results import _load_rotation_results as load_rotation_results
 
 
 class TestConsolidateResults(unittest.TestCase):

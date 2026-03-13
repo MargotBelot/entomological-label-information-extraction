@@ -1,4 +1,12 @@
-# Import third-party libraries
+#!/usr/bin/env python3
+"""
+Utility functions for the entomological label processing pipeline.
+
+Provides image validation, filename generation, JSON/CSV I/O, NURI format
+checking, and model integrity verification helpers used across all pipeline
+variants.
+"""
+
 import os
 import re
 import json
@@ -80,7 +88,7 @@ def validate_image_integrity(
             return False
 
         return True
-    except (IOError, SyntaxError, Exception):
+    except Exception:
         return False
 
 
@@ -98,7 +106,7 @@ def check_dir(directory: str) -> None:
     if not os.path.isdir(directory):
         raise FileNotFoundError(f"The directory '{directory}' does not exist.")
 
-    jpg_files = [f for f in os.listdir(directory) if f.lower().endswith((".jpg", ".jpeg"))]
+    jpg_files = [f for f in os.listdir(directory) if f.lower().endswith((".jpg", ".jpeg", ".png", ".tiff", ".tif", ".bmp"))]
 
     if not jpg_files:
         raise FileNotFoundError(

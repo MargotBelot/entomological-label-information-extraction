@@ -1,6 +1,9 @@
 # Unified Docker Compose for Entomological Label Information Extraction
 # 
 # Usage:
+#   Gemini Pipeline (recommended):
+#     GEMINI_API_KEY=<key> docker-compose --profile gemini up
+#
 #   Multi-Label Image Pipeline (MLI):
 #     docker-compose --profile mli up
 #   
@@ -18,6 +21,31 @@
 # All services use the consolidated Dockerfile with multi-stage builds
 
 services:
+  # ============================================
+  # GEMINI PIPELINE (lightweight, API-based)
+  # ============================================
+  gemini_pipeline:
+    profiles: [gemini]
+    stdin_open: true
+    tty: true
+    build:
+      context: ..
+      dockerfile: pipelines/Dockerfile
+      target: gemini
+    volumes:
+      - ${PWD}/data:/app/data
+    environment:
+      - PYTHONPATH=/app
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    command: bash tools/pipelines/run_gemini_pipeline_conda.sh
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '2.0'
+        reservations:
+          memory: 1G
+          cpus: '1.0'
   # ============================================
   # SEGMENTATION/DETECTION SERVICE
   # ============================================

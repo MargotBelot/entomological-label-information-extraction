@@ -1,15 +1,22 @@
-# Import third-party libraries
+#!/usr/bin/env python3
+"""
+Label Rotation Module (TensorFlow)
+
+Predicts and corrects the orientation of label images using a trained
+TensorFlow classification model that outputs one of four angle classes
+(0°, 90°, 180°, 270°).  Used by the traditional pipeline; the Gemini
+pipeline determines rotation angles via the Gemini API instead.
+"""
+
 import os
 import cv2
 import numpy as np
 import tensorflow as tf
-import warnings
 from typing import List
 import shutil
 import logging
 from PIL import Image
 
-warnings.filterwarnings("ignore", category=UserWarning, module="absl")
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
@@ -209,7 +216,14 @@ def rotate_images(
 # ------------------ Debugging Function ------------------ #
 
 
-def debug_save_by_angle(image_paths, predicted_angles, output_base_dir):
+def debug_save_by_angle(image_paths: List[str], predicted_angles: List[int], output_base_dir: str) -> None:
+    """Copy images into angle-named subdirectories for visual debugging.
+
+    Args:
+        image_paths: List of source image paths.
+        predicted_angles: Predicted angle class per image (0-3).
+        output_base_dir: Base directory for angle subdirectories.
+    """
     angle_names = {0: "0", 1: "90", 2: "180", 3: "270"}
     for img_path, angle in zip(image_paths, predicted_angles):
         angle_folder = os.path.join(output_base_dir, angle_names.get(angle, "unknown"))
@@ -326,7 +340,14 @@ def predict_angles(
             )  # if your function expects multiples of 90
 
 
-def rotate_image_pil(image_path, angle_deg, output_path):
+def rotate_image_pil(image_path: str, angle_deg: float, output_path: str) -> None:
+    """Rotate an image using PIL and save the result.
+
+    Args:
+        image_path: Path to the input image.
+        angle_deg: Counter-clockwise rotation angle in degrees.
+        output_path: Path to save the rotated image.
+    """
     with Image.open(image_path) as img:
         rotated = img.rotate(angle_deg, expand=True)
         rotated.save(output_path)

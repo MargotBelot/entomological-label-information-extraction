@@ -16,9 +16,6 @@ import warnings
 # Import the necessary module from the 'label_processing' module package
 from label_processing import utils
 
-# Suppress warning messages during execution
-warnings.filterwarnings("ignore")
-
 # Constants
 CONFIG = r"--psm 6 --oem 3"  # Configuration for OCR
 LANGUAGES = "eng+deu+fra+ita+spa+por"  # Specifying languages used for OCR
@@ -118,13 +115,13 @@ class ImageProcessor:
     @staticmethod
     def read_image(path: str | Path) -> ImageProcessor:
         """
-        Read an image from the specified path and return an instance of the Image class.
+        Read an image from the specified path and return an ImageProcessor instance.
 
         Args:
             path (str): The path to a JPG file.
 
         Returns:
-            Image: An instance of the Image class.
+            ImageProcessor: An instance of the ImageProcessor class.
         """
         return ImageProcessor(cv2.imread(str(path)), path)
 
@@ -133,7 +130,7 @@ class ImageProcessor:
         Convert the image to grayscale.
 
         Returns:
-            Image: An instance of the Image class representing the grayscale image.
+            ImageProcessor: An instance representing the grayscale image.
         """
         image = cv2.cvtColor(self.image, cv2.COLOR_RGB2GRAY)
         image_instance = self.copy_this()
@@ -148,7 +145,7 @@ class ImageProcessor:
             ksize (Tuple[int, int], optional): The kernel size for blurring. Defaults to (5, 5).
 
         Returns:
-            Image: An instance of the Image class representing the blurred image.
+            ImageProcessor: An instance representing the blurred image.
         """
         image = cv2.GaussianBlur(self.image, ksize, 0)
         image_instance = self.copy_this()
@@ -160,7 +157,7 @@ class ImageProcessor:
         Remove noise from the image using median blur.
 
         Returns:
-            Image: An instance of the Image class representing the noise-reduced image.
+            ImageProcessor: An instance representing the noise-reduced image.
         """
         image = cv2.medianBlur(self.image, 5)
         image_instance = self.copy_this()
@@ -221,7 +218,7 @@ class ImageProcessor:
             thresh_mode (Threshmode): The thresholding mode to use (OTSU, ADAPTIVE_MEAN, or ADAPTIVE_GAUSSIAN).
 
         Returns:
-            Image: An instance of the Image class representing the thresholded image.
+            ImageProcessor: An instance representing the thresholded image.
         """
         if thresh_mode == Threshmode.OTSU:
             image = cv2.threshold(
@@ -262,7 +259,7 @@ class ImageProcessor:
         Dilate the image using a 5x5 kernel.
 
         Returns:
-            Image: An instance of the Image class representing the dilated image.
+            ImageProcessor: An instance representing the dilated image.
         """
         kernel = np.ones((5, 5), np.uint8)
         image = cv2.dilate(self.image, kernel, iterations=1)
@@ -275,7 +272,7 @@ class ImageProcessor:
         Erode the image using a 5x5 kernel.
 
         Returns:
-            Image: An instance of the Image class representing the eroded image.
+            ImageProcessor: An instance representing the eroded image.
         """
         kernel = np.ones((5, 5), np.uint8)
         image = cv2.erode(self.image, kernel, iterations=1)
@@ -341,7 +338,7 @@ class ImageProcessor:
             angle (Optional[np.float64]): The skew angle to use for deskewing.
 
         Returns:
-            Image: An instance of the Image class representing the deskewed image.
+            ImageProcessor: An instance representing the deskewed image.
         """
         if angle is None:
             # Handle the case where angle is None, e.g., log a message or skip deskewing

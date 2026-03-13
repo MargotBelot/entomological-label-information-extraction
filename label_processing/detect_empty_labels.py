@@ -1,4 +1,12 @@
-# Import third-party libraries
+#!/usr/bin/env python3
+"""
+Empty Label Detection Module
+
+Classifies label images as empty or non-empty based on the proportion of dark
+pixels within a cropped region. Used as the first filtering step in the
+traditional pipeline.
+"""
+
 import glob
 import os
 from PIL import Image

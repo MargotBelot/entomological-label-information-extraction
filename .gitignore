@@ -59,6 +59,11 @@ Pipfile.lock
 # Model cache (from detection.py)
 .entomological_cache/
 
+# API keys and credentials
+*.key
+credentials*.json
+!models/checksums.sha256
+
 # Temporary pipeline outputs
 *.tmp
 *.temp

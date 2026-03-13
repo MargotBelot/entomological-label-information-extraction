@@ -1,4 +1,4 @@
-# Entomological Label Information Extraction
+# Entomological Label Information Extraction (ELIE)
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 ![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue)
@@ -8,94 +8,28 @@
 ![Platform](https://img.shields.io/badge/platform-linux%20%7C%20macOS%20%7C%20windows-lightgrey)
 [![Docker](https://img.shields.io/badge/docker-supported-2496ED?logo=docker&logoColor=white)](pipelines/Dockerfile)
 [![Conda](https://img.shields.io/badge/conda-supported-44A833?logo=anaconda&logoColor=white)](environment.yml)
-![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)
 
 **AI-powered text extraction from insect specimen labels using computer vision and OCR**
 
-Extract and digitize text from museum specimen labels automatically. Perfect for museum digitization, research data preparation, and biodiversity informatics.
+Extract and digitize text from museum specimen labels automatically — including handwritten text. Perfect for museum digitization, research data preparation, and biodiversity informatics.
 
 > **Related Repository**: For advanced clustering and deduplication of extracted labels, see [ELIE-clustering](https://github.com/joel-tuberosa/ELIE-clustering)
-
----
-
-## Table of Contents
-
-- [Entomological Label Information Extraction](#entomological-label-information-extraction)
-  - [Table of Contents](#table-of-contents)
-  - [Complete Beginner? Start Here!](#complete-beginner-start-here)
-  - [What It Does](#what-it-does)
-    - [Two Pipeline Types](#two-pipeline-types)
-  - [Quick Start](#quick-start)
-    - [1. Install Prerequisites](#1-install-prerequisites)
-    - [2. Install ELIE](#2-install-elie)
-    - [3. Add Your Images](#3-add-your-images)
-    - [4. Run Pipeline](#4-run-pipeline)
-    - [5. View Results](#5-view-results)
-  - [Advanced Usage](#advanced-usage)
-    - [Individual Processing Steps](#individual-processing-steps)
-    - [Docker (Optional)](#docker-optional)
-    - [Apptainer/Singularity (HPC)](#apptainersingularity-hpc)
-    - [Development Setup](#development-setup)
-    - [GPU Acceleration](#gpu-acceleration)
-    - [Custom OCR](#custom-ocr)
-  - [Pipeline Workflow](#pipeline-workflow)
-  - [Project Structure](#project-structure)
-  - [Troubleshooting](#troubleshooting)
-    - [Common First-Time Issues](#common-first-time-issues)
-  - [Sample Data](#sample-data)
-  - [Technical Details](#technical-details)
-    - [Models](#models)
-    - [Preprocessing](#preprocessing)
-    - [Resource Requirements](#resource-requirements)
-    - [Minimum Hardware Requirements](#minimum-hardware-requirements)
-    - [Performance Benchmarks](#performance-benchmarks)
-    - [Accuracy](#accuracy)
-    - [Efficiency \& Time Savings](#efficiency--time-savings)
-    - [Limitations](#limitations)
-  - [Citation](#citation)
-  - [License](#license)
-  - [Documentation](#documentation)
-    - [Quick Links](#quick-links)
-    - [Additional Guides](#additional-guides)
-    - [Related Projects](#related-projects)
-
----
-
-## Complete Beginner? Start Here!
-
-**5-Minute Overview:**
-
-1. **Install** → Install conda and Tesseract (one-time setup)
-2. **Get ELIE** → Download and install this software
-3. **Add Images** → Put your specimen/label photos in `data/` folder
-4. **Run** → Click `python launch.py` to start
-5. **Results** → Get extracted text in JSON/CSV files
-
-**System will automatically:**
-- Find labels in your photos (or use pre-cropped labels)
-- Classify label types
-- Correct orientation
-- Extract text with OCR
-- Clean and organize results
-
-**Jump to [Quick Start](#quick-start)** for step-by-step instructions
 
 ---
 
 ## What It Does
 
 - **Input**: Specimen photos (full images) or pre-cropped label images
-- **Process**: Detects labels → classifies → corrects orientation → extracts text with OCR → cleans output
-- **Output**: Structured JSON/CSV files with extracted text and metadata
+- **Process**: Detects labels → classifies → corrects orientation → extracts text (OCR/HTR) → cleans output → extracts structured entities → validates against GBIF & OSM
+- **Output**: Structured JSON/CSV files with extracted text, Darwin Core records, and quality reports
 
-### Two Pipeline Types
+### Three Pipeline Types
 
-| Pipeline | Input | Use Case |
-|----------|-------|----------|
-| **MLI** (Multi-Label) | Full specimen photos | System automatically detects and crops individual labels |
-| **SLI** (Single-Label) | Pre-cropped labels | Processes each label image directly |
-
-Put images in `data/MLI/input/` or `data/SLI/input/`, run pipeline, results appear in corresponding `output/` directory.
+| Pipeline | Input | Detection | Classification & OCR | Best For |
+|----------|-------|-----------|---------------------|----------|
+| **Gemini** (recommended) | Full specimen photos or pre-cropped labels | Gemini API | Gemini API | Printed + handwritten labels; no local model needed |
+| **MLI** (traditional) | Full specimen photos | Detectron2 (local) | TensorFlow + Tesseract | Printed labels only; offline use |
+| **SLI** (traditional) | Pre-cropped labels | Not needed | TensorFlow + Tesseract | Printed labels only; offline use |
 
 ---
 
@@ -103,16 +37,12 @@ Put images in `data/MLI/input/` or `data/SLI/input/`, run pipeline, results appe
 
 ### 1. Install Prerequisites
 
-**Required:**
-
-**a) Conda** - Python package manager ([Install Miniconda](https://conda.io/miniconda.html))
+**a) Conda** — Python package manager ([Install Miniconda](https://conda.io/miniconda.html))
 ```bash
-# Check if conda is installed:
 conda --version
-# If not found, install from: https://conda.io/miniconda.html
 ```
 
-**b) Tesseract OCR** - Text recognition engine
+**b) Tesseract OCR** — only needed for the traditional pipelines
 ```bash
 # macOS:
 brew install tesseract
@@ -120,164 +50,122 @@ brew install tesseract
 # Linux (Ubuntu/Debian):
 sudo apt install tesseract-ocr
 
-# Windows:
-# Download from: https://github.com/UB-Mannheim/tesseract/wiki
-
-# Verify installation:
-tesseract --version
+# Windows: https://github.com/UB-Mannheim/tesseract/wiki
 ```
 
 ### 2. Install ELIE
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/MargotBelot/entomological-label-information-extraction.git
 cd entomological-label-information-extraction
 
 conda env create -f environment.yml
-conda activate entomological-label
+conda activate ELIE
 pip install -e .
 ```
 
-### 3. Add Your Images
+### 3. Set Up API Key (Gemini Pipeline)
 
-**For full specimen photos** (system will detect and crop labels):
+Get a free API key from [Google AI Studio](https://aistudio.google.com/apikey), then:
 ```bash
-# Copy your JPG images to:
+export GEMINI_API_KEY=<your-api-key>
+```
+
+### 4. Add Your Images
+
+```bash
+# Full specimen photos → Gemini pipeline will detect labels automatically
 cp /path/to/your/photos/*.jpg data/MLI/input/
 ```
 
-**For pre-cropped label images**:
-```bash
-# Copy your JPG images to:
-cp /path/to/your/labels/*.jpg data/SLI/input/
-```
+### 5. Run the Pipeline
 
-**Or use the included sample data** to test:
-- Sample images already in `data/MLI/input/` and `data/SLI/input/`
-
-### 4. Run Pipeline
-
-**Option A: GUI (Recommended)**
+**Option A: Streamlit GUI (Recommended)**
 ```bash
 python launch.py
 ```
-Opens web interface with point-and-click pipeline selection, real-time progress, and results browser.
+Opens a web interface where you can select a pipeline, configure options, review results, correct OCR, and re-run entity recognition — all from the browser.
 
 **Option B: Command Line**
 ```bash
-# MLI pipeline (for full specimen photos)
+# Gemini pipeline (recommended)
+./tools/pipelines/run_gemini_pipeline_conda.sh
+
+# Traditional MLI pipeline
 ./tools/pipelines/run_mli_pipeline_conda.sh
 
-# SLI pipeline (for pre-cropped labels)
+# Traditional SLI pipeline
 ./tools/pipelines/run_sli_pipeline_conda.sh
 ```
 
-### 5. View Results
+You can override defaults with environment variables:
+```bash
+INPUT_DIR=data/MLI/input OUTPUT_DIR=data/MLI/output \
+ENTITY_RECOGNITION=true EXPORT_DWC=true EXPORT_CSV=true \
+./tools/pipelines/run_gemini_pipeline_conda.sh
+```
 
-Results saved to:
-- `data/MLI/output/consolidated_results.json` - All extracted data
-- `data/MLI/output/corrected_transcripts.json` - Cleaned text
-- `data/MLI/output/identifier.csv` - Specimen IDs
+### 6. View Results
 
-**What to expect:**
-- **First run**: Downloads models (~500MB), takes 5-10 minutes
-- **Processing time**: 2-5 minutes per image (varies by size and CPU)
-- **Progress**: GUI shows real-time progress and system metrics
-- **Output**: JSON files with structured data, CSV files for spreadsheets
+Results saved to the output directory:
+
+| File | Description |
+|------|-------------|
+| `entity_master.json` | All labels with extracted entities, GBIF validation, OSM geocoding |
+| `consolidated_results.json` | Labels with OCR text and metadata |
+| `quality_report.json` | Extraction quality scores per label |
+| `darwin_core.json` | Darwin Core formatted records (one per specimen) |
+| `darwin_core.csv` | Same as above in CSV format |
+| `validated_results.json` | After manual OCR corrections in the Streamlit UI |
 
 ---
 
-## Advanced Usage
+## Gemini Pipeline Workflow
 
-### Individual Processing Steps
+The Gemini pipeline replaces local models with the Gemini API for all vision tasks:
 
-Run specific stages independently:
-```bash
-# Detection
-python scripts/processing/detection.py -j data/MLI/input -o data/MLI/output
-
-# Classification
-python scripts/processing/classifiers.py -m 1 -j data/input -o data/output
-
-# Rotation correction
-python scripts/processing/rotation.py -i data/input -o data/output
-
-# OCR
-python scripts/processing/tesseract.py -d data/input -o data/output
-
-# OCR with CLAHE (for low-contrast labels)
-python scripts/processing/tesseract.py -d data/input -o data/output --clahe
-
-# OCR with illumination normalization (for uneven lighting)
-python scripts/processing/tesseract.py -d data/input -o data/output --normalize-illumination
-
-# Post-processing
-python scripts/postprocessing/process.py -j data/ocr_preprocessed.json -o data/output
 ```
-
-### Docker (Optional)
-
-For containerized execution:
-
-```bash
-cd pipelines
-
-# MLI pipeline
-docker-compose --profile mli up
-
-# SLI pipeline
-docker-compose --profile sli up
-
-# Individual services
-docker-compose up segmentation
-docker-compose up rotation
-```
-
-See `pipelines/README.md` for complete Docker documentation.
-
-### Apptainer/Singularity (HPC)
-
-For high-performance computing clusters:
-
-```bash
-# Build container
-cd pipelines
-apptainer build elie.sif elie.def
-
-# Run pipeline
-apptainer run --bind /scratch/data:/app/data elie.sif mli
-
-# SLURM job submission
-sbatch tools/hpc/run_elie_slurm.sh
-```
-
-See `pipelines/HPC_QUICKSTART.md` for complete HPC documentation.
-
-### Development Setup
-
-```bash
-pip install -e .[dev,test]
-pytest unit_tests/
-```
-
-### GPU Acceleration
-
-Install CUDA for NVIDIA GPUs. Models automatically use GPU when available.
-
-### Custom OCR
-
-Use Google Vision API instead of Tesseract:
-```bash
-python scripts/processing/vision.py -c credentials.json -d data/input -o data/output
+Specimen Image
+    │
+    ▼
+┌─────────────────────────────┐
+│ Step 1+2: Gemini Detection  │  Gemini finds all labels, classifies them
+│   + Classification          │  (printed/handwritten/mixed/identifier/empty),
+│   + Rotation                │  and determines rotation angle
+└─────────────────────────────┘
+    │
+    ▼
+┌─────────────────────────────┐
+│ Step 3: OCR / HTR           │  Gemini reads text from each label
+│   (Gemini, Tesseract, or   │  (works for printed AND handwritten)
+│    Google Vision)           │
+└─────────────────────────────┘
+    │
+    ▼
+┌─────────────────────────────┐
+│ Step 4: Post-processing     │  Text cleaning, consolidation
+└─────────────────────────────┘
+    │
+    ▼
+┌─────────────────────────────┐
+│ Step 5: Entity Recognition  │  Gemini extracts structured entities;
+│   + GBIF + OSM enrichment   │  validates names with GBIF; geocodes
+│                             │  localities with OpenStreetMap
+└─────────────────────────────┘
+    │
+    ▼
+┌─────────────────────────────┐
+│ Step 6+7: Crop & Cleanup    │  Optional label cropping; remove
+│                             │  intermediate files
+└─────────────────────────────┘
 ```
 
 ---
 
-## Pipeline Workflow
+## Traditional Pipeline Workflow
 
-![Pipeline Workflow](docs/images/pipeline_flowchart.png)
+For offline processing using local models (Detectron2, TensorFlow, Tesseract):
 
-**Pipeline stages:**
 1. **Detection** (MLI only): Detect and crop labels from specimen photos
 2. **Classification**: Filter empty labels, identify QR codes, classify text type
 3. **Rotation**: Correct label orientation for better OCR
@@ -287,252 +175,153 @@ python scripts/processing/vision.py -c credentials.json -d data/input -o data/ou
 
 ---
 
+## Streamlit Web Interface
+
+The built-in Streamlit interface (`python launch.py`) provides:
+
+- **Pipeline configuration**: Select pipeline type, OCR engine, entity recognition options
+- **Real-time progress**: Live processing dashboard with logs and metrics
+- **Label explorer**: Browse images with annotated bounding boxes
+- **OCR correction**: Edit transcribed text directly in the browser
+- **Entity viewer**: See extracted scientific names, collectors, dates, geography
+- **Re-run entity recognition**: After correcting OCR text, re-extract entities with one click
+- **Download**: Export all outputs (JSON, CSV, Darwin Core)
+
+---
+
+## Docker (Optional)
+
+For containerized execution:
+
+```bash
+cd pipelines
+
+# Gemini pipeline (lightweight — no local models needed)
+GEMINI_API_KEY=<your-key> docker-compose --profile gemini up
+
+# Traditional MLI pipeline
+docker-compose --profile mli up
+
+# Traditional SLI pipeline
+docker-compose --profile sli up
+```
+
+See `pipelines/README.md` for complete Docker documentation.
+
+---
+
 ## Project Structure
 
 ```
 entomological-label-information-extraction/
 ├── data/
 │   ├── MLI/input/                    # Full specimen photos
-│   ├── MLI/output/                   # MLI results
-│   ├── SLI/input/                    # Pre-cropped labels
-│   └── SLI/output/                   # SLI results
-├── scripts/
-│   ├── processing/                   # Main pipeline scripts
-│   ├── postprocessing/               # Output consolidation
-│   └── evaluation/                   # Analysis tools
+│   ├── MLI/output/                   # Results
+│   └── SLI/input/                    # Pre-cropped labels
 ├── label_processing/                 # Core processing modules
-├── label_postprocessing/             # Post-processing modules
-├── models/                           # Trained model files
+│   ├── gemini_processor.py           # Gemini detection, classification, OCR
+│   ├── entity_recognition.py         # Entity extraction, GBIF, OSM, DwC/OpenDS
+│   ├── label_detection.py            # Detectron2 detection (traditional)
+│   ├── tensorflow_classifier.py      # TF classifiers (traditional)
+│   └── ...
+├── scripts/
+│   ├── processing/
+│   │   ├── gemini_classify.py        # Gemini detection + classification CLI
+│   │   ├── gemini_ocr.py             # Gemini OCR CLI
+│   │   ├── entity_recognition.py     # Entity recognition CLI
+│   │   ├── detection.py              # Detectron2 detection CLI
+│   │   └── ...
+│   ├── postprocessing/
+│   │   ├── consolidate_results.py    # Merge pipeline outputs
+│   │   └── crop_labels.py            # Crop labels from originals
+│   └── evaluation/                   # Analysis tools
+├── interfaces/
+│   └── launch_streamlit.py           # Streamlit web GUI
 ├── pipelines/
 │   ├── Dockerfile                    # Docker multi-stage build
 │   ├── docker-compose.yml            # Docker orchestration
-│   ├── elie.def                      # Apptainer definition
 │   └── requirements/                 # Per-stage dependencies
 ├── tools/
-│   ├── pipelines/                    # Conda shell scripts
+│   ├── pipelines/                    # Shell scripts (Gemini, MLI, SLI)
 │   └── hpc/                          # SLURM job templates
-├── interfaces/
-│   └── launch_streamlit.py           # Web GUI
-├── launch.py                         # Quick launcher
-└── environment.yml                   # Conda environment
+├── unit_tests/                       # Test suite
+├── launch.py                         # Quick launcher (Streamlit)
+├── environment.yml                   # Conda environment
+└── pyproject.toml                    # Python package config
 ```
-
-**Key output files:**
-- `consolidated_results.json` - Main results with all metadata
-- `corrected_transcripts.json` - Cleaned OCR text
-- `identifier.csv` - Specimen IDs
-- `input_predictions.csv` - Detection results (MLI only)
 
 ---
 
 ## Troubleshooting
 
-### Common First-Time Issues
+### Common Issues
 
-**"Command not found: conda"**
+**"conda activate ELIE" fails**
 ```bash
-# Conda not installed. Install Miniconda first:
-# Visit: https://conda.io/miniconda.html
-# Then restart your terminal
+# Ensure environment was created:
+conda env create -f environment.yml
+# Restart terminal, then:
+conda activate ELIE
 ```
 
-**"Command not found: python"**
+**"GEMINI_API_KEY not set"**
 ```bash
-# Make sure conda environment is activated:
-conda activate entomological-label
-
-# Or try python3 instead:
-python3 launch.py
+export GEMINI_API_KEY=<your-api-key>
+# Get a key from https://aistudio.google.com/apikey
 ```
 
-**"conda: command not found" after installation**
+**"ModuleNotFoundError"**
 ```bash
-# Restart your terminal/shell, then try again
-# Or source conda:
-source ~/miniconda3/bin/activate  # Adjust path if needed
-```
-
-**"No images found" or empty results**
-```bash
-# Check images are in correct folder:
-ls data/MLI/input/  # Should show .jpg files
-ls data/SLI/input/  # Should show .jpg files
-
-# Make sure images are JPG format (not PNG, TIFF, etc.)
-```
-
-**"Tesseract not found"**
-```bash
-# Tesseract not installed. Install it:
-
-# macOS:
-brew install tesseract
-
-# Linux:
-sudo apt install tesseract-ocr
-
-# Windows:
-# Download installer from: https://github.com/UB-Mannheim/tesseract/wiki
-
-# Verify it worked:
-tesseract --version
-```
-
-**"No such file or directory"**
-```bash
-# Make sure you're in the project directory:
-cd entomological-label-information-extraction
-pwd  # Should end with entomological-label-information-extraction
-```
-
-**"ModuleNotFoundError" or "ImportError"**
-```bash
-# Environment not activated or package not installed:
-conda activate entomological-label
+conda activate ELIE
 pip install -e .
 ```
 
-**"Model loading issues" or "Out of memory"**
+**"No images found"**
 ```bash
-# Clear model cache:
-python scripts/processing/detection.py --clear-cache -j data/MLI/input -o data/MLI/output
+# Check images are in the correct folder:
+ls data/MLI/input/   # Should show image files (.jpg, .png, .tiff)
+```
 
-# If still fails, reduce batch size or use smaller images
+**"Tesseract not found"** (traditional pipeline only)
+```bash
+# macOS:
+brew install tesseract
+# Linux:
+sudo apt install tesseract-ocr
 ```
 
 **Still stuck?**
-- Check full documentation: https://entomological-label-information-extraction.readthedocs.io/
+- Full docs: https://entomological-label-information-extraction.readthedocs.io/
 - Run diagnostic: `python scripts/health_check.py`
-- Check GitHub issues for similar problems
-
-
----
-
-## Sample Data
-
-**Included in repository:**
-- `data/MLI/` - Sample multi-label specimen images
-- `data/SLI/` - Sample single-label images
-
-**Full training datasets:**
-Available on Zenodo: https://doi.org/10.7479/khac-x956
-
-**Model retraining:**
-See training notebooks in `training_notebooks/`
-- HPC-optimized training scripts with EfficientNetV2
-- Complete guide: `training_notebooks/README_HPC_TRAINING.md`
 
 ---
 
 ## Technical Details
 
 ### Models
-- **Detection**: Faster R-CNN (Detectron2)
-- **Classification**: TensorFlow CNNs for empty/printed/handwritten/identifier
-- **OCR**: Tesseract + optional Google Vision API
-- **Post-processing**: NLTK for text cleaning
 
-### Preprocessing
-- Stage 1 (detection/classification/rotation): Geometric normalization only
-- Stage 2 (OCR): Grayscale, denoising, adaptive thresholding, deskewing
-  - Optional CLAHE for contrast enhancement (useful for faded/low-contrast labels)
-  - Optional illumination normalization (useful for uneven lighting)
-- Empty label detection: 10% border crop, dark pixel threshold < 1%
-
-### Resource Requirements
-| Stage | Memory | CPUs | Time (est.) |
-|-------|--------|------|-------------|
-| Detection | 6 GB | 4 | 30-60 min |
-| Classification | 3 GB | 2 | 15-30 min |
-| Rotation | 3 GB | 2 | 10-20 min |
-| OCR | 4 GB | 3 | 30-60 min |
-| Post-processing | 2 GB | 2 | 5-10 min |
-
-*Times vary by number/size of images and represent estimates for individual stages*
-
-### Minimum Hardware Requirements
-- **RAM**: 6 GB minimum (8 GB recommended)
-- **Storage**: 2 GB for models + space for images
-- **CPU**: Multi-core processor (4+ cores recommended)
-- **GPU**: Optional (models run on CPU by default)
-
-### Performance Benchmarks
-
-Actual pipeline performance on test datasets:
-
-| Dataset | Images | Pipeline Modules | Total Runtime | Avg. Time/Image |
-|---------|--------|------------------|---------------|------------------|
-| MfN_LEP_SEASIA | 25,844 SLI | 7 modules (all except detection) | 2h 44min | ~6 sec |
-| MCZ_ENT_Boston | 1,596 MLI | 5 modules | 51min 10s | ~1.9 sec |
-| USNM_COL_CAM | 912 MLI | All 8 modules | 47min 21s | ~3.1 sec |
-
-*Benchmarks run on Apple MacBook M1 (CPU only, no GPU acceleration). Total runtime depends on which modules are executed and dataset characteristics.*
+| Component | Gemini Pipeline | Traditional Pipeline |
+|-----------|----------------|---------------------|
+| Detection | Gemini 2.5 Flash (API) | Faster R-CNN / Detectron2 (local) |
+| Classification | Gemini 2.5 Flash (API) | TensorFlow CNNs (local) |
+| OCR / HTR | Gemini 2.5 Flash (API) | Tesseract or Google Vision |
+| Entity Recognition | Gemini 2.0 Flash (API) + GBIF + OSM | Not available |
+| Post-processing | NLTK for text cleaning | NLTK for text cleaning |
 
 ### Accuracy
 
-Pipeline performance on held-out test data:
 - **Label Detection**: 94% accuracy (IoU ≥ 0.8)
-- **Empty Label Detection**: 100% precision
-- **Handwritten/Printed Classifier**: 98-99% accuracy
-- **Specimen Identifier Classifier**: 100% accuracy
+- **Classification**: 98-100% accuracy
 - **Rotation Correction**: 97.3% accuracy
-- **OCR (Google Vision, printed labels)**: Median CER 0.0-5.0%, WER 0.0-22%
-- **Clustering**: 75-97% accuracy depending on dataset redundancy
+- **OCR (printed)**: Median CER 0.0-5.0%, WER 0.0-22%
 
-**For advanced clustering capabilities**, see the companion [ELIE-clustering](https://github.com/joel-tuberosa/ELIE-clustering) package, which provides enhanced algorithms for label deduplication and textual similarity analysis.
+### Resource Requirements
 
-### Efficiency & Time Savings
-
-ELIE reduces manual transcription effort by **up to 87%** by:
-- Automatically extracting printed labels with OCR
-- Clustering recurring labels for one-time validation
-- Routing only unique/representative labels for manual review
-
-Estimated time savings:
-- **Small dataset** (10,000 labels): ~408 hours saved
-- **Large dataset** (100,000 labels): ~1,787 hours saved
-
-*Based on average manual transcription time of 74 seconds per label*
-
-### Limitations
-
-- **Handwritten text**: OCR accuracy drops significantly (29% CER vs 5% for printed). HTR integration planned for future releases.
-- **Image quality**: Low-resolution, blurred, or damaged labels reduce accuracy
-- **Non-Latin scripts**: Current models trained primarily on Latin-alphabet text
-- **Historical labels**: Faded ink and archaic fonts may require manual review
-- **Complex layouts**: Labels with unusual formatting or mixed orientations may need preprocessing
-
----
-
-## Roadmap & Planned Improvements
-
-Future enhancements planned for ELIE:
-
-### Model Improvements
-- [ ] **Retrain rotation model** with EfficientNetV2 architecture (3x faster, 70% smaller)
-- [ ] **Retrain classifiers** (SLI/HPC) with modern architectures
-- [ ] **Add "Mixed" label category** for labels containing both handwritten and printed text
-- [ ] Upgrade all models from ResNet50 to EfficientNetV2-B0/B1
-
-### New Features
-- [ ] **Named Entity Recognition (NER)** module for automatic extraction of:
-  - Taxonomy (genus, species, author)
-  - Geographic locations
-  - Collection dates
-  - Collector names
-- [ ] **Data enrichment** with LLM/API integration:
-  - Taxonomic validation and standardization
-  - Geographic coordinate lookup
-  - Automated data quality checks
-- [ ] **Darwin Core output format** for biodiversity data standards compliance
-- [ ] **Rebuilt web interface** with improved UX and visualization
-
-### Documentation & Training
-- [ ] HPC training guide for model retraining (see `training_notebooks/README_HPC_TRAINING.md`)
-- [ ] Best practices for custom dataset preparation
-- [ ] Model performance comparison tools
-
-**Contributions welcome!** See issues or contact maintainers for collaboration.
+| Pipeline | RAM | CPU | GPU | Internet |
+|----------|-----|-----|-----|----------|
+| Gemini | 2 GB | Any | Not needed | Required (API) |
+| Traditional MLI | 6 GB | 4+ cores | Optional | Not needed |
+| Traditional SLI | 4 GB | 2+ cores | Optional | Not needed |
 
 ---
 
@@ -548,11 +337,12 @@ Future enhancements planned for ELIE:
   url = {https://doi.org/10.1111/2041-210x.70235}
 }
 ```
+
 ---
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) file
+MIT License — see [LICENSE](LICENSE) file
 
 ---
 
@@ -564,13 +354,11 @@ MIT License - see [LICENSE](LICENSE) file
 - [Quick Start Guide](https://entomological-label-information-extraction.readthedocs.io/en/latest/quickstart.html)
 - [User Guide](https://entomological-label-information-extraction.readthedocs.io/en/latest/user_guide.html)
 - [API Reference](https://entomological-label-information-extraction.readthedocs.io/en/latest/api/modules.html)
-- [Troubleshooting](https://entomological-label-information-extraction.readthedocs.io/en/latest/troubleshooting.html)
 
 ### Additional Guides
-- [Advanced Configuration](docs/ADVANCED_CONFIG.md) - Environment variables, model caching, performance tuning
-- [Rotation Model Setup](docs/ROTATION_MODEL_SETUP.md) - Rotation model installation and troubleshooting
-- [Docker README](pipelines/README.md) - Docker deployment details
-- [HPC Quickstart](pipelines/HPC_QUICKSTART.md) - HPC/Apptainer deployment
+- [Advanced Configuration](docs/ADVANCED_CONFIG.md)
+- [Rotation Model Setup](docs/ROTATION_MODEL_SETUP.md)
+- [Docker README](pipelines/README.md)
 
 ### Related Projects
-- [ELIE-clustering](https://github.com/joel-tuberosa/ELIE-clustering) - Advanced clustering package for label deduplication and similarity analysis
+- [ELIE-clustering](https://github.com/joel-tuberosa/ELIE-clustering) — Advanced clustering for label deduplication and similarity analysis

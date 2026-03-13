@@ -227,10 +227,15 @@ def ocr_on_dir(crop_dir: str, new_dir: str, verbose_print: Callable, args: argpa
     ocr_results = []
     count_qr, total_nuri = 0, 0
     thresh_mode = Threshmode(args.thresholding)
-    files = glob.glob(os.path.join(crop_dir, "*.jpg"))
+    image_patterns = ["*.jpg", "*.jpeg", "*.png", "*.tiff", "*.tif", "*.bmp"]
+    files = []
+    for pattern in image_patterns:
+        files.extend(glob.glob(os.path.join(crop_dir, pattern)))
+        files.extend(glob.glob(os.path.join(crop_dir, pattern.upper())))
+    files = sorted(set(files))  # Remove duplicates and sort
 
     if not files:
-        print("Error: No JPG files found in the specified directory.")
+        print("Error: No image files found in the specified directory.")
         return []
 
     if args.multiprocessing:

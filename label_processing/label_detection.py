@@ -1,4 +1,12 @@
-# Import third-party libraries
+#!/usr/bin/env python3
+"""
+Label Detection Module (Detectron2 / Detecto)
+
+Detects and crops individual labels from full specimen photographs using a
+trained Faster R-CNN object-detection model.  Used by the traditional MLI
+pipeline; the Gemini pipeline uses gemini_processor.detect_and_classify instead.
+"""
+
 import cv2
 import torch
 import os
@@ -13,13 +21,7 @@ import sys
 from detecto.core import Model
 import pickle
 
-import warnings
 import platform
-
-# Suppress torchvision deprecation warnings from detecto library
-warnings.filterwarnings("ignore", message="The parameter 'pretrained' is deprecated.*")
-warnings.filterwarnings("ignore", message="Arguments other than a weight enum.*")
-warnings.filterwarnings("ignore", category=UserWarning, module="torchvision")
 
 
 # ---------------------Image Segmentation---------------------#

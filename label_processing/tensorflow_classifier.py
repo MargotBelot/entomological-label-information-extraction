@@ -13,9 +13,6 @@ import sys
 # Import the necessary module from the 'label_processing' module package
 from label_processing import utils
 
-# Suppress warning messages during execution
-warnings.filterwarnings("ignore")
-
 
 # --------------------------------Predict Classes--------------------------------#
 
@@ -93,8 +90,13 @@ def class_prediction(
     utils.check_dir(jpg_dir)
     print("\nPredicting classes with memory-safe batch processing")
 
-    # Get all image files
-    image_files = list(glob.glob(f"{jpg_dir}/*.jpg"))
+    # Get all image files (support multiple formats)
+    image_patterns = ["*.jpg", "*.jpeg", "*.png", "*.tiff", "*.tif", "*.bmp"]
+    image_files = []
+    for pattern in image_patterns:
+        image_files.extend(glob.glob(os.path.join(jpg_dir, pattern)))
+        image_files.extend(glob.glob(os.path.join(jpg_dir, pattern.upper())))
+    image_files = sorted(set(image_files))
 
     # SECURITY: Limit total number of images to prevent resource exhaustion
     if len(image_files) > max_images:
@@ -245,7 +247,12 @@ def filter_pictures(
         print(f"Error creating directories: {e}")
         return
 
-    for filepath in glob.glob(os.path.join(jpg_dir, "*.jpg")):
+    image_patterns = ["*.jpg", "*.jpeg", "*.png", "*.tiff", "*.tif", "*.bmp"]
+    all_image_files = []
+    for pattern in image_patterns:
+        all_image_files.extend(glob.glob(os.path.join(jpg_dir, pattern)))
+        all_image_files.extend(glob.glob(os.path.join(jpg_dir, pattern.upper())))
+    for filepath in sorted(set(all_image_files)):
         filename = os.path.basename(filepath)
         match = dataframe[dataframe.filename == filename]
         

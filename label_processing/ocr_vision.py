@@ -2,13 +2,10 @@
 from __future__ import annotations
 import io
 import os
-import warnings
 from google.cloud import vision
 
 # Import the necessary module from the 'label_processing' module package
 import label_processing.utils
-
-# Suppress warning messages during execution
 warnings.filterwarnings("ignore")
 
 
@@ -154,6 +151,6 @@ class VisionApi:
             )
 
         entry = {"ID": filename, "text": transcript, "bounding_boxes": bounding_boxes}
-        if label_processing.utils.check_text(entry["text"]):
+        if label_processing.utils.check_nuri_format(entry["text"]):
             entry = label_processing.utils.replace_nuri(entry)
         return entry

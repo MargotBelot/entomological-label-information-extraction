@@ -6,13 +6,21 @@ This directory contains a **consolidated Docker setup** with a single multi-stag
 
 ### Docker
 
-**Multi-Label Image Pipeline (MLI)** - Process full specimen photos:
+**Gemini Pipeline (recommended)** — Lightweight, API-based, handles printed + handwritten labels:
+```bash
+cd pipelines
+GEMINI_API_KEY=<your-key> docker-compose --profile gemini up
+```
+
+> Get a free API key from [Google AI Studio](https://aistudio.google.com/apikey)
+
+**Multi-Label Image Pipeline (MLI)** — Traditional, uses local models (Detectron2 + TensorFlow):
 ```bash
 cd pipelines
 docker-compose --profile mli up
 ```
 
-**Single-Label Image Pipeline (SLI)** - Process pre-cropped labels:
+**Single-Label Image Pipeline (SLI)** — Traditional, pre-cropped labels:
 ```bash
 cd pipelines
 docker-compose --profile sli up
@@ -103,6 +111,7 @@ docker-compose run --rm rotation \
 
 All services are built from one consolidated Dockerfile with multiple stages:
 - **base**: Common dependencies (Python, OpenCV, system libraries)
+- **gemini**: Gemini API pipeline (google-genai, lightweight)
 - **segmentation**: Detection model + dependencies
 - **rotation**: Rotation correction model
 - **classification**: Classification models
@@ -136,6 +145,7 @@ Single-file container definition for HPC environments:
 One docker-compose file manages all pipelines using **profiles**:
 
 **Profiles:**
+- `gemini` - Gemini API pipeline (detection → classification → OCR → entity recognition, all via Gemini)
 - `mli` - Full Multi-Label Image pipeline (detection → classification → OCR → post-processing)
 - `sli` - Full Single-Label Image pipeline (classification → rotation → OCR → post-processing)
 - `standalone` - Individual services without dependencies
@@ -173,6 +183,7 @@ docker-compose build
 ## Resource Limits
 
 Default resource allocations (adjustable in `docker-compose.yml`):
+- **Gemini pipeline**: 2GB RAM, 2 CPUs (lightweight — no local models)
 - **Detection**: 6GB RAM, 4 CPUs
 - **Classification**: 3GB RAM, 2 CPUs
 - **Tesseract**: 4GB RAM, 3 CPUs

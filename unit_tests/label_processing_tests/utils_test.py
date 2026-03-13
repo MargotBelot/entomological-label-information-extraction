@@ -19,9 +19,10 @@ class TestUtilityFunctions(unittest.TestCase):
     """Test suite for utility functions in the 'label_processing' module."""
 
     # Test check_dir function
+    @patch('label_processing.utils.validate_image_integrity', return_value=True)
     @patch('os.path.isdir')
     @patch('os.listdir')
-    def test_check_dir(self, mock_listdir, mock_isdir):
+    def test_check_dir(self, mock_listdir, mock_isdir, mock_validate):
         """
         Test the check_dir function, which checks if a directory contains .jpg files.
 
@@ -39,8 +40,8 @@ class TestUtilityFunctions(unittest.TestCase):
         except FileNotFoundError:
             self.fail("check_dir raised FileNotFoundError unexpectedly!")
         
-        # Test with no jpg files
-        mock_listdir.return_value = ['image1.png', 'image2.png']
+        # Test with no image files
+        mock_listdir.return_value = ['readme.txt', 'notes.doc']
         with self.assertRaises(FileNotFoundError):
             check_dir('/valid/dir')  # Mocked directory path
         

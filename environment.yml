@@ -1,4 +1,4 @@
-name: entomological-label
+name: ELIE
 channels:
   - conda-forge
   - defaults
@@ -79,8 +79,11 @@ dependencies:
       - deskew==1.5.1
       - sphinx-rtd-theme==0.5.1
       - plotly>=5.20.0
+      - google-genai>=1.0.0
+      - streamlit>=1.30.0
+      - psutil>=5.9.0
 
 # To use:
 #   conda env create -f environment.yml
-#   conda activate entomological-label
+#   conda activate ELIE
 #   pip install -e .
