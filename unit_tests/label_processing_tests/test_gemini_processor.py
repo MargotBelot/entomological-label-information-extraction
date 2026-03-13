@@ -3,7 +3,14 @@
 import unittest
 import numpy as np
 
-from label_processing.gemini_processor import _rescale_bbox, rotate_image
+try:
+    from label_processing.gemini_processor import _rescale_bbox, rotate_image
+    HAS_GENAI = True
+except ImportError:
+    HAS_GENAI = False
+
+
+@unittest.skipUnless(HAS_GENAI, "google-genai not installed")
 
 
 class TestRescaleBbox(unittest.TestCase):
@@ -58,6 +65,7 @@ class TestRescaleBbox(unittest.TestCase):
         self.assertEqual(result["ymin"], 500)   # 500/1000 * 1000
 
 
+@unittest.skipUnless(HAS_GENAI, "google-genai not installed")
 class TestRotateImage(unittest.TestCase):
     """Tests for the rotate_image helper."""
 

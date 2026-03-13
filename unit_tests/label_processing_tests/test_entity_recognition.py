@@ -2,13 +2,17 @@
 
 import unittest
 
-from label_processing.entity_recognition import (
-    _normalize_name,
-    assess_extraction_success,
-    generate_dwc,
-    generate_opends,
-    build_master_json,
-)
+try:
+    from label_processing.entity_recognition import (
+        _normalize_name,
+        assess_extraction_success,
+        generate_dwc,
+        generate_opends,
+        build_master_json,
+    )
+    HAS_GENAI = True
+except ImportError:
+    HAS_GENAI = False
 
 
 # --------------- Helpers --------------- #
@@ -61,6 +65,7 @@ def _rich_entities():
 # --------------- _normalize_name --------------- #
 
 
+@unittest.skipUnless(HAS_GENAI, "google-genai not installed")
 class TestNormalizeName(unittest.TestCase):
 
     def test_none_returns_none(self):
@@ -85,6 +90,7 @@ class TestNormalizeName(unittest.TestCase):
 # --------------- assess_extraction_success --------------- #
 
 
+@unittest.skipUnless(HAS_GENAI, "google-genai not installed")
 class TestAssessExtractionSuccess(unittest.TestCase):
 
     def test_perfect_extraction(self):
@@ -136,6 +142,7 @@ class TestAssessExtractionSuccess(unittest.TestCase):
 # --------------- generate_dwc --------------- #
 
 
+@unittest.skipUnless(HAS_GENAI, "google-genai not installed")
 class TestGenerateDwc(unittest.TestCase):
 
     def test_single_label_produces_one_record(self):
@@ -197,6 +204,7 @@ class TestGenerateDwc(unittest.TestCase):
 # --------------- generate_opends --------------- #
 
 
+@unittest.skipUnless(HAS_GENAI, "google-genai not installed")
 class TestGenerateOpends(unittest.TestCase):
 
     def test_single_label_produces_one_record(self):
@@ -221,6 +229,7 @@ class TestGenerateOpends(unittest.TestCase):
 # --------------- build_master_json --------------- #
 
 
+@unittest.skipUnless(HAS_GENAI, "google-genai not installed")
 class TestBuildMasterJson(unittest.TestCase):
 
     def test_groups_by_source_image(self):
