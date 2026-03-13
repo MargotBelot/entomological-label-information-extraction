@@ -6,7 +6,6 @@ from google.cloud import vision
 
 # Import the necessary module from the 'label_processing' module package
 import label_processing.utils
-warnings.filterwarnings("ignore")
 
 
 class VisionApi:
