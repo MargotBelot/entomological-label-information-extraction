@@ -76,6 +76,8 @@ Main Documentation
    :hidden:
    
    troubleshooting
+   ADVANCED_CONFIG
+   ROTATION_MODEL_SETUP
    contributing
    changelog
    license

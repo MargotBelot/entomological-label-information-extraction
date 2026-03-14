@@ -31,6 +31,7 @@ Configuration
    :members:
    :undoc-members:
    :show-inheritance:
+   :no-index:
 
 Empty Label Detection
 ~~~~~~~~~~~~~~~~~~~~~
@@ -39,6 +40,7 @@ Empty Label Detection
    :members:
    :undoc-members:
    :show-inheritance:
+   :no-index:
 
 Label Detection
 ~~~~~~~~~~~~~~~
@@ -47,6 +49,7 @@ Label Detection
    :members:
    :undoc-members:
    :show-inheritance:
+   :no-index:
 
 Label Rotation
 ~~~~~~~~~~~~~~
@@ -55,6 +58,7 @@ Label Rotation
    :members:
    :undoc-members:
    :show-inheritance:
+   :no-index:
 
 OCR Vision
 ~~~~~~~~~~
@@ -63,6 +67,7 @@ OCR Vision
    :members:
    :undoc-members:
    :show-inheritance:
+   :no-index:
 
 TensorFlow Classifier
 ~~~~~~~~~~~~~~~~~~~~~
@@ -71,6 +76,7 @@ TensorFlow Classifier
    :members:
    :undoc-members:
    :show-inheritance:
+   :no-index:
 
 Text Recognition
 ~~~~~~~~~~~~~~~~
@@ -79,6 +85,7 @@ Text Recognition
    :members:
    :undoc-members:
    :show-inheritance:
+   :no-index:
 
 OCR preprocessing summary
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -98,3 +105,4 @@ Utilities
    :members:
    :undoc-members:
    :show-inheritance:
+   :no-index:

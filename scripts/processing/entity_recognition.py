@@ -4,6 +4,7 @@ Entity Recognition CLI Script
 
 Reads consolidated_results.json, runs LLM-based entity extraction with GBIF/OSM
 enrichment, and writes:
+
   - entity_master.json   (always)
   - quality_report.json  (always)
   - darwin_core.json     (optional --dwc)
@@ -11,6 +12,7 @@ enrichment, and writes:
   - darwin_core.csv      (optional --csv)
 
 Usage:
+
     python entity_recognition.py -i <consolidated_results.json> -o <output_dir>
     python entity_recognition.py -i <file> -o <dir> --dwc --opends --csv
 """

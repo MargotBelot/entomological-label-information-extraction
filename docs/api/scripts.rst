@@ -27,6 +27,7 @@ Health Check
    :members:
    :undoc-members:
    :show-inheritance:
+   :no-index:
 
 Evaluation Scripts
 ~~~~~~~~~~~~~~~~~~
@@ -37,36 +38,43 @@ The ``evaluation`` subpackage contains comprehensive evaluation and analysis too
    :members:
    :undoc-members:
    :show-inheritance:
+   :no-index:
 
 .. automodule:: scripts.evaluation.classifiers_eval
    :members:
    :undoc-members:
    :show-inheritance:
+   :no-index:
 
 .. automodule:: scripts.evaluation.cluster_eval
    :members:
    :undoc-members:
    :show-inheritance:
+   :no-index:
 
 .. automodule:: scripts.evaluation.detection_eval
    :members:
    :undoc-members:
    :show-inheritance:
+   :no-index:
 
 .. automodule:: scripts.evaluation.ocr_eval
    :members:
    :undoc-members:
    :show-inheritance:
+   :no-index:
 
 .. automodule:: scripts.evaluation.redundancy
    :members:
    :undoc-members:
    :show-inheritance:
+   :no-index:
 
 .. automodule:: scripts.evaluation.rotation_eval
    :members:
    :undoc-members:
    :show-inheritance:
+   :no-index:
 
 Post-processing Scripts
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -83,6 +91,7 @@ The ``postprocessing`` subpackage provides tools for result consolidation and pr
    :members:
    :undoc-members:
    :show-inheritance:
+   :no-index:
 
 Processing Scripts
 ~~~~~~~~~~~~~~~~~~
@@ -93,13 +102,16 @@ The ``processing`` subpackage contains core processing utilities:
    :members:
    :undoc-members:
    :show-inheritance:
+   :no-index:
 
 .. automodule:: scripts.processing.classifiers
    :members:
    :undoc-members:
    :show-inheritance:
+   :no-index:
 
 .. automodule:: scripts.processing.detection
    :members:
    :undoc-members:
    :show-inheritance:
+   :no-index:

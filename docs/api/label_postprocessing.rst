@@ -24,3 +24,4 @@ OCR Post-processing
    :members:
    :undoc-members:
    :show-inheritance:
+   :no-index:

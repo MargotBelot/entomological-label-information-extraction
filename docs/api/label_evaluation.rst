@@ -27,6 +27,7 @@ Accuracy Classifier
    :members:
    :undoc-members:
    :show-inheritance:
+   :no-index:
 
 Text Evaluation
 ~~~~~~~~~~~~~~~
@@ -35,6 +36,7 @@ Text Evaluation
    :members:
    :undoc-members:
    :show-inheritance:
+   :no-index:
 
 IoU Scores
 ~~~~~~~~~~
@@ -43,6 +45,7 @@ IoU Scores
    :members:
    :undoc-members:
    :show-inheritance:
+   :no-index:
 
 Redundancy Analysis
 ~~~~~~~~~~~~~~~~~~~
@@ -51,3 +54,4 @@ Redundancy Analysis
    :members:
    :undoc-members:
    :show-inheritance:
+   :no-index:

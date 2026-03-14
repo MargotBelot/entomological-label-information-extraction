@@ -315,7 +315,7 @@ print(f"Rotated shape: {rotated.shape}")
 
 If you continue to have issues:
 
-1. Check the project [README.md](../README.md) for general setup
+1. Check the project [README](https://github.com/MargotBelot/entomological-label-information-extraction) for general setup
 2. Review [ADVANCED_CONFIG.md](ADVANCED_CONFIG.md) for environment variables
 3. Open an issue on the project repository with:
    - Error message
@@ -326,5 +326,5 @@ If you continue to have issues:
 ## See Also
 
 - [ADVANCED_CONFIG.md](ADVANCED_CONFIG.md) - Advanced configuration options
-- [README.md](../README.md) - Main project documentation
+- [README](https://github.com/MargotBelot/entomological-label-information-extraction) - Main project documentation
 - `label_processing/label_rotation.py` - Rotation module source code
