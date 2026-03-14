@@ -7,7 +7,7 @@ Quick Start Guide
    📋 **Prerequisites**: Make sure you have `Git <https://git-scm.com/>`_ and `Conda <https://conda.io/miniconda.html>`_ installed first!
 
 🚀 Option 1: Gemini Pipeline (Recommended)
------------------------------------------
+--------------------------------------------
 
 **The simplest and most powerful way to get started — handles printed AND handwritten labels:**
 
@@ -41,7 +41,7 @@ Quick Start Guide
 - Export Darwin Core records (JSON/CSV)
 
 🔧 Option 2: Traditional Pipelines (Offline)
--------------------------------------------
+---------------------------------------------
 
 **For offline use with local models (Detectron2 + TensorFlow + Tesseract). Printed labels only.**
 

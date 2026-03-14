@@ -118,7 +118,7 @@ Troubleshooting
    python scripts/health_check.py
    
    # Test with a single image
-python scripts/processing/analysis.py -i path/to/images_dir -o test_output/
+   python scripts/processing/analysis.py -i path/to/images_dir -o test_output/
    
    # Get help for any script
    python scripts/processing/detection.py --help

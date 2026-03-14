@@ -287,6 +287,6 @@ chmod 644 models/*.h5 models/*.pth
 
 ## See Also
 
-- [README.md](../README.md) - Main documentation
-- [Docker README](../pipelines/README.md) - Docker-specific docs
-- [HPC Quickstart](../pipelines/HPC_QUICKSTART.md) - HPC-specific docs
+- README.md - Main documentation
+- pipelines/README.md - Docker-specific docs
+- pipelines/HPC_QUICKSTART.md - HPC-specific docs
