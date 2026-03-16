@@ -123,6 +123,28 @@ textarea {
     font-size: 0.85rem !important;
 }
 
+/* Input fields for entity editing */
+input[type="text"] {
+    border: 1px solid #D0D7E0 !important;
+    border-radius: 6px !important;
+}
+
+/* Label crop container */
+.label-crop-container {
+    border: 2px solid #E0E7EF;
+    border-radius: 8px;
+    padding: 0.5rem;
+    background: #FAFBFC;
+}
+
+/* OCR edit area container */
+.ocr-edit-area {
+    border: 2px solid #E0E7EF;
+    border-radius: 8px;
+    padding: 0.5rem;
+    background: #FFFBF0;
+}
+
 /* Download buttons full width */
 button[data-testid="stDownloadButton"] { width: 100%; }
 
@@ -1080,6 +1102,8 @@ def main():
             # Initialise OCR edits store in session state
             if 'ocr_edits' not in st.session_state:
                 st.session_state.ocr_edits = {}
+            if 'entity_edits' not in st.session_state:
+                st.session_state.entity_edits = {}
             if 'validated' not in st.session_state:
                 st.session_state.validated = False
             
@@ -1167,7 +1191,7 @@ def main():
                         
                         with info_col:
                             if labels_for_image:
-                                for lbl in labels_for_image:
+                                for lbl_idx, lbl in enumerate(labels_for_image):
                                     idx = lbl.get("label_index", "?")
                                     cat = lbl.get("category", "unknown")
                                     det_conf = lbl.get("detection_confidence", lbl.get("confidence", ""))
@@ -1180,28 +1204,77 @@ def main():
                                     original_text = ocr_block.get("text", "") if isinstance(ocr_block, dict) else ""
                                     current_text = st.session_state.ocr_edits.get(label_fn, original_text)
                                     
-                                    # Header
+                                    # Header with label info
                                     st.markdown(
                                         f"**Label {idx}** — "
                                         f"<span style='color:{cat_color}; font-weight:bold'>{cat}</span>"
                                         f" &nbsp; (conf: {det_conf}, rot: {angle}°)",
                                         unsafe_allow_html=True
                                     )
-                                    # Editable OCR text
-                                    edited = st.text_area(
-                                        f"OCR text",
-                                        value=current_text,
-                                        key=f"ocr_{label_fn}",
-                                        height=80,
-                                        label_visibility="collapsed"
-                                    )
-                                    # Track edits
-                                    if edited != original_text:
-                                        st.session_state.ocr_edits[label_fn] = edited
-                                        st.caption("✏️ Modified")
-                                    elif label_fn in st.session_state.ocr_edits:
-                                        # User reverted to original
-                                        del st.session_state.ocr_edits[label_fn]
+                                    
+                                    # Try to extract and display the label crop if available
+                                    crop_path = None
+                                    if img_cv is not None:
+                                        bbox = lbl.get("bbox", {})
+                                        x1 = int(bbox.get("xmin", lbl.get("xmin", 0)))
+                                        y1 = int(bbox.get("ymin", lbl.get("ymin", 0)))
+                                        x2 = int(bbox.get("xmax", lbl.get("xmax", img_cv.shape[1])))
+                                        y2 = int(bbox.get("ymax", lbl.get("ymax", img_cv.shape[0])))
+                                        
+                                        # Validate bbox coordinates
+                                        x1, y1 = max(0, x1), max(0, y1)
+                                        x2 = min(img_cv.shape[1], max(x1 + 10, x2))
+                                        y2 = min(img_cv.shape[0], max(y1 + 10, y2))
+                                        
+                                        if x2 > x1 and y2 > y1:
+                                            # Extract label crop
+                                            label_crop = img_cv[y1:y2, x1:x2]
+                                            # Resize for display if too large
+                                            crop_h, crop_w = label_crop.shape[:2]
+                                            max_crop_h = 200
+                                            if crop_h > max_crop_h:
+                                                scale = max_crop_h / crop_h
+                                                label_crop = cv2.resize(label_crop, 
+                                                                       (int(crop_w * scale), max_crop_h))
+                                            label_crop_rgb = cv2.cvtColor(label_crop, cv2.COLOR_BGR2RGB)
+                                            
+                                            # Display crop and OCR side-by-side
+                                            crop_col, text_col = st.columns([0.4, 0.6])
+                                            
+                                            with crop_col:
+                                                st.image(label_crop_rgb, caption="Label Image", use_container_width=True)
+                                            
+                                            with text_col:
+                                                # Editable OCR text
+                                                edited = st.text_area(
+                                                    f"OCR Text",
+                                                    value=current_text,
+                                                    key=f"ocr_{label_fn}",
+                                                    height=150,
+                                                    label_visibility="collapsed",
+                                                    placeholder="Edit OCR text here..."
+                                                )
+                                                # Track edits
+                                                if edited != original_text:
+                                                    st.session_state.ocr_edits[label_fn] = edited
+                                                    st.caption("✏️ Modified", unsafe_allow_html=False)
+                                                elif label_fn in st.session_state.ocr_edits:
+                                                    # User reverted to original
+                                                    del st.session_state.ocr_edits[label_fn]
+                                    
+                                    if crop_path is None and img_cv is None:
+                                        # Fallback: just show text area if image can't be processed
+                                        edited = st.text_area(
+                                            f"OCR Text for Label {idx}",
+                                            value=current_text,
+                                            key=f"ocr_{label_fn}",
+                                            height=120,
+                                            placeholder="Edit OCR text here..."
+                                        )
+                                        if edited != original_text:
+                                            st.session_state.ocr_edits[label_fn] = edited
+                                        elif label_fn in st.session_state.ocr_edits:
+                                            del st.session_state.ocr_edits[label_fn]
                                     
                                     # --- Entity extraction data (if available) ---
                                     entities = lbl.get("entity_extraction", {})
@@ -1241,12 +1314,30 @@ def main():
                 st.subheader("✅ Validation")
                 edit_count = len(st.session_state.ocr_edits)
                 total_labels = len(consolidated)
-                if edit_count:
-                    st.info(f"✏️ {edit_count} label(s) have been manually corrected.")
-                else:
-                    st.caption("No corrections made — OCR text is unchanged.")
                 
-                val_col1, val_col2 = st.columns(2)
+                if edit_count:
+                    st.success(f"✏️ **{edit_count}** label(s) have been manually corrected.")
+                    
+                    # Show corrections summary
+                    if st.checkbox("📋 Show corrections summary"):
+                        correction_data = []
+                        for entry in consolidated:
+                            label_fn = entry.get("label_filename", "")
+                            if label_fn in st.session_state.ocr_edits:
+                                original = (entry.get("ocr", {}) or {}).get("text", "") if isinstance(entry.get("ocr"), dict) else ""
+                                corrected = st.session_state.ocr_edits[label_fn]
+                                correction_data.append({
+                                    "Label": label_fn,
+                                    "Original": original[:100] + "..." if len(original) > 100 else original,
+                                    "Corrected": corrected[:100] + "..." if len(corrected) > 100 else corrected,
+                                })
+                        
+                        df_corrections = pd.DataFrame(correction_data)
+                        st.dataframe(df_corrections, use_container_width=True)
+                else:
+                    st.caption("✅ No corrections made — OCR text is unchanged.")
+                
+                val_col1, val_col2, val_col3 = st.columns(3)
                 with val_col1:
                     if st.button("✅ Validate & Save", type="primary",
                                  help="Save current OCR text (with your corrections) as the validated results."):
@@ -1255,13 +1346,46 @@ def main():
                         for entry in consolidated:
                             v = dict(entry)  # shallow copy
                             label_fn = v.get("label_filename", "")
-                            ocr = dict(v.get("ocr", {}))
+                            ocr = dict(v.get("ocr", {})) if isinstance(v.get("ocr"), dict) else {}
                             if label_fn in st.session_state.ocr_edits:
                                 ocr["text"] = st.session_state.ocr_edits[label_fn]
                                 ocr["manually_corrected"] = True
                             else:
                                 ocr["manually_corrected"] = False
                             v["ocr"] = ocr
+                            
+                            # Merge entity edits if available
+                            if label_fn in st.session_state.entity_edits:
+                                entity_edits = st.session_state.entity_edits[label_fn]
+                                if not v.get("entity_extraction"):
+                                    v["entity_extraction"] = {}
+                                # Update entity fields
+                                if "scientific_name" in entity_edits:
+                                    sci_names = v["entity_extraction"].get("scientific_names", [{}])
+                                    sci_names[0]["name"] = entity_edits["scientific_name"]
+                                if "authority" in entity_edits:
+                                    sci_names = v["entity_extraction"].get("scientific_names", [{}])
+                                    sci_names[0]["authority"] = entity_edits["authority"]
+                                if "recordedBy" in entity_edits:
+                                    v["entity_extraction"]["recordedBy"] = entity_edits["recordedBy"]
+                                if "eventDate" in entity_edits:
+                                    v["entity_extraction"]["eventDate"] = entity_edits["eventDate"]
+                                if "type_status" in entity_edits:
+                                    traits = v["entity_extraction"].get("traits_and_status", {})
+                                    traits["type_status"] = entity_edits["type_status"]
+                                    v["entity_extraction"]["traits_and_status"] = traits
+                                if "institutionCode" in entity_edits:
+                                    v["entity_extraction"]["institutionCode"] = entity_edits["institutionCode"]
+                                if "locality" in entity_edits or "country" in entity_edits:
+                                    geo = v["entity_extraction"].get("geographic_data", {})
+                                    if "locality" in entity_edits:
+                                        geo["locality"] = entity_edits["locality"]
+                                    if "country" in entity_edits:
+                                        parsed = geo.get("parsed", {})
+                                        parsed["country"] = entity_edits["country"]
+                                        geo["parsed"] = parsed
+                                    v["entity_extraction"]["geographic_data"] = geo
+                            
                             v["validated"] = True
                             validated.append(v)
                         # Save
@@ -1269,14 +1393,214 @@ def main():
                         with open(validated_path, "w", encoding="utf-8") as f:
                             json.dump(validated, f, indent=2, ensure_ascii=False)
                         st.session_state.validated = True
-                        st.success(f"Saved {len(validated)} labels → `validated_results.json` ({edit_count} corrected)")
+                        st.success(f"✅ Saved {len(validated)} labels → `validated_results.json` ({edit_count} corrected)")
                 
                 with val_col2:
-                    if st.session_state.ocr_edits:
+                    if st.session_state.ocr_edits or st.session_state.entity_edits:
                         if st.button("↩️ Reset all corrections"):
                             st.session_state.ocr_edits = {}
+                            st.session_state.entity_edits = {}
                             st.session_state.validated = False
                             st.rerun()
+                
+                with val_col3:
+                    if edit_count > 0 or len(st.session_state.entity_edits) > 0:
+                        # Create export data
+                        export_data = []
+                        for entry in consolidated:
+                            label_fn = entry.get("label_filename", "")
+                            row = {
+                                "Label": label_fn,
+                                "Original_OCR": (entry.get("ocr", {}) or {}).get("text", "") if isinstance(entry.get("ocr"), dict) else "",
+                            }
+                            if label_fn in st.session_state.ocr_edits:
+                                row["Corrected_OCR"] = st.session_state.ocr_edits[label_fn]
+                                row["OCR_Modified"] = "Yes"
+                            else:
+                                row["Corrected_OCR"] = row["Original_OCR"]
+                                row["OCR_Modified"] = "No"
+                            
+                            # Add entity fields if edited
+                            if label_fn in st.session_state.entity_edits:
+                                edits = st.session_state.entity_edits[label_fn]
+                                for key, value in edits.items():
+                                    row[f"Entity_{key}"] = value
+                            
+                            export_data.append(row)
+                        
+                        df_export = pd.DataFrame(export_data)
+                        csv = df_export.to_csv(index=False).encode('utf-8')
+                        st.download_button(
+                            label="📥 Download Edits (CSV)",
+                            data=csv,
+                            file_name=f"label_corrections_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+                            mime="text/csv",
+                        )
+                
+                # ─── Fine-grained Entity Field Editing ───
+                st.subheader("🎯 Edit Entity Fields")
+                st.caption("Correct specific structured fields (scientific name, collector, date, location, etc.) extracted from labels.")
+                
+                # Show entity editor if entity data exists
+                if consolidated:
+                    labels_with_entities = [lbl for lbl in consolidated if lbl.get("entity_extraction")]
+                    
+                    if labels_with_entities:
+                        entity_label_names = [lbl.get("label_filename", f"Label {lbl.get('label_index', '?')}") 
+                                            for lbl in labels_with_entities]
+                        selected_entity_label = st.selectbox(
+                            "Select label to edit entities",
+                            entity_label_names,
+                            key="entity_editor_select"
+                        )
+                        
+                        selected_entity_idx = entity_label_names.index(selected_entity_label)
+                        selected_entity_lbl = labels_with_entities[selected_entity_idx]
+                        entities = selected_entity_lbl.get("entity_extraction", {})
+                        label_fn = selected_entity_lbl.get("label_filename", "")
+                        
+                        # Initialize edits for this label if not exists
+                        if label_fn not in st.session_state.entity_edits:
+                            st.session_state.entity_edits[label_fn] = {}
+                        
+                        current_edits = st.session_state.entity_edits[label_fn]
+                        
+                        # Create columns for entity editing
+                        entity_col1, entity_col2 = st.columns(2)
+                        
+                        with entity_col1:
+                            st.markdown("**Taxonomy & Specimen**")
+                            
+                            # Scientific name
+                            sci_names = entities.get("scientific_names", [])
+                            original_sci_name = sci_names[0].get("name", "") if sci_names else ""
+                            current_sci_name = current_edits.get("scientific_name", original_sci_name)
+                            edited_sci_name = st.text_input(
+                                "Scientific Name",
+                                value=current_sci_name,
+                                key=f"sci_name_{label_fn}",
+                                help="Binomial nomenclature (genus species)"
+                            )
+                            if edited_sci_name != original_sci_name:
+                                current_edits["scientific_name"] = edited_sci_name
+                            elif "scientific_name" in current_edits:
+                                del current_edits["scientific_name"]
+                            
+                            # Authority
+                            sci_auth = sci_names[0].get("authority", "") if sci_names else ""
+                            current_auth = current_edits.get("authority", sci_auth)
+                            edited_auth = st.text_input(
+                                "Authority",
+                                value=current_auth,
+                                key=f"auth_{label_fn}",
+                                help="Author and year"
+                            )
+                            if edited_auth != sci_auth:
+                                current_edits["authority"] = edited_auth
+                            elif "authority" in current_edits:
+                                del current_edits["authority"]
+                            
+                            # Type status
+                            traits = entities.get("traits_and_status", {})
+                            original_type_status = traits.get("type_status", "")
+                            current_type_status = current_edits.get("type_status", original_type_status)
+                            edited_type_status = st.text_input(
+                                "Type Status",
+                                value=current_type_status,
+                                key=f"type_status_{label_fn}",
+                                help="e.g., holotype, paratype, syntype"
+                            )
+                            if edited_type_status != original_type_status:
+                                current_edits["type_status"] = edited_type_status
+                            elif "type_status" in current_edits:
+                                del current_edits["type_status"]
+                        
+                        with entity_col2:
+                            st.markdown("**Occurrence & Collection**")
+                            
+                            # Collector
+                            original_collector = entities.get("recordedBy", "")
+                            current_collector = current_edits.get("recordedBy", original_collector)
+                            edited_collector = st.text_input(
+                                "Collector",
+                                value=current_collector,
+                                key=f"collector_{label_fn}",
+                                help="Name(s) of person(s) who collected the specimen"
+                            )
+                            if edited_collector != original_collector:
+                                current_edits["recordedBy"] = edited_collector
+                            elif "recordedBy" in current_edits:
+                                del current_edits["recordedBy"]
+                            
+                            # Date
+                            original_date = entities.get("eventDate", "")
+                            current_date = current_edits.get("eventDate", original_date)
+                            edited_date = st.text_input(
+                                "Collection Date",
+                                value=current_date,
+                                key=f"date_{label_fn}",
+                                help="YYYY-MM-DD format or verbatim"
+                            )
+                            if edited_date != original_date:
+                                current_edits["eventDate"] = edited_date
+                            elif "eventDate" in current_edits:
+                                del current_edits["eventDate"]
+                            
+                            # Institution
+                            original_institution = entities.get("institutionCode", "")
+                            current_institution = current_edits.get("institutionCode", original_institution)
+                            edited_institution = st.text_input(
+                                "Institution Code",
+                                value=current_institution,
+                                key=f"institution_{label_fn}",
+                                help="Museum/herbarium code"
+                            )
+                            if edited_institution != original_institution:
+                                current_edits["institutionCode"] = edited_institution
+                            elif "institutionCode" in current_edits:
+                                del current_edits["institutionCode"]
+                        
+                        # Location editing
+                        st.markdown("**Geographic Information**")
+                        geo = entities.get("geographic_data", {})
+                        locality_col1, locality_col2 = st.columns(2)
+                        
+                        with locality_col1:
+                            original_locality = geo.get("locality", "")
+                            current_locality = current_edits.get("locality", original_locality)
+                            edited_locality = st.text_area(
+                                "Locality",
+                                value=current_locality,
+                                key=f"locality_{label_fn}",
+                                height=80,
+                                help="Specific location description"
+                            )
+                            if edited_locality != original_locality:
+                                current_edits["locality"] = edited_locality
+                            elif "locality" in current_edits:
+                                del current_edits["locality"]
+                        
+                        with locality_col2:
+                            original_country = geo.get("parsed", {}).get("country", "")
+                            current_country = current_edits.get("country", original_country)
+                            edited_country = st.text_input(
+                                "Country",
+                                value=current_country,
+                                key=f"country_{label_fn}",
+                                help="Country name"
+                            )
+                            if edited_country != original_country:
+                                current_edits["country"] = edited_country
+                            elif "country" in current_edits:
+                                del current_edits["country"]
+                        
+                        # Show summary
+                        entity_edit_count = len(current_edits)
+                        if entity_edit_count > 0:
+                            st.success(f"✏️ {entity_edit_count} field(s) modified for this label")
+                        
+                    else:
+                        st.info("📭 No labels with extracted entities found. Run the pipeline or entity extraction first.")
                 
                 # ─── Re-run Entity Recognition ───
                 st.subheader("🧬 Re-run Entity Recognition")
