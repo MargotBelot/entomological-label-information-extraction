@@ -546,6 +546,29 @@ def main():
             export_dwc = False
             export_opends = False
             export_csv = False
+        
+        # OCR Engine selection for MLI and SLI pipelines
+        if pipeline_type in ["MLI", "SLI"]:
+            st.markdown("---")
+            st.markdown("**OCR Engine**")
+            ocr_engine = st.selectbox(
+                "Choose OCR Engine",
+                ["Tesseract", "Gemini", "Google Vision"],
+                help=(
+                    "Tesseract: Printed labels only (local, free)\n"
+                    "Gemini: Handles printed, handwritten, and mixed labels (requires API key)\n"
+                    "Google Vision: Printed labels only (requires credentials file)"
+                ),
+                key="mli_sli_ocr_engine"
+            )
+            st.markdown("**Post-OCR Options**")
+            enable_crop_labels = st.checkbox(
+                "Crop Labels",
+                value=False,
+                help="Crop individual label regions from original images using detected bounding boxes."
+            )
+        else:
+            ocr_engine = None
             enable_crop_labels = False
         
         # Input directory
@@ -575,23 +598,26 @@ def main():
         batch_size = st.slider("Batch Size", 1, 8, 1, help="Number of images to process simultaneously")
     
     # API credentials section
-    if pipeline_type == "Gemini" or (ocr_engine and ocr_engine == "Google Vision"):
+    needs_gemini = (pipeline_type == "Gemini") or (pipeline_type in ["MLI", "SLI"] and ocr_engine == "Gemini")
+    needs_vision = (ocr_engine and ocr_engine == "Google Vision")
+    
+    if needs_gemini or needs_vision:
         st.subheader("🔑 API Credentials")
         cred_col1, cred_col2 = st.columns(2)
         
         with cred_col1:
-            if pipeline_type == "Gemini":
+            if needs_gemini:
                 gemini_api_key = st.text_input(
                     "Gemini API Key",
                     type="password",
-                    help="Your Gemini API key (from Google AI Studio). Required for Gemini pipeline.",
+                    help="Your Gemini API key (from Google AI Studio). Required for Gemini pipeline or Gemini OCR.",
                     placeholder="Enter your Gemini API key"
                 )
             else:
                 gemini_api_key = None
         
         with cred_col2:
-            if ocr_engine == "Google Vision":
+            if needs_vision:
                 vision_credentials = st.text_input(
                     "Google Vision Credentials Path",
                     help="Path to your Google Cloud Vision API credentials JSON file.",
@@ -892,7 +918,7 @@ def main():
                         env['INPUT_DIR'] = input_dir
                         env['OUTPUT_DIR'] = output_dir
                         
-                        # Set Gemini pipeline environment variables
+                        # Set pipeline-specific environment variables
                         if pipeline_type == "Gemini":
                             if gemini_api_key:
                                 env['GEMINI_API_KEY'] = gemini_api_key
@@ -912,9 +938,19 @@ def main():
                                     env['EXPORT_OPENDS'] = 'true'
                                 if export_csv:
                                     env['EXPORT_CSV'] = 'true'
-                            # Crop labels flag
-                            if enable_crop_labels:
-                                env['CROP_LABELS'] = 'true'
+                        elif pipeline_type in ["MLI", "SLI"]:
+                            # Set OCR engine and credentials for MLI/SLI pipelines
+                            if ocr_engine:
+                                engine_map = {"Tesseract": "tesseract", "Gemini": "gemini", "Google Vision": "vision"}
+                                env['OCR_ENGINE'] = engine_map.get(ocr_engine, "tesseract")
+                            if ocr_engine == "Gemini" and gemini_api_key:
+                                env['GEMINI_API_KEY'] = gemini_api_key
+                            if ocr_engine == "Google Vision" and vision_credentials:
+                                env['GOOGLE_VISION_CREDENTIALS'] = vision_credentials
+                        
+                        # Crop labels flag (available for all pipeline types)
+                        if enable_crop_labels:
+                            env['CROP_LABELS'] = 'true'
                         
                         # Create a temporary file to capture output
                         output_fd, st.session_state.pipeline_output_file = tempfile.mkstemp(suffix='.log')

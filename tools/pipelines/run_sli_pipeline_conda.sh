@@ -86,14 +86,52 @@ else
 fi
 
 echo ""
-echo "=== Step 5: OCR with Tesseract ==="
+echo "=== Step 5: OCR (Multiple Engine Support) ==="
+
+# Set OCR engine (default: tesseract)
+OCR_ENGINE=${OCR_ENGINE:-"tesseract"}
+
+# Determine input directory for OCR
 if [ -d "$OUTPUT_DIR/printed_preprocessed" ] && [ -n "$(ls -A "$OUTPUT_DIR/printed_preprocessed" 2>/dev/null)" ]; then
-    python scripts/processing/tesseract.py -d "$OUTPUT_DIR/printed_preprocessed" -o "$OUTPUT_DIR" || echo "OCR step completed with warnings"
+    OCR_INPUT_DIR="$OUTPUT_DIR/printed_preprocessed"
 elif [ -d "$OUTPUT_DIR/printed" ] && [ -n "$(ls -A "$OUTPUT_DIR/printed" 2>/dev/null)" ]; then
-    # Fallback: use unrotated images if rotation failed
-    python scripts/processing/tesseract.py -d "$OUTPUT_DIR/printed" -o "$OUTPUT_DIR" || echo "OCR step completed with warnings"
+    OCR_INPUT_DIR="$OUTPUT_DIR/printed"
 else
     echo "Warning: No printed labels found for OCR"
+    OCR_INPUT_DIR=""
+fi
+
+# Run OCR with selected engine
+if [ -n "$OCR_INPUT_DIR" ]; then
+    if [ "$OCR_ENGINE" = "gemini" ]; then
+        if [ -z "$GEMINI_API_KEY" ]; then
+            echo "Error: GEMINI_API_KEY environment variable is not set for Gemini OCR"
+            exit 1
+        fi
+        echo "Using Gemini OCR..."
+        python scripts/processing/gemini_ocr.py \
+            -d "$OCR_INPUT_DIR" \
+            -o "$OUTPUT_DIR" \
+            --categories printed \
+            || echo "Gemini OCR completed with warnings"
+    elif [ "$OCR_ENGINE" = "vision" ]; then
+        if [ -z "$GOOGLE_VISION_CREDENTIALS" ]; then
+            echo "Error: GOOGLE_VISION_CREDENTIALS environment variable is not set for Google Vision OCR"
+            exit 1
+        fi
+        echo "Using Google Vision OCR..."
+        python scripts/processing/vision.py \
+            -c "$GOOGLE_VISION_CREDENTIALS" \
+            -d "$OCR_INPUT_DIR" \
+            -o "$OUTPUT_DIR" \
+            || echo "Google Vision OCR completed with warnings"
+    else
+        # Default: Tesseract
+        echo "Using Tesseract OCR..."
+        python scripts/processing/tesseract.py -d "$OCR_INPUT_DIR" -o "$OUTPUT_DIR" || echo "Tesseract OCR completed with warnings"
+    fi
+else
+    echo "Skipping OCR: no input images found"
 fi
 
 echo ""
@@ -105,6 +143,16 @@ else
     echo "Warning: No OCR results found for post-processing"
     echo "Creating mock results file for demo..."
     echo '{"demo": "SLI pipeline completed", "timestamp": "'$(date -Iseconds)'", "processed_images": '$(ls "$INPUT_DIR"/*.jpg 2>/dev/null | wc -l)'}' > "$OUTPUT_DIR/consolidated_results.json"
+fi
+
+echo ""
+echo "=== Step 7: Crop Labels (Optional) ==="
+CROP_LABELS=${CROP_LABELS:-"false"}
+if [ "$CROP_LABELS" = "true" ]; then
+    echo "Cropping labels from original images..."
+    python scripts/postprocessing/crop_labels.py -i "$INPUT_DIR" -o "$OUTPUT_DIR" || echo "Cropping completed with warnings"
+else
+    echo "Skipping label cropping (set CROP_LABELS=true to enable)"
 fi
 
 echo ""
