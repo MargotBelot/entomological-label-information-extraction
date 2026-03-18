@@ -25,11 +25,11 @@ Extract and digitize text from museum specimen labels automatically — includin
 
 ### Three Pipeline Types
 
-| Pipeline | Input | Detection | Classification & OCR | Best For |
-|----------|-------|-----------|---------------------|----------|
-| **Gemini** (recommended) | Full specimen photos or pre-cropped labels | Gemini API | Gemini API | Printed + handwritten labels; no local model needed |
-| **MLI** (traditional) | Full specimen photos | Detectron2 (local) | TensorFlow + Tesseract | Printed labels only; offline use |
-| **SLI** (traditional) | Pre-cropped labels | Not needed | TensorFlow + Tesseract | Printed labels only; offline use |
+| Pipeline | Input | Detection | OCR Engines | Best For |
+|----------|-------|-----------|-----|----------|
+| **Gemini** (recommended) | Full specimen photos or pre-cropped labels | Gemini API | Gemini, Tesseract, Google Vision | Printed + handwritten labels; no local models needed |
+| **MLI** (traditional) | Full specimen photos | Detectron2 (local) | Tesseract, Gemini, Google Vision | Flexible offline/API hybrid; choose your OCR |
+| **SLI** (traditional) | Pre-cropped labels | Not needed | Tesseract, Gemini, Google Vision | Flexible offline/API hybrid; choose your OCR |
 
 ---
 
@@ -42,7 +42,7 @@ Extract and digitize text from museum specimen labels automatically — includin
 conda --version
 ```
 
-**b) Tesseract OCR** — only needed for the traditional pipelines
+**b) Tesseract OCR** — *Optional* (only if using Tesseract for OCR)
 ```bash
 # macOS:
 brew install tesseract
@@ -52,6 +52,12 @@ sudo apt install tesseract-ocr
 
 # Windows: https://github.com/UB-Mannheim/tesseract/wiki
 ```
+
+**c) Docker & Docker Compose** — *Optional* (only for MLI and SLI containerized pipelines)
+
+Ensure Docker is installed and running if using MLI or SLI pipelines via Docker. The Gemini pipeline does not require Docker.
+
+See [Docker docs](https://docs.docker.com/get-docker/) for installation.
 
 ### 2. Install ELIE
 
@@ -64,12 +70,21 @@ conda activate ELIE
 pip install -e .
 ```
 
-### 3. Set Up API Key (Gemini Pipeline)
+### 3. Set Up API Credentials (Optional)
 
-Get a free API key from [Google AI Studio](https://aistudio.google.com/apikey), then:
+**Gemini API Key** — Required if using Gemini for detection, classification, or OCR:
 ```bash
+# Get a free key from https://aistudio.google.com/apikey
 export GEMINI_API_KEY=<your-api-key>
 ```
+
+**Google Vision Credentials** — Required if using Google Vision for OCR in MLI/SLI pipelines:
+```bash
+# Download credentials JSON from Google Cloud Console
+export GOOGLE_VISION_CREDENTIALS=/path/to/credentials.json
+```
+
+**Tesseract** — No credentials needed; runs locally and offline.
 
 ### 4. Add Your Images
 
@@ -84,7 +99,11 @@ cp /path/to/your/photos/*.jpg data/MLI/input/
 ```bash
 python launch.py
 ```
-Opens a web interface where you can select a pipeline, configure options, review results, correct OCR, and re-run entity recognition — all from the browser.
+Opens a web interface where you can:
+- Select a pipeline (Gemini, MLI, or SLI)
+- Choose an OCR engine: **Tesseract** (offline), **Gemini** (API), or **Google Vision** (API)
+- Enable optional features: Entity Recognition, Crop Labels, Darwin Core export
+- Review results, correct OCR text, and re-run entity recognition — all from the browser
 
 **Option B: Command Line**
 ```bash
@@ -100,8 +119,21 @@ Opens a web interface where you can select a pipeline, configure options, review
 
 You can override defaults with environment variables:
 ```bash
+# Gemini pipeline
+GEMINI_API_KEY=<your-key> ./tools/pipelines/run_gemini_pipeline_conda.sh
+
+# MLI pipeline with Gemini OCR
+OCR_ENGINE=gemini GEMINI_API_KEY=<your-key> ./tools/pipelines/run_mli_pipeline_conda.sh
+
+# MLI pipeline with Google Vision OCR
+OCR_ENGINE=vision GOOGLE_VISION_CREDENTIALS=/path/to/creds.json ./tools/pipelines/run_mli_pipeline_conda.sh
+
+# MLI pipeline with Tesseract (default, no API needed)
+./tools/pipelines/run_mli_pipeline_conda.sh
+
+# Enable optional features (Gemini pipeline)
 INPUT_DIR=data/MLI/input OUTPUT_DIR=data/MLI/output \
-ENTITY_RECOGNITION=true EXPORT_DWC=true EXPORT_CSV=true \
+ENTITY_RECOGNITION=true EXPORT_DWC=true CROP_LABELS=true \
 ./tools/pipelines/run_gemini_pipeline_conda.sh
 ```
 
@@ -112,11 +144,12 @@ Results saved to the output directory:
 | File | Description |
 |------|-------------|
 | `entity_master.json` | All labels with extracted entities, GBIF validation, OSM geocoding |
-| `consolidated_results.json` | Labels with OCR text and metadata |
+| `consolidated_results.json` | Labels with OCR text and metadata (includes bbox for cropping) |
 | `quality_report.json` | Extraction quality scores per label |
 | `darwin_core.json` | Darwin Core formatted records (one per specimen) |
 | `darwin_core.csv` | Same as above in CSV format |
 | `validated_results.json` | After manual OCR corrections in the Streamlit UI |
+| `cropped_labels/` | (Optional) Individual label images cropped using detected bounding boxes |
 
 ---
 
@@ -189,21 +222,92 @@ The built-in Streamlit interface (`python launch.py`) provides:
 
 ---
 
+## OCR Engine Selection (MLI & SLI Pipelines)
+
+MLI and SLI pipelines now support multiple OCR engines, selectable from the Streamlit interface:
+
+| OCR Engine | Tesseract | Gemini | Google Vision |
+|-----------|-----------|--------|---------------|
+| **Setup** | Local (brew/apt) | API key | Credentials JSON |
+| **Handwritten** | ❌ | ✅ | ❌ |
+| **Mixed text** | ❌ | ✅ | ❌ |
+| **Speed** | Fast (seconds) | Slower (API) | Slower (API) |
+| **Cost** | Free | Free tier; pay per call | Pay per request |
+| **Offline** | ✅ | ❌ | ❌ |
+
+**In Streamlit Interface:**
+1. Select "MLI" or "SLI" pipeline
+2. Choose OCR Engine: Tesseract, Gemini, or Google Vision
+3. If using Gemini or Google Vision, provide credentials
+4. Run the pipeline
+
+**Via Command Line:**
+```bash
+# Tesseract (default)
+./tools/pipelines/run_mli_pipeline_conda.sh
+
+# Gemini
+OCR_ENGINE=gemini GEMINI_API_KEY=<key> ./tools/pipelines/run_mli_pipeline_conda.sh
+
+# Google Vision
+OCR_ENGINE=vision GOOGLE_VISION_CREDENTIALS=/path/to/creds.json ./tools/pipelines/run_mli_pipeline_conda.sh
+```
+
+---
+
+## Crop Labels Feature
+
+All pipelines (Gemini, MLI, SLI) can optionally crop individual label regions from the original images using the detected bounding boxes.
+
+**Enable in Streamlit:**
+1. Configure your pipeline (Gemini, MLI, or SLI)
+2. Check the "Crop Labels" checkbox under post-processing options
+3. Run the pipeline
+4. Cropped labels saved to `{output_dir}/cropped_labels/`
+
+**Via Command Line:**
+```bash
+# Any pipeline
+CROP_LABELS=true ./tools/pipelines/run_gemini_pipeline_conda.sh
+CROP_LABELS=true ./tools/pipelines/run_mli_pipeline_conda.sh
+CROP_LABELS=true ./tools/pipelines/run_sli_pipeline_conda.sh
+```
+
+Output structure:
+```
+output_dir/
+├── cropped_labels/
+│   ├── specimen_1_label1.jpg
+│   ├── specimen_1_label2.jpg
+│   └── ...
+├── consolidated_results.json   (includes bbox coordinates for each label)
+└── ...
+```
+
+---
+
 ## Docker (Optional)
 
-For containerized execution:
+Docker is **not required** for the recommended Conda-based setup. However, Docker is available for containerized execution of MLI and SLI pipelines.
+
+**Note:** The Gemini pipeline via Conda does not require Docker (it's already lightweight with no local models).
+
+For containerized execution of traditional pipelines:
 
 ```bash
 cd pipelines
 
-# Gemini pipeline (lightweight — no local models needed)
-GEMINI_API_KEY=<your-key> docker-compose --profile gemini up
+# Check Docker is running
+docker --version
 
-# Traditional MLI pipeline
+# Traditional MLI pipeline (containerized)
 docker-compose --profile mli up
 
-# Traditional SLI pipeline
+# Traditional SLI pipeline (containerized)
 docker-compose --profile sli up
+
+# For Gemini (optional — Conda version recommended)
+GEMINI_API_KEY=<your-key> docker-compose --profile gemini up
 ```
 
 See `pipelines/README.md` for complete Docker documentation.
@@ -282,12 +386,44 @@ pip install -e .
 ls data/MLI/input/   # Should show image files (.jpg, .png, .tiff)
 ```
 
-**"Tesseract not found"** (traditional pipeline only)
+**"Tesseract not found"** (Tesseract OCR only)
 ```bash
 # macOS:
 brew install tesseract
 # Linux:
 sudo apt install tesseract-ocr
+# Windows: https://github.com/UB-Mannheim/tesseract/wiki
+```
+
+**"Docker is required to run ELIE pipelines"** (only for MLI/SLI via Docker)
+```bash
+# If using Conda-based pipelines (recommended for Gemini):
+# Docker is NOT needed — run with: python launch.py
+
+# Docker only needed if using containerized MLI/SLI:
+# Install: https://docs.docker.com/get-docker/
+# Start Docker Desktop or systemd service, then retry
+```
+
+**"Google Vision API error"** (when using Google Vision OCR)
+```bash
+# Verify credentials file exists and is valid JSON:
+cat /path/to/credentials.json | python -m json.tool
+
+# Set environment variable:
+export GOOGLE_VISION_CREDENTIALS=/path/to/credentials.json
+
+# For MLI pipeline with Google Vision:
+OCR_ENGINE=vision GOOGLE_VISION_CREDENTIALS=/path/to/creds.json ./tools/pipelines/run_mli_pipeline_conda.sh
+```
+
+**"Crop Labels not working"** (no cropped_labels/ folder)
+```bash
+# Ensure checkbox is enabled in Streamlit, or set environment variable:
+CROP_LABELS=true ./tools/pipelines/run_gemini_pipeline_conda.sh
+
+# Verify consolidated results were created (needed for bounding boxes):
+ls output_dir/consolidated_results.json
 ```
 
 **Still stuck?**
