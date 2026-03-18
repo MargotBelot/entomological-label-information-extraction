@@ -480,14 +480,8 @@ def main():
     if 'job_duration' not in st.session_state:
         st.session_state.job_duration = None
     
-    # Check Docker status
-    docker_ready = display_docker_status()
-    
-    # Main interface
-    if not docker_ready:
-        st.error("🚫 Docker is required to run ELIE pipelines. Please start Docker to continue.")
-        st.info("💡 Docker will start automatically when detected. Please wait a moment after clicking 'Start Docker'.")
-        return
+    # Display Docker status in sidebar (informational only)
+    display_docker_status()
     
     # Pipeline configuration
     st.header("⚙️ Pipeline Configuration")
@@ -854,6 +848,20 @@ def main():
                     script_path = st.session_state.processor.project_root / "tools" / "pipelines" / "run_sli_pipeline_conda.sh"
                 else:  # Gemini
                     script_path = st.session_state.processor.project_root / "tools" / "pipelines" / "run_gemini_pipeline_conda.sh"
+                
+                # Check Docker requirement for MLI and SLI pipelines
+                if pipeline_type in ["MLI", "SLI"]:
+                    docker_status = DockerManager.get_docker_status()
+                    if not docker_status['installed']:
+                        st.session_state.logs.append(f"[{current_time}] ❌ Docker is required for {pipeline_type} pipelines but is not installed")
+                        st.session_state.logs.append("[" + current_time + "] 💡 Please install Docker from https://docs.docker.com/get-docker/")
+                        st.session_state.processing = False
+                        return
+                    if not docker_status['running']:
+                        st.session_state.logs.append(f"[{current_time}] ❌ Docker is required for {pipeline_type} pipelines but is not running")
+                        st.session_state.logs.append("[" + current_time + "] 💡 Please start Docker and try again")
+                        st.session_state.processing = False
+                        return
                 
                 # Validate input directory first
                 input_path = Path(input_dir)
